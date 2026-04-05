@@ -19,11 +19,12 @@ const supabase = createClient(
 const app = express();
 const resend = new Resend(process.env.RESEND_API_KEY);
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const RESEND_ENABLED = false; // Set to true when you have a valid Resend API key
 console.log('--- SERVER CODE IS ACTIVE ---');
 if (!process.env.RESEND_API_KEY) {
   console.warn('[WARN] RESEND_API_KEY is not set in .env');
 } else {
-  console.log('[INFO] RESEND_API_KEY is detected');
+  console.log('[INFO] RESEND_API_KEY is detected (sending disabled via RESEND_ENABLED flag)');
 }
 
 app.use(cors());
@@ -89,22 +90,26 @@ app.post('/api/auth/register/initiate', async (req, res) => {
       return res.status(500).json({ error: 'Failed to initiate registration.' });
     }
 
-    // Send OTP email via Resend
-    try {
-      const { data, error: emailErr } = await resend.emails.send({
-        from: 'TouristGeo <onboarding@resend.dev>',
-        to: email,
-        subject: 'TouristGeo - Verification Code',
-        html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#fff;border-radius:16px;"><h1 style="color:#22c55e;text-align:center;">TouristGeo</h1><div style="text-align:center;padding:24px;background:#f0fdf4;border-radius:12px;"><p style="color:#6b7280;">Your verification code is:</p><div style="font-size:36px;font-weight:900;letter-spacing:8px;color:#16a34a;padding:12px;">${otp}</div></div><p style="color:#9ca3af;font-size:12px;text-align:center;">This code expires in 10 minutes.</p></div>`,
-      });
-      if (emailErr) {
-        console.error('Resend API Error (registration):', emailErr);
-        return res.status(500).json({ error: `Email service error: ${emailErr.message || 'Unknown error'}. Note: If you are using the onboarding email, you can only send to your own Resend account email.` });
+    // Send OTP email via Resend (disabled — check console for OTP)
+    if (RESEND_ENABLED) {
+      try {
+        const { data, error: emailErr } = await resend.emails.send({
+          from: 'TouristGeo <onboarding@resend.dev>',
+          to: email,
+          subject: 'TouristGeo - Verification Code',
+          html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#fff;border-radius:16px;"><h1 style="color:#22c55e;text-align:center;">TouristGeo</h1><div style="text-align:center;padding:24px;background:#f0fdf4;border-radius:12px;"><p style="color:#6b7280;">Your verification code is:</p><div style="font-size:36px;font-weight:900;letter-spacing:8px;color:#16a34a;padding:12px;">${otp}</div></div><p style="color:#9ca3af;font-size:12px;text-align:center;">This code expires in 10 minutes.</p></div>`,
+        });
+        if (emailErr) {
+          console.error('Resend API Error (registration):', emailErr);
+          return res.status(500).json({ error: `Email service error: ${emailErr.message || 'Unknown error'}. Note: If you are using the onboarding email, you can only send to your own Resend account email.` });
+        }
+        console.log('Email sent successfully:', data?.id);
+      } catch (err: any) {
+        console.error('Fatal Email send error:', err);
+        return res.status(500).json({ error: 'Failed to send verification email.' });
       }
-      console.log('Email sent successfully:', data?.id);
-    } catch (err: any) {
-      console.error('Fatal Email send error:', err);
-      return res.status(500).json({ error: 'Failed to send verification email.' });
+    } else {
+      console.log(`[DEV] Resend disabled. OTP for ${email}: ${otp} (use this code to complete registration)`);
     }
 
     res.json({ success: true, message: 'Verification code sent to your email' });
@@ -286,20 +291,24 @@ app.delete('/api/auth/me', async (req, res) => {
      const { error: deleteAuthError } = await supabase.auth.admin.deleteUser(payload.id);
      if (deleteAuthError) console.error('Warning: Auth delete error:', deleteAuthError);
 
-     // 4. Send Confirmation Email
-     try {
-       await resend.emails.send({
-         from: 'TouristGeo <onboarding@resend.dev>',
-         to: user.email,
-         subject: 'TouristGeo - Account Deleted',
-         html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#fff;border-radius:16px;">
-                 <h1 style="color:#ef4444;text-align:center;">TouristGeo</h1>
-                 <p>Your account and all associated data (including any created tours) have been successfully and permanently deleted.</p>
-                 <p>We are sorry to see you go! If this was a mistake, or you wish to return, you can register a new account at any time.</p>
-               </div>`,
-       });
-     } catch (e) {
-       console.error('Failed to send deletion email', e);
+     // 4. Send Confirmation Email (disabled when RESEND_ENABLED is false)
+     if (RESEND_ENABLED) {
+       try {
+         await resend.emails.send({
+           from: 'TouristGeo <onboarding@resend.dev>',
+           to: user.email,
+           subject: 'TouristGeo - Account Deleted',
+           html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#fff;border-radius:16px;">
+                   <h1 style="color:#ef4444;text-align:center;">TouristGeo</h1>
+                   <p>Your account and all associated data (including any created tours) have been successfully and permanently deleted.</p>
+                   <p>We are sorry to see you go! If this was a mistake, or you wish to return, you can register a new account at any time.</p>
+                 </div>`,
+         });
+       } catch (e) {
+         console.error('Failed to send deletion email', e);
+       }
+     } else {
+       console.log(`[DEV] Resend disabled. Skipped account deletion email for ${user.email}`);
      }
 
      res.json({ success: true });
@@ -394,22 +403,26 @@ app.post('/api/auth/password/initiate', async (req, res) => {
     if (newPassword === '__verify_only__') {
       const otp = Math.floor(1000 + Math.random() * 9000).toString();
       console.log(`[AUTH] Email OTP for identity verify (${user.email}): ${otp}`);
-      // Send OTP email via Resend
-      try {
-        const { data, error: emailErr } = await resend.emails.send({
-          from: 'TouristGeo <onboarding@resend.dev>',
-          to: user.email,
-          subject: 'TouristGeo - Password Change Verification',
-          html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#fff;border-radius:16px;"><h1 style="color:#22c55e;text-align:center;">TouristGeo</h1><div style="text-align:center;padding:24px;background:#f0fdf4;border-radius:12px;"><p style="color:#6b7280;">Your password change verification code is:</p><div style="font-size:36px;font-weight:900;letter-spacing:8px;color:#16a34a;padding:12px;">${otp}</div></div><p style="color:#9ca3af;font-size:12px;text-align:center;">This code expires in 10 minutes.</p></div>`,
-        });
-        if (emailErr) {
-          console.error('Resend API Error (password change verify):', emailErr);
-          return res.status(500).json({ error: `Email service error: ${emailErr.message}. Note: Onboarding emails only send to the account owner.` });
+      // Send OTP email via Resend (disabled when RESEND_ENABLED is false)
+      if (RESEND_ENABLED) {
+        try {
+          const { data, error: emailErr } = await resend.emails.send({
+            from: 'TouristGeo <onboarding@resend.dev>',
+            to: user.email,
+            subject: 'TouristGeo - Password Change Verification',
+            html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#fff;border-radius:16px;"><h1 style="color:#22c55e;text-align:center;">TouristGeo</h1><div style="text-align:center;padding:24px;background:#f0fdf4;border-radius:12px;"><p style="color:#6b7280;">Your password change verification code is:</p><div style="font-size:36px;font-weight:900;letter-spacing:8px;color:#16a34a;padding:12px;">${otp}</div></div><p style="color:#9ca3af;font-size:12px;text-align:center;">This code expires in 10 minutes.</p></div>`,
+          });
+          if (emailErr) {
+            console.error('Resend API Error (password change verify):', emailErr);
+            return res.status(500).json({ error: `Email service error: ${emailErr.message}. Note: Onboarding emails only send to the account owner.` });
+          }
+          console.log('Verification email sent successfully:', data?.id);
+        } catch (err: any) {
+          console.error('Fatal Email send error (password verify):', err);
+          return res.status(500).json({ error: 'Failed to send verification email' });
         }
-        console.log('Verification email sent successfully:', data?.id);
-      } catch (err: any) {
-        console.error('Fatal Email send error (password verify):', err);
-        return res.status(500).json({ error: 'Failed to send verification email' });
+      } else {
+        console.log(`[DEV] Resend disabled. Password change OTP for ${user.email}: ${otp}`);
       }
 
       // Store/Update OTP for verification
@@ -490,22 +503,26 @@ app.post('/api/auth/password/forgot/initiate', async (req, res) => {
 
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
     console.log(`[AUTH] Guest Email OTP for password reset (${email}): ${otp}`);
-    // Send OTP email via Resend
-    try {
-      const { data, error: emailErr } = await resend.emails.send({
-        from: 'TouristGeo <onboarding@resend.dev>',
-        to: email,
-        subject: 'TouristGeo - Password Reset Code',
-        html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#fff;border-radius:16px;"><h1 style="color:#22c55e;text-align:center;">TouristGeo</h1><div style="text-align:center;padding:24px;background:#f0fdf4;border-radius:12px;"><p style="color:#6b7280;">Your password reset code is:</p><div style="font-size:36px;font-weight:900;letter-spacing:8px;color:#16a34a;padding:12px;">${otp}</div></div><p style="color:#9ca3af;font-size:12px;text-align:center;">This code expires in 10 minutes.</p></div>`,
-      });
-      if (emailErr) {
-        console.error('Resend API Error (guest password reset):', emailErr);
-        return res.status(500).json({ error: `Email service error: ${emailErr.message || 'Unknown error'}. Note: If you are using the onboarding email, you can only send to your own Resend account email.` });
+    // Send OTP email via Resend (disabled when RESEND_ENABLED is false)
+    if (RESEND_ENABLED) {
+      try {
+        const { data, error: emailErr } = await resend.emails.send({
+          from: 'TouristGeo <onboarding@resend.dev>',
+          to: email,
+          subject: 'TouristGeo - Password Reset Code',
+          html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#fff;border-radius:16px;"><h1 style="color:#22c55e;text-align:center;">TouristGeo</h1><div style="text-align:center;padding:24px;background:#f0fdf4;border-radius:12px;"><p style="color:#6b7280;">Your password reset code is:</p><div style="font-size:36px;font-weight:900;letter-spacing:8px;color:#16a34a;padding:12px;">${otp}</div></div><p style="color:#9ca3af;font-size:12px;text-align:center;">This code expires in 10 minutes.</p></div>`,
+        });
+        if (emailErr) {
+          console.error('Resend API Error (guest password reset):', emailErr);
+          return res.status(500).json({ error: `Email service error: ${emailErr.message || 'Unknown error'}. Note: If you are using the onboarding email, you can only send to your own Resend account email.` });
+        }
+        console.log('Reset email sent successfully:', data?.id);
+      } catch (err: any) {
+        console.error('Fatal Reset email send error:', err);
+        return res.status(500).json({ error: 'Failed to send reset email.' });
       }
-      console.log('Reset email sent successfully:', data?.id);
-    } catch (err: any) {
-      console.error('Fatal Reset email send error:', err);
-      return res.status(500).json({ error: 'Failed to send reset email.' });
+    } else {
+      console.log(`[DEV] Resend disabled. Password reset OTP for ${email}: ${otp}`);
     }
 
     const { error: tempError } = await supabase.from('temp_registrations').upsert({
