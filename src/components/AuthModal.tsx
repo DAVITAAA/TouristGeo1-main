@@ -74,10 +74,15 @@ export default function AuthModal({ language, onClose, onSuccess }: AuthModalPro
                 setToken(result.token);
                 onSuccess(result.user);
             } else {
-                await initiateRegistration(formData);
-                setSuccess(language === 'ka' ? 'ვერიფიკაციის კოდი გამოგზავნილია!' : 'Verification code sent!');
-                setStep('verify');
-                setVerificationCode('');
+                const result = await initiateRegistration(formData);
+                if (result.token) {
+                    setToken(result.token, true);
+                    onSuccess(result.user);
+                } else {
+                    setSuccess(language === 'ka' ? 'ვერიფიკაციის კოდი გამოგზავნილია!' : 'Verification code sent!');
+                    setStep('verify');
+                    setVerificationCode('');
+                }
             }
         } catch (err: any) {
             let msg = err.message || t.auth_error;

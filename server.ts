@@ -80,6 +80,41 @@ app.post('/api/auth/register/initiate', async (req, res) => {
     // Delete any existing temp registration for this email first
     await supabase.from('temp_registrations').delete().eq('email', email);
 
+    if (!RESEND_ENABLED) {
+      console.log(`[DEV] Resend disabled. Bypassing OTP verification for ${email} and registering directly.`);
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: { name }
+      });
+
+      if (authError) return res.status(400).json({ error: authError.message });
+
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .upsert([{ 
+          id: authData.user.id, 
+          name, 
+          email, 
+          phone, 
+          company_name, 
+          role: role || 'tourist' 
+        }], { onConflict: 'id' })
+        .select()
+        .single();
+
+      if (profileError) {
+        await supabase.auth.admin.deleteUser(authData.user.id);
+        return res.status(500).json({ error: 'Failed to create profile' });
+      }
+
+      await supabase.from('temp_registrations').delete().eq('email', email);
+
+      const user = { id: profileData.id, name: profileData.name, email: profileData.email, role: profileData.role };
+      return res.json({ user, token: createToken(user) });
+    }
+
     const { error: tempError } = await supabase.from('temp_registrations').insert({
       phone: phone || `reg_${Date.now()}`, email, name, password, role, company_name, otp_code: otp,
       expires_at: new Date(Date.now() + 10 * 60000).toISOString()
