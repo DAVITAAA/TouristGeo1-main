@@ -673,7 +673,7 @@ app.get('/api/tours', async (req, res) => {
     const { category, search } = req.query;
     let query = supabase
       .from('tours')
-      .select('*, profiles(name)')
+      .select('*, profiles(name, company_name)')
       .eq('status', 'published');
 
     if (category) {
@@ -691,6 +691,7 @@ app.get('/api/tours', async (req, res) => {
     const formattedTours = tours.map((t: any) => ({
       ...t,
       operator_name: t.profiles?.name,
+      company_name: t.profiles?.company_name,
       languages: t.languages || [],
       highlights: t.highlights || [],
       included: t.included || [],
@@ -875,7 +876,7 @@ app.get('/api/tours/:id', async (req, res) => {
   try {
     const { data: tour, error } = await supabase
       .from('tours')
-      .select('*, profiles(name)')
+      .select('*, profiles(name, company_name)')
       .eq('id', req.params.id)
       .single();
 
@@ -883,7 +884,8 @@ app.get('/api/tours/:id', async (req, res) => {
 
     res.json({
       ...tour,
-      operator_name: tour.profiles?.name
+      operator_name: tour.profiles?.name,
+      company_name: tour.profiles?.company_name
     });
   } catch (error) {
     console.error('Error fetching tour detail:', error);

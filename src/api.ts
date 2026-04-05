@@ -12,6 +12,8 @@ import { supabase } from './supabase';export interface Tour {
     gallery?: string[];
     description?: string;
     operator?: string;
+    operator_name?: string;
+    company_name?: string;
     badges?: string[];
     highlights?: string[];
     included?: string[];
