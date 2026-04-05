@@ -253,11 +253,12 @@ export default function Tours({ onNavigate, language }: ToursProps) {
                   ))}
                 </AnimatePresence>
 
-                {/* Floating Map Button */}
+                {/* Floating Map Button temporarily hidden
                 <button className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-secondary text-white px-8 py-4 rounded-full font-black shadow-2xl flex items-center gap-3 z-50 hover:scale-105 transition-all">
                   <span className="material-symbols-outlined">map</span>
                   {t.show_map}
                 </button>
+                */}
               </div>
             ) : (
               <div className="bg-white rounded-[32px] p-20 text-center border border-dashed border-border-light">

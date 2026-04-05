@@ -15,7 +15,7 @@ interface TourDetailProps {
 export default function TourDetail({ tour, onNavigate, language, user }: TourDetailProps) {
   const t = translations[language];
   const isKa = language === 'ka';
-  const { convertPrice, getCurrencySymbol } = useCurrency();
+  const { convertPrice, getCurrencySymbol, currency } = useCurrency();
   const [activeTab, setActiveTab] = useState('About');
   const [similarTours, setSimilarTours] = useState<Tour[]>([]);
   const [bookingDate, setBookingDate] = useState('');
@@ -270,6 +270,14 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
                   <div className="flex items-baseline gap-2">
                     <span className="text-5xl font-black text-text-main">{getCurrencySymbol()}{convertPrice(tour.price)}</span>
                     <span className="text-text-muted font-bold">/ {isKa ? 'კაცზე' : 'person'}</span>
+                  </div>
+                  <div className="flex items-center gap-3 mt-2 py-1 px-3 bg-secondary/10 w-fit rounded-lg border border-secondary/20 shadow-sm">
+                    {(['USD', 'EUR', 'GEL'] as any[]).filter((c: any) => c !== currency).map((c: any) => (
+                       <span key={c} className="text-xs font-black text-secondary mix-blend-multiply flex items-center gap-1">
+                         {getCurrencySymbol(c)}{convertPrice(tour.price, c)}
+                       </span>
+                    ))}
+                    <span className="text-[9px] font-bold text-text-muted ml-1 border-l border-border-light pl-2" title="Official National Bank of Georgia Rate">NBG Live</span>
                   </div>
                 </div>
 

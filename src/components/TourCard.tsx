@@ -98,7 +98,6 @@ export default function TourCard({ tour, onNavigate, language }: TourCardProps) 
             </div>
             
             <div className="flex flex-col items-end">
-              <span className="text-[10px] text-text-muted font-bold line-through">${tour.price + 100}</span>
               <div className="flex flex-col items-end">
                 <span className="text-[10px] font-black text-text-muted uppercase mb-1">{t.from_price}</span>
                 <span className="text-2xl font-black text-primary flex items-baseline gap-0.5">

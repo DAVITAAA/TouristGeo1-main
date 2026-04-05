@@ -19,6 +19,7 @@ export default function AddTourWizard({ onNavigate, language, user, tourToEdit }
   const [loading, setLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [inputCurrency, setInputCurrency] = useState<'USD' | 'EUR' | 'GEL'>('USD');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(tourToEdit?.image || null);
   const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
@@ -112,7 +113,12 @@ export default function AddTourWizard({ onNavigate, language, user, tourToEdit }
       body.append('location', formData.location);
       body.append('category', formData.category);
       body.append('description', formData.description);
-      body.append('price', formData.price.toString());
+      
+      let finalPriceUsd = formData.price;
+      if (inputCurrency === 'EUR') finalPriceUsd = formData.price / 0.92;
+      else if (inputCurrency === 'GEL') finalPriceUsd = formData.price / 2.65;
+      body.append('price', Math.round(finalPriceUsd).toString());
+      
       body.append('maxGroupSize', formData.maxGroupSize.toString());
       body.append('duration', formData.duration.toString());
       body.append('itinerary', JSON.stringify(formData.itinerary));
@@ -303,8 +309,16 @@ export default function AddTourWizard({ onNavigate, language, user, tourToEdit }
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                <div className="p-6 bg-white rounded-3xl border border-border-light space-y-4 shadow-sm">
                   <label className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em]">{isKa ? 'ფასი ერთ კაცზე' : 'Price Per Person'}</label>
-                  <div className="flex items-center gap-3 text-2xl font-black text-text-main">
-                     <span className="text-text-muted">$</span>
+                  <div className="flex items-center gap-2 text-2xl font-black text-text-main">
+                     <select 
+                       value={inputCurrency}
+                       onChange={(e) => setInputCurrency(e.target.value as any)}
+                       className="text-text-muted bg-transparent outline-none text-lg cursor-pointer font-bold border-b-2 border-transparent hover:border-border-light focus:border-primary transition-all pb-1"
+                     >
+                       <option value="USD">$</option>
+                       <option value="EUR">€</option>
+                       <option value="GEL">₾</option>
+                     </select>
                      <input 
                       type="number" 
                       value={formData.price} 
