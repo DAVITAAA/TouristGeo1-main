@@ -17,6 +17,7 @@ const filterOptions = {
 export default function Tours({ onNavigate, language }: ToursProps) {
   const t = translations[language];
   const isKa = language === 'ka';
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const [tours, setTours] = useState<Tour[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,8 +94,89 @@ export default function Tours({ onNavigate, language }: ToursProps) {
         </nav>
 
         <div className="flex flex-col lg:grid lg:grid-cols-12 gap-10">
-          {/* Sidebar Filters */}
-          <aside className="lg:col-span-3 space-y-8">
+          {/* Mobile Filter Toggle Button */}
+          <button
+            onClick={() => setMobileFiltersOpen(true)}
+            className="lg:hidden flex items-center justify-center gap-2 w-full py-3.5 bg-white rounded-2xl border border-border-light shadow-sm font-bold text-sm text-text-main active:scale-[0.98] transition-all"
+          >
+            <span className="material-symbols-outlined text-primary text-[20px]">tune</span>
+            {isKa ? 'ფილტრები' : 'Filters'}
+            {(selectedDestinations.length > 0 || selectedDuration) && (
+              <span className="bg-primary text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                {selectedDestinations.length + (selectedDuration ? 1 : 0)}
+              </span>
+            )}
+          </button>
+
+          {/* Mobile Filter Overlay */}
+          {mobileFiltersOpen && (
+            <div className="fixed inset-0 z-[100] lg:hidden">
+              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" onClick={() => setMobileFiltersOpen(false)} />
+              <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl max-h-[85vh] overflow-y-auto mobile-filter-enter">
+                <div className="sticky top-0 bg-white z-10 px-6 pt-4 pb-3 border-b border-border-light flex items-center justify-between">
+                  <h2 className="text-lg font-black text-text-main">{t.filters}</h2>
+                  <button onClick={() => setMobileFiltersOpen(false)} className="w-9 h-9 rounded-full bg-background-light flex items-center justify-center text-text-muted">
+                    <span className="material-symbols-outlined">close</span>
+                  </button>
+                </div>
+                <div className="p-6 space-y-8">
+                  {/* Destination Filter */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-black text-text-main flex items-center gap-2">
+                      <span className="material-symbols-outlined text-primary text-lg">map</span>
+                      {t.destinations}
+                    </h3>
+                    <div className="space-y-3">
+                      {filterOptions.destinations.map(dest => (
+                        <label key={dest} className="flex items-center gap-3 cursor-pointer group">
+                          <div className="relative flex items-center">
+                            <input type="checkbox" checked={selectedDestinations.includes(dest)} onChange={() => toggleDest(dest)} className="peer appearance-none w-5 h-5 rounded-md border-2 border-border-light checked:bg-primary checked:border-primary transition-all" />
+                            <span className="material-symbols-outlined absolute inset-0 text-white text-base font-black opacity-0 peer-checked:opacity-100 flex items-center justify-center">check</span>
+                          </div>
+                          <span className="text-sm font-bold text-text-muted group-hover:text-text-main transition-colors">{getTranslatedDest(dest)}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Price Range */}
+                  <div className="space-y-6">
+                    <h3 className="text-sm font-black text-text-main flex items-center gap-2">
+                      <span className="material-symbols-outlined text-primary text-lg">payments</span>
+                      {t.filter_price_range}
+                    </h3>
+                    <div className="px-2">
+                      <input type="range" min="0" max="5000" step="50" value={priceRange[1]} onChange={(e) => setPriceRange([0, parseInt(e.target.value)])} className="w-full accent-primary h-1 bg-border-light rounded-full appearance-none" />
+                      <div className="flex justify-between mt-4 text-xs font-black text-text-muted">
+                        <span>${priceRange[0]}</span>
+                        <span>${priceRange[1]}</span>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Duration Filter */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-black text-text-main flex items-center gap-2">
+                      <span className="material-symbols-outlined text-primary text-lg">schedule</span>
+                      {t.duration_label}
+                    </h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      {filterOptions.durations.map(dur => (
+                        <button key={dur} onClick={() => setSelectedDuration(selectedDuration === dur ? '' : dur)} className={`px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${selectedDuration === dur ? 'bg-primary/10 border-primary text-primary shadow-sm' : 'bg-background-light border-transparent text-text-muted hover:border-border-light'}`}>
+                          {getTranslatedDuration(dur)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex gap-3 pt-4">
+                    <button onClick={() => { setSelectedDestinations([]); setSelectedDuration(''); setPriceRange([0, 5000]); }} className="flex-1 py-3.5 bg-background-light text-text-muted rounded-xl font-bold text-sm">{t.clear_all}</button>
+                    <button onClick={() => setMobileFiltersOpen(false)} className="flex-1 py-3.5 bg-primary text-white rounded-xl font-bold text-sm shadow-lg shadow-primary/20">{isKa ? 'შედეგების ნახვა' : 'Show Results'}</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Sidebar Filters — desktop only */}
+          <aside className="hidden lg:block lg:col-span-3 space-y-8">
             <div className="bg-white p-8 rounded-[32px] shadow-sm border border-border-light sticky top-28">
               <div className="flex items-center justify-between mb-8">
                 <h2 className="text-xl font-black text-text-main">{t.filters}</h2>

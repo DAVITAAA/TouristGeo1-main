@@ -52,7 +52,7 @@ export default function Places({ language }: { language: Language }) {
     return (
         <>
             {/* Hero */}
-            <section className="relative h-[380px] overflow-hidden">
+            <section className="relative h-[280px] sm:h-[380px] overflow-hidden">
                 <img
                     src="https://storage.georgia.travel/images/tbs.webp"
                     alt="Georgian Destinations"
@@ -60,7 +60,7 @@ export default function Places({ language }: { language: Language }) {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
                 <div className="relative z-10 h-full flex flex-col justify-end items-center pb-14 text-center text-white px-4">
-                    <h1 className="text-5xl md:text-7xl font-black tracking-tight drop-shadow-2xl">
+                    <h1 className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tight drop-shadow-2xl">
                         {isKa ? 'ადგილები' : 'Places'}
                     </h1>
                     <p className="mt-4 text-lg md:text-xl max-w-2xl text-white/85 font-medium">

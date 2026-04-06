@@ -276,7 +276,7 @@ export default function Home({ onNavigate, language }: { onNavigate: (page: stri
                   {isKa ? 'ყველას ნახვა' : 'View all'}
                 </button>
               </div>
-              <div className="flex gap-2">
+              <div className="hidden sm:flex gap-2">
                 <button onClick={() => scroll(sightsRef, -1)} className="w-10 h-10 rounded-full border border-border-light flex items-center justify-center hover:bg-primary hover:text-primary-content hover:border-primary transition-all">
                   <span className="material-symbols-outlined text-sm">chevron_left</span>
                 </button>
@@ -290,8 +290,8 @@ export default function Home({ onNavigate, language }: { onNavigate: (page: stri
           <ScrollReveal variant="scale">
             <div ref={sightsRef} className="carousel-scroll flex gap-5 overflow-x-auto pb-4">
               {popularSights.map((sight, i) => (
-                <TiltCard key={i} className="flex-shrink-0 w-64 rounded-2xl" maxTilt={6}>
-                  <div className="relative h-80 rounded-2xl overflow-hidden shadow-lg group cursor-pointer">
+                <TiltCard key={i} className="flex-shrink-0 w-56 sm:w-64 rounded-2xl" maxTilt={6}>
+                  <div className="relative h-72 sm:h-80 rounded-2xl overflow-hidden shadow-lg group cursor-pointer">
                     <img src={sight.img} alt={isKa ? sight.titleKa : sight.titleEn} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
                     {/* Glassmorphism overlay on hover */}

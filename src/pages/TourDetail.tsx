@@ -98,7 +98,7 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
     : [];
 
   return (
-    <div className="min-h-screen bg-background-light pt-24 pb-20">
+    <div className="min-h-screen bg-background-light pt-24 pb-28 lg:pb-20">
       <div className="container mx-auto px-4 max-w-7xl">
 
         {/* Breadcrumbs */}
@@ -111,9 +111,9 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
         </nav>
 
         {/* Title & Actions */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 mb-6 sm:mb-8">
           <div className="space-y-2">
-            <h1 className="text-3xl md:text-4xl font-black text-text-main leading-tight">{tour.title}</h1>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-text-main leading-tight">{tour.title}</h1>
             <div className="flex items-center gap-4 text-sm font-bold text-text-muted">
               <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-lg text-primary">location_on</span>{tour.location}</span>
               <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-lg text-primary">schedule</span>{tour.duration} {isKa ? 'დღე' : 'Days'}</span>
@@ -240,7 +240,7 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
           </div>
 
           {/* Sidebar */}
-          <div className="w-full lg:w-[380px] flex-shrink-0 space-y-6">
+          <div className="w-full lg:w-[380px] flex-shrink-0 space-y-6 hidden lg:block">
             {/* Booking Card */}
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-border-light">
               <div className="mb-6">
@@ -341,6 +341,26 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
         )}
 
       </div>
+
+        {/* Mobile Sticky Booking Bar */}
+        <div className="mobile-booking-bar lg:hidden">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-black text-text-muted uppercase tracking-wider">{isKa ? 'ფასი' : 'From'}</p>
+              <div className="flex items-baseline gap-1">
+                <span className="text-2xl font-black text-text-main">{getCurrencySymbol()}{convertPrice(tour.price)}</span>
+                <span className="text-xs text-text-muted font-bold">/ {isKa ? 'კაცზე' : 'person'}</span>
+              </div>
+            </div>
+            <button
+              onClick={handleBooking}
+              className="px-6 py-3 bg-primary text-white rounded-xl font-black text-sm shadow-lg shadow-primary/20 active:scale-95 transition-all flex items-center gap-2"
+            >
+              {isBooking ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <>{isKa ? 'დაჯავშნა' : 'Book Now'} <span className="material-symbols-outlined text-[16px]">arrow_right_alt</span></>}
+            </button>
+          </div>
+        </div>
+
       <AnimatePresence>
         {toast && (
           <Toast 

@@ -404,3 +404,92 @@ body {
 .pulse-cta:hover {
   animation: pulse-ring 1.5s ease infinite;
 }
+
+/* === Mobile Drawer === */
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-out-right {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.mobile-drawer-enter {
+  animation: slide-in-right 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.mobile-drawer-exit {
+  animation: slide-out-right 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* === Body scroll lock === */
+body.no-scroll {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+}
+
+/* === No scrollbar utility === */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* === Mobile season panels — disable hover expand, use tap === */
+@media (max-width: 639px) {
+  .season-panel {
+    flex: none !important;
+    min-height: 140px;
+  }
+
+  .season-panel:hover {
+    flex: none !important;
+  }
+
+  .season-panel .season-overlay {
+    opacity: 1;
+  }
+}
+
+/* === Mobile filter drawer === */
+@keyframes slide-in-bottom {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.mobile-filter-enter {
+  animation: slide-in-bottom 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* === Sticky mobile booking bar === */
+@media (max-width: 1023px) {
+  .mobile-booking-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 40;
+    background: white;
+    border-top: 1px solid #e2e8f0;
+    padding: 12px 16px;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+  }
+}

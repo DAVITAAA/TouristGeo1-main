@@ -64,7 +64,7 @@ export default function WhyGeorgia({ language }: { language: Language }) {
               <motion.h1 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-5xl md:text-7xl font-black text-text-main leading-none tracking-tight"
+                className="text-4xl sm:text-5xl md:text-7xl font-black text-text-main leading-none tracking-tight"
               >
                 {t.wg_hero_title}
               </motion.h1>
@@ -180,7 +180,7 @@ export default function WhyGeorgia({ language }: { language: Language }) {
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className="group relative h-[450px] rounded-[32px] overflow-hidden shadow-xl"
+                className="group relative h-[300px] sm:h-[450px] rounded-[32px] overflow-hidden shadow-xl"
               >
                 <img src={dest.img} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
@@ -206,9 +206,9 @@ export default function WhyGeorgia({ language }: { language: Language }) {
         <div className="container mx-auto max-w-7xl">
           <div className="flex flex-col lg:flex-row gap-16">
             <div className="lg:w-2/3 space-y-8">
-              <h2 className="text-4xl font-black text-text-main">{t.wg_explore_regions}</h2>
+              <h2 className="text-3xl sm:text-4xl font-black text-text-main">{t.wg_explore_regions}</h2>
               
-              <div className="flex gap-4">
+              <div className="flex flex-wrap gap-2 sm:gap-4">
                 {['Mountains', 'Sea', 'Plains'].map(tag => (
                   <button key={tag} className="px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest bg-primary/10 text-primary border border-primary/20">
                     {tag}
@@ -216,7 +216,7 @@ export default function WhyGeorgia({ language }: { language: Language }) {
                 ))}
               </div>
 
-              <div className="relative aspect-video rounded-[40px] overflow-hidden bg-slate-900 shadow-inner group">
+              <div className="relative aspect-video rounded-[32px] sm:rounded-[40px] overflow-hidden bg-slate-900 shadow-inner group">
                 <img 
                   src="https://images.unsplash.com/photo-1565008415888-c309837966bc?auto=format&fit=crop&w=1200&q=80" 
                   className="w-full h-full object-cover opacity-60 grayscale hover:grayscale-0 transition-all duration-700" 

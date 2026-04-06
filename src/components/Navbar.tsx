@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { translations, Language } from '../translations';
 import { User } from '../api';
 import { useDarkMode } from '../hooks/useDarkMode';
@@ -116,8 +116,34 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
   const { isDark, toggleDarkMode } = useDarkMode();
   const { wishlist } = useWishlist();
   const { currency, setCurrency, convertPrice, getCurrencySymbol } = useCurrency();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileMenuClosing, setMobileMenuClosing] = useState(false);
+
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.classList.add('no-scroll');
+    } else {
+      document.body.classList.remove('no-scroll');
+    }
+    return () => document.body.classList.remove('no-scroll');
+  }, [mobileMenuOpen]);
+
+  const closeMobileMenu = () => {
+    setMobileMenuClosing(true);
+    setTimeout(() => {
+      setMobileMenuOpen(false);
+      setMobileMenuClosing(false);
+    }, 250);
+  };
+
+  const handleMobileNav = (page: string) => {
+    closeMobileMenu();
+    setTimeout(() => onNavigate(page), 100);
+  };
 
   return (
+    <>
     <header className="sticky top-0 z-50 w-full border-b border-border-light bg-surface-light/95 backdrop-blur supports-[backdrop-filter]:bg-surface-light/60">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
@@ -252,7 +278,7 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
             <button className="text-sm font-bold text-text-main hover:text-primary transition-colors py-4">{t.contact}</button>
           </nav>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={() => onNavigate('favorites')}
               className={`relative p-2 rounded-full hover:bg-background-light transition-colors flex items-center justify-center border border-border-light sm:border-transparent ${currentPage === 'favorites' ? 'text-primary' : 'text-text-main'}`}
@@ -272,14 +298,15 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
             >
               {isDark ? <Sun size={20} /> : <Moon size={20} />}
             </button>
+            {/* Language & Currency — hidden on small mobile, visible in drawer instead */}
             <button
               onClick={() => setLanguage(language === 'ka' ? 'en' : 'ka')}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border-light hover:bg-background-light transition-colors text-sm font-bold text-text-main"
+              className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border-light hover:bg-background-light transition-colors text-sm font-bold text-text-main"
             >
               <span className="material-symbols-outlined text-lg">language</span>
               {language === 'ka' ? 'EN' : 'GE'}
             </button>
-            <div className="relative">
+            <div className="relative hidden sm:block">
               <select
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value as any)}
@@ -333,12 +360,181 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
               </button>
             )}
 
-            <button className="lg:hidden text-text-main">
-              <span className="material-symbols-outlined">menu</span>
+            {/* Hamburger — mobile only */}
+            <button
+              className="lg:hidden text-text-main p-1"
+              onClick={() => setMobileMenuOpen(true)}
+              aria-label="Open menu"
+            >
+              <span className="material-symbols-outlined text-[28px]">menu</span>
             </button>
           </div>
         </div>
       </div>
     </header>
+
+      {/* ═══════════════════════════════════════
+          MOBILE DRAWER — rendered outside header to avoid stacking context issues
+          ═══════════════════════════════════════ */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-[200] lg:hidden">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
+            onClick={closeMobileMenu}
+          />
+
+          {/* Drawer Panel */}
+          <div
+            className={`absolute top-0 right-0 bottom-0 w-[85%] max-w-sm bg-surface-light shadow-2xl flex flex-col ${
+              mobileMenuClosing ? 'mobile-drawer-exit' : 'mobile-drawer-enter'
+            }`}
+          >
+            {/* Drawer Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border-light">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-content">
+                  <span className="material-symbols-outlined text-[18px] font-bold">terrain</span>
+                </div>
+                <span className="text-lg font-extrabold text-text-main">Travel<span className="text-primary">Georgia</span></span>
+              </div>
+              <button
+                onClick={closeMobileMenu}
+                className="w-9 h-9 rounded-full bg-background-light flex items-center justify-center text-text-muted hover:text-text-main transition-colors"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            {/* Drawer Body — scrollable */}
+            <div className="flex-1 overflow-y-auto py-4">
+              {/* Navigation Links */}
+              <nav className="px-4 space-y-1">
+                {[
+                  { page: 'tours', label: t.nav_tours, icon: 'explore' },
+                  { page: 'why-georgia', label: t.nav_why_georgia, icon: 'auto_awesome' },
+                  { page: 'places', label: t.nav_places, icon: 'place' },
+                  { page: 'sights', label: t.nav_sights, icon: 'photo_camera' },
+                  { page: 'favorites', label: isKa ? 'რჩეულები' : 'Favorites', icon: 'favorite' },
+                ].map((item) => (
+                  <button
+                    key={item.page}
+                    onClick={() => handleMobileNav(item.page)}
+                    className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-left font-bold text-sm transition-all ${
+                      currentPage === item.page
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-text-main hover:bg-background-light'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
+                    {item.label}
+                    {item.page === 'favorites' && wishlist.length > 0 && (
+                      <span className="ml-auto bg-primary text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                        {wishlist.length}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </nav>
+
+              {/* Divider */}
+              <div className="mx-4 my-4 border-t border-border-light" />
+
+              {/* Settings Row */}
+              <div className="px-4 space-y-3">
+                <p className="text-[10px] font-black text-text-muted uppercase tracking-widest px-4">{isKa ? 'პარამეტრები' : 'Settings'}</p>
+
+                {/* Language Toggle */}
+                <button
+                  onClick={() => setLanguage(language === 'ka' ? 'en' : 'ka')}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-bold text-sm text-text-main hover:bg-background-light transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[20px]">language</span>
+                  {isKa ? 'English' : 'ქართული'}
+                  <span className="ml-auto text-xs font-black text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                    {language === 'ka' ? 'EN' : 'GE'}
+                  </span>
+                </button>
+
+                {/* Currency Selector */}
+                <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-left font-bold text-sm text-text-main">
+                  <span className="material-symbols-outlined text-[20px]">payments</span>
+                  {isKa ? 'ვალუტა' : 'Currency'}
+                  <div className="ml-auto flex gap-1">
+                    {(['USD', 'EUR', 'GEL'] as const).map((c) => (
+                      <button
+                        key={c}
+                        onClick={() => setCurrency(c)}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all ${
+                          currency === c
+                            ? 'bg-primary text-white shadow-sm'
+                            : 'bg-background-light text-text-muted hover:text-text-main'
+                        }`}
+                      >
+                        {c}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Dark Mode Toggle */}
+                <button
+                  onClick={toggleDarkMode}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-bold text-sm text-text-main hover:bg-background-light transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[20px]">{isDark ? 'light_mode' : 'dark_mode'}</span>
+                  {isDark ? (isKa ? 'ნათელი რეჟიმი' : 'Light Mode') : (isKa ? 'მუქი რეჟიმი' : 'Dark Mode')}
+                </button>
+              </div>
+            </div>
+
+            {/* Drawer Footer */}
+            <div className="px-4 py-4 border-t border-border-light space-y-3">
+              {user ? (
+                <>
+                  <button
+                    onClick={() => handleMobileNav('profile')}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-background-light text-left"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-surface-dark text-white flex items-center justify-center font-black text-sm uppercase flex-shrink-0">
+                      {user.name[0]}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-sm text-text-main truncate">{user.name}</p>
+                      <p className="text-[10px] font-bold text-text-muted truncate">{user.email}</p>
+                    </div>
+                    <span className="material-symbols-outlined text-text-muted text-[18px]">chevron_right</span>
+                  </button>
+                  {user.role === 'operator' && (
+                    <button
+                      onClick={() => handleMobileNav('add-tour')}
+                      className="w-full py-3 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 flex items-center justify-center gap-2 active:scale-95 transition-all"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">add_circle</span>
+                      {t.post_tour}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => { closeMobileMenu(); onLogout?.(); }}
+                    className="w-full py-2.5 text-red-500 font-bold text-sm rounded-xl hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">logout</span>
+                    {t.logout}
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => { closeMobileMenu(); onLoginClick?.(); }}
+                  className="w-full py-3.5 bg-text-main text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all"
+                >
+                  <span className="material-symbols-outlined text-[18px]">login</span>
+                  {t.login}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
