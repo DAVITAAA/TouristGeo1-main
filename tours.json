@@ -1,0 +1,45 @@
+[
+  {
+    "id": 27,
+    "operator_id": "bff162eb-f70b-45fe-a450-35e461e39948",
+    "title": "Kazbegi Day Trip & Gergeti Trinity",
+    "duration": "1 Day",
+    "location": "Kazbegi, Gudauri",
+    "price": 35,
+    "rating": 0,
+    "reviews_count": 0,
+    "category": "Nature",
+    "max_group_size": 15,
+    "languages": [
+      "English",
+      "Russian"
+    ],
+    "description": "Take a scenic drive along the Georgian Military Highway to the stunning Caucasus Mountains. We'll stop at the Zhinvali Reservoir, the Ananuri Fortress complex, and the Russia-Georgia Friendship Monument in Gudauri. The highlight of the trip is reaching the town of Stepantsminda, where we will switch to 4x4 vehicles to go up to the iconic 14th-century Gergeti Trinity Church, sitting at 2170 meters right under Mount Kazbek.",
+    "highlights": [],
+    "included": [],
+    "not_included": [],
+    "meeting_point": null,
+    "cancellation_policy": null,
+    "image": "https://storage.georgia.travel/images/gomi-mountain-gnta.webp",
+    "gallery": [],
+    "itinerary": [
+      {
+        "day": 1,
+        "image": "https://storage.georgia.travel/images/gomi-mountain-gnta.webp",
+        "title": "Tbilisi to Kazbegi & Return",
+        "activities": [
+          "Ananuri Fortress",
+          "Gudauri Viewpoint",
+          "Gergeti Trinity 4x4 Ride"
+        ],
+        "description": "Depart from Tbilisi at 9:00 AM. Scenic stops along the Military Highway, visit Gergeti Trinity, and return to Tbilisi by 7:00 PM."
+      }
+    ],
+    "status": "published",
+    "created_at": "2026-04-06T15:27:51.755255+00:00",
+    "profiles": {
+      "name": "დავითი",
+      "company_name": "TravelGeo"
+    }
+  }
+]
