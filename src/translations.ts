@@ -215,7 +215,7 @@ export const translations = {
         tours_explore: 'Explore Tours in',
         tours_in_georgia: 'Georgia',
         filter_region: 'Region',
-        filter_price_range: 'Price Range (GEL)',
+        filter_price_range: 'Price Range (USD)',
         filter_tour_type: 'Tour Type',
         filter_difficulty: 'Difficulty',
         region_svaneti: 'Svaneti',

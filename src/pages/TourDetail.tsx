@@ -15,10 +15,10 @@ interface TourDetailProps {
 export default function TourDetail({ tour, onNavigate, language, user }: TourDetailProps) {
   const t = translations[language];
   const isKa = language === 'ka';
-  const { convertPrice, getCurrencySymbol, currency } = useCurrency();
+  const { convertPrice, getCurrencySymbol } = useCurrency();
+  const targetCurrency = isKa ? 'GEL' : 'USD';
   const [activeTab, setActiveTab] = useState('About');
   const [similarTours, setSimilarTours] = useState<Tour[]>([]);
-  const [bookingDate, setBookingDate] = useState('');
   const [guests, setGuests] = useState(1);
   const [isBooking, setIsBooking] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
@@ -72,14 +72,13 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
   }, [tour]);
 
   const handleBooking = async () => {
-    if (!bookingDate) return;
     setIsBooking(true);
     try {
       await createBooking({
         tour_id: tour.id,
         user_name: user?.name || 'Guest User',
         user_email: user?.email || 'guest@example.com',
-        booking_date: bookingDate,
+        booking_date: new Date().toISOString().split('T')[0],
         guests: guests,
         total_price: tour.price * guests
       });
@@ -246,11 +245,11 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
               <div className="mb-6">
                 <p className="text-xs font-black text-text-muted uppercase tracking-[0.15em] mb-2">{isKa ? 'ფასი' : 'Price From'}</p>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-black text-text-main">{getCurrencySymbol()}{convertPrice(tour.price)}</span>
+                  <span className="text-4xl font-black text-text-main">{getCurrencySymbol(targetCurrency)}{convertPrice(tour.price, targetCurrency)}</span>
                   <span className="text-text-muted font-bold text-sm">/ {isKa ? 'კაცზე' : 'person'}</span>
                 </div>
                 <div className="flex items-center gap-3 mt-2 py-1.5 px-3 bg-secondary/10 w-fit rounded-lg border border-secondary/20">
-                  {(['USD', 'EUR', 'GEL'] as const).filter(c => c !== currency).map(c => (
+                  {(['USD', 'EUR', 'GEL'] as const).filter(c => c !== targetCurrency).map(c => (
                      <span key={c} className="text-xs font-black text-secondary flex items-center gap-0.5">
                        {getCurrencySymbol(c)}{convertPrice(tour.price, c)}
                      </span>
@@ -260,24 +259,14 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
               </div>
 
               <div className="space-y-4">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-black text-text-muted uppercase tracking-widest">{isKa ? 'აირჩიეთ თარიღი' : 'Select Date'}</label>
-                  <input 
-                    type="date" 
-                    value={bookingDate}
-                    onChange={(e) => setBookingDate(e.target.value)}
-                    className="p-3.5 rounded-xl bg-background-light border border-border-light font-bold text-text-main outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-                  />
-                </div>
-
                 <div className="bg-background-light p-4 rounded-xl border border-border-light space-y-3">
                    <div className="flex items-center justify-between text-sm font-bold text-text-muted">
-                      <span>{getCurrencySymbol()}{convertPrice(tour.price)} × {guests}</span>
-                      <span>{getCurrencySymbol()}{convertPrice(tour.price * guests)}</span>
+                      <span>{getCurrencySymbol(targetCurrency)}{convertPrice(tour.price, targetCurrency)} × {guests}</span>
+                      <span>{getCurrencySymbol(targetCurrency)}{convertPrice(tour.price * guests, targetCurrency)}</span>
                    </div>
                    <div className="flex items-center justify-between font-black text-base text-text-main pt-3 border-t border-gray-200">
                       <span>{isKa ? 'ჯამური ფასი' : 'Total Price'}</span>
-                      <span className="text-primary text-xl">{getCurrencySymbol()}{convertPrice(tour.price * guests)}</span>
+                      <span className="text-primary text-xl">{getCurrencySymbol(targetCurrency)}{convertPrice(tour.price * guests, targetCurrency)}</span>
                    </div>
                 </div>
 
@@ -331,7 +320,7 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
                               <span className="text-xs font-black text-white">{st.rating}</span>
                            </div>
                            <h4 className="text-base font-black text-white line-clamp-1">{st.title}</h4>
-                           <p className="text-white/70 text-sm font-medium">{getCurrencySymbol()}{convertPrice(st.price)}</p>
+                           <p className="text-white/70 text-sm font-medium">{getCurrencySymbol(targetCurrency)}{convertPrice(st.price, targetCurrency)}</p>
                         </div>
                      </div>
                   </div>
@@ -348,7 +337,7 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
             <div>
               <p className="text-[10px] font-black text-text-muted uppercase tracking-wider">{isKa ? 'ფასი' : 'From'}</p>
               <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-black text-text-main">{getCurrencySymbol()}{convertPrice(tour.price)}</span>
+                <span className="text-2xl font-black text-text-main">{getCurrencySymbol(targetCurrency)}{convertPrice(tour.price, targetCurrency)}</span>
                 <span className="text-xs text-text-muted font-bold">/ {isKa ? 'კაცზე' : 'person'}</span>
               </div>
             </div>

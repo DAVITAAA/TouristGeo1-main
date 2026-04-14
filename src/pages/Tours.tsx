@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { translations, Language } from '../translations';
 import { fetchTours, Tour } from '../api';
+import { useCurrency } from '../hooks/useCurrency';
 import TourCard from '../components/TourCard';
 
 interface ToursProps {
@@ -18,6 +19,9 @@ export default function Tours({ onNavigate, language }: ToursProps) {
   const t = translations[language];
   const isKa = language === 'ka';
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const { convertPrice, getCurrencySymbol } = useCurrency();
+  const targetCurrency = isKa ? 'GEL' : 'USD';
+  const symbol = getCurrencySymbol(targetCurrency);
 
   const [tours, setTours] = useState<Tour[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,7 +57,8 @@ export default function Tours({ onNavigate, language }: ToursProps) {
     );
     // Be robust with price filtering, allow any string/number conversion
     const tourPrice = typeof tour.price === 'string' ? parseInt(tour.price) : tour.price;
-    const matchesPrice = isNaN(tourPrice) ? true : (tourPrice >= priceRange[0] && tourPrice <= priceRange[1]);
+    const convertedPrice = convertPrice(tourPrice, targetCurrency);
+    const matchesPrice = isNaN(convertedPrice) ? true : (convertedPrice >= priceRange[0] && convertedPrice <= priceRange[1]);
 
     return matchesSearch && matchesDest && matchesDuration && matchesPrice;
   });
@@ -147,8 +152,8 @@ export default function Tours({ onNavigate, language }: ToursProps) {
                     <div className="px-2">
                       <input type="range" min="0" max="5000" step="50" value={priceRange[1]} onChange={(e) => setPriceRange([0, parseInt(e.target.value)])} className="w-full accent-primary h-1 bg-border-light rounded-full appearance-none" />
                       <div className="flex justify-between mt-4 text-xs font-black text-text-muted">
-                        <span>${priceRange[0]}</span>
-                        <span>${priceRange[1]}</span>
+                        <span>{symbol}{priceRange[0]}</span>
+                        <span>{symbol}{priceRange[1]}</span>
                       </div>
                     </div>
                   </div>
@@ -233,8 +238,8 @@ export default function Tours({ onNavigate, language }: ToursProps) {
                     className="w-full accent-primary h-1 bg-border-light rounded-full appearance-none"
                   />
                   <div className="flex justify-between mt-4 text-xs font-black text-text-muted">
-                    <span>${priceRange[0]}</span>
-                    <span>${priceRange[1]}</span>
+                    <span>{symbol}{priceRange[0]}</span>
+                    <span>{symbol}{priceRange[1]}</span>
                   </div>
                 </div>
               </div>

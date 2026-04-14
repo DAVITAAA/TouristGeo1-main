@@ -2,7 +2,6 @@ import { useEffect, useState, useRef, useCallback, ReactNode, RefObject } from '
 import { translations, Language } from '../translations';
 import SeasonModal from '../components/SeasonModal';
 import TiltCard from '../components/TiltCard';
-import FAQ from '../components/FAQ';
 import { useScrollReveal } from '../hooks/useScrollReveal';
 
 /* ═══════════════════════════════════════
@@ -163,10 +162,10 @@ export default function Home({ onNavigate, language }: { onNavigate: (page: stri
                     {isKa ? 'ტურების ნახვა' : 'Browse Tours'}
                     <span className="material-symbols-outlined text-lg">arrow_forward</span>
                   </button>
-                  <button onClick={() => onNavigate('why-georgia')} className="px-8 py-4 rounded-xl border-2 border-white/40 text-white font-black text-base hover:bg-white/10 backdrop-blur-sm transition-all flex items-center gap-2 hover:border-white/70">
+                  {/* <button onClick={() => onNavigate('why-georgia')} className="px-8 py-4 rounded-xl border-2 border-white/40 text-white font-black text-base hover:bg-white/10 backdrop-blur-sm transition-all flex items-center gap-2 hover:border-white/70">
                     {isKa ? 'გაიგე მეტი' : 'Learn More'}
                     <span className="material-symbols-outlined text-lg">arrow_forward</span>
-                  </button>
+                  </button> */}
                 </div>
               </div>
             )}
@@ -272,9 +271,9 @@ export default function Home({ onNavigate, language }: { onNavigate: (page: stri
               <div className="flex items-center gap-3">
                 <span className="text-primary text-xl">✦</span>
                 <span className="font-bold text-text-main">{isKa ? 'აღმოაჩინე პოპულარული სანახაობები' : 'Discover popular sights'}</span>
-                <button onClick={() => onNavigate('sights')} className="text-primary font-bold text-sm hover:underline ml-4">
+                {/* <button onClick={() => onNavigate('sights')} className="text-primary font-bold text-sm hover:underline ml-4">
                   {isKa ? 'ყველას ნახვა' : 'View all'}
-                </button>
+                </button> */}
               </div>
               <div className="hidden sm:flex gap-2">
                 <button onClick={() => scroll(sightsRef, -1)} className="w-10 h-10 rounded-full border border-border-light flex items-center justify-center hover:bg-primary hover:text-primary-content hover:border-primary transition-all">
@@ -314,10 +313,7 @@ export default function Home({ onNavigate, language }: { onNavigate: (page: stri
         </div>
       </section>
 
-      {/* ════════════════════════════════════
-          SECTION 6 — FAQ
-          ════════════════════════════════════ */}
-      <FAQ language={language} />
+
 
     </>
   );

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
 // Static fallback exchange rates base on USD
-let cachedRates = {
+let cachedRates: any = {
     USD: 1,
     EUR: 0.92,
     GEL: 2.65,
@@ -12,21 +12,7 @@ let fetchPromise: Promise<void> | null = null;
 export type CurrencyOption = 'USD' | 'EUR' | 'GEL';
 
 export function useCurrency() {
-    const [currency, setCurrency] = useState<CurrencyOption>(() => {
-        if (typeof window !== 'undefined') {
-            const saved = localStorage.getItem('travel_georgia_currency');
-            if (saved && ['USD', 'EUR', 'GEL'].includes(saved)) {
-                return saved as CurrencyOption;
-            }
-        }
-        return 'USD';
-    });
-    
     const [rates, setRates] = useState(cachedRates);
-
-    useEffect(() => {
-        localStorage.setItem('travel_georgia_currency', currency);
-    }, [currency]);
 
     useEffect(() => {
         let isMounted = true;
@@ -58,14 +44,14 @@ export function useCurrency() {
     }, []);
 
     // Convert a base price (assumed to be in USD in DB/API)
-    const convertPrice = (basePriceUsd: number, targetCurrency: CurrencyOption = currency) => {
+    const convertPrice = (basePriceUsd: number, targetCurrency: CurrencyOption) => {
         const rate = rates[targetCurrency] || 1;
         
         // Return 2 decimal places exactly for better precision when converting
         return Number((basePriceUsd * rate).toFixed(2));
     };
 
-    const getCurrencySymbol = (targetCurrency: CurrencyOption = currency) => {
+    const getCurrencySymbol = (targetCurrency: CurrencyOption) => {
         switch (targetCurrency) {
             case 'EUR': return '€';
             case 'GEL': return '₾';
@@ -74,5 +60,5 @@ export function useCurrency() {
         }
     }
 
-    return { currency, setCurrency, convertPrice, getCurrencySymbol, rates };
+    return { convertPrice, getCurrencySymbol, rates };
 }

@@ -115,7 +115,7 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
   const isKa = language === 'ka';
   const { isDark, toggleDarkMode } = useDarkMode();
   const { wishlist } = useWishlist();
-  const { currency, setCurrency, convertPrice, getCurrencySymbol } = useCurrency();
+  // const { currency, setCurrency, convertPrice, getCurrencySymbol } = useCurrency();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileMenuClosing, setMobileMenuClosing] = useState(false);
 
@@ -162,50 +162,11 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
               </button>
             </div>
 
-            {/* ========== Why Georgia ========== */}
+            {/* ========== Why Georgia (HIDDEN) ========== 
             <div className="group relative">
-              <button onClick={() => onNavigate('why-georgia')} className={`flex items-center gap-1 text-sm font-bold transition-colors py-4 ${currentPage === 'why-georgia' ? 'text-primary' : 'text-text-main group-hover:text-primary'}`}>
-                {t.nav_why_georgia}
-                <span className="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:rotate-180">expand_more</span>
-              </button>
-
-              <div className="absolute top-full left-1/2 -translate-x-1/2 w-[700px] opacity-0 invisible translate-y-2 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 z-50 pt-1">
-                <div className="rounded-2xl bg-surface-light shadow-2xl border border-border-light overflow-hidden">
-                  {/* Hero banner */}
-                  <div className="relative h-40 w-full overflow-hidden">
-                    <img
-                      src="https://storage.georgia.travel/images/445x420/why-georgia-nature.webp"
-                      alt="Why Georgia"
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-                    <div className="absolute bottom-4 left-5 text-white">
-                      <p className="font-extrabold text-xl">{t.nav_why_georgia}</p>
-                      <p className="text-sm text-white/80 mt-0.5">
-                        {isKa ? 'აღმოაჩინე რატომ უყვართ ტურისტებს საქართველო' : 'Discover why tourists fall in love with Georgia'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Grid items */}
-                  <div className="grid grid-cols-2 gap-3 p-4">
-                    {whyGeorgiaItems.map((item, i) => (
-                      <div key={i} className="flex gap-3 p-2.5 rounded-xl hover:bg-background-light transition-colors cursor-pointer group/item">
-                        <img
-                          src={item.img}
-                          alt={isKa ? item.titleKa : item.titleEn}
-                          className="w-16 h-16 rounded-lg object-cover flex-shrink-0 transition-transform duration-300 group-hover/item:scale-105"
-                        />
-                        <div className="min-w-0">
-                          <p className="font-bold text-sm text-text-main leading-tight">{isKa ? item.titleKa : item.titleEn}</p>
-                          <p className="text-xs text-text-muted mt-0.5 line-clamp-2">{isKa ? item.descKa : item.descEn}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+               ...
             </div>
+            */}
 
             {/* ========== Places ========== */}
             <div className="group relative">
@@ -275,7 +236,7 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
               </div>
             </div>
 
-            <button className="text-sm font-bold text-text-main hover:text-primary transition-colors py-4">{t.contact}</button>
+            {/* <button className="text-sm font-bold text-text-main hover:text-primary transition-colors py-4">{t.contact}</button> */}
           </nav>
 
           <div className="flex items-center gap-2 sm:gap-3">
@@ -298,7 +259,7 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
             >
               {isDark ? <Sun size={20} /> : <Moon size={20} />}
             </button>
-            {/* Language & Currency — hidden on small mobile, visible in drawer instead */}
+            {/* Language Toggle */}
             <button
               onClick={() => setLanguage(language === 'ka' ? 'en' : 'ka')}
               className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border-light hover:bg-background-light transition-colors text-sm font-bold text-text-main"
@@ -306,18 +267,6 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
               <span className="material-symbols-outlined text-lg">language</span>
               {language === 'ka' ? 'EN' : 'GE'}
             </button>
-            <div className="relative hidden sm:block">
-              <select
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value as any)}
-                className="appearance-none bg-transparent pl-3 pr-8 py-1.5 rounded-lg border border-border-light hover:bg-background-light transition-colors text-sm font-bold text-text-main outline-none cursor-pointer"
-              >
-                <option value="USD">$ USD</option>
-                <option value="EUR">€ EUR</option>
-                <option value="GEL">₾ GEL</option>
-              </select>
-              <span className="material-symbols-outlined text-lg absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted">expand_more</span>
-            </div>
 
             {user ? (
               <div className="hidden sm:flex items-center gap-4">
@@ -412,7 +361,7 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
               <nav className="px-4 space-y-1">
                 {[
                   { page: 'tours', label: t.nav_tours, icon: 'explore' },
-                  { page: 'why-georgia', label: t.nav_why_georgia, icon: 'auto_awesome' },
+                  // { page: 'why-georgia', label: t.nav_why_georgia, icon: 'auto_awesome' },
                   { page: 'places', label: t.nav_places, icon: 'place' },
                   { page: 'sights', label: t.nav_sights, icon: 'photo_camera' },
                   { page: 'favorites', label: isKa ? 'რჩეულები' : 'Favorites', icon: 'favorite' },
@@ -456,26 +405,7 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
                   </span>
                 </button>
 
-                {/* Currency Selector */}
-                <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-left font-bold text-sm text-text-main">
-                  <span className="material-symbols-outlined text-[20px]">payments</span>
-                  {isKa ? 'ვალუტა' : 'Currency'}
-                  <div className="ml-auto flex gap-1">
-                    {(['USD', 'EUR', 'GEL'] as const).map((c) => (
-                      <button
-                        key={c}
-                        onClick={() => setCurrency(c)}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all ${
-                          currency === c
-                            ? 'bg-primary text-white shadow-sm'
-                            : 'bg-background-light text-text-muted hover:text-text-main'
-                        }`}
-                      >
-                        {c}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+
 
                 {/* Dark Mode Toggle */}
                 <button

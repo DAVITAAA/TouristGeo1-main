@@ -137,6 +137,7 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
   };
   const { convertPrice, getCurrencySymbol } = useCurrency();
   const isKa = language === 'ka';
+  const targetCurrency = isKa ? 'GEL' : 'USD';
 
   useEffect(() => {
     fetchMyBookings()
@@ -350,7 +351,7 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
                           <div>
                             <p className="text-[10px] text-text-muted font-bold uppercase tracking-widest mb-1">{isKa ? 'ფასი' : 'Total Price'}</p>
                             <p className="font-black text-primary text-lg">
-                              {getCurrencySymbol()}{convertPrice(booking.total_price)}
+                              {getCurrencySymbol(targetCurrency)}{convertPrice(booking.total_price, targetCurrency)}
                             </p>
                           </div>
                           <div className="col-span-2 flex items-center justify-end">
@@ -415,7 +416,7 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
                         </p>
                         <div className="mt-auto flex items-center justify-between border-t border-gray-50 pt-4">
                            <p className="font-black text-primary flex items-center gap-1">
-                              {getCurrencySymbol()}{convertPrice(tour.price)}
+                              {getCurrencySymbol(targetCurrency)}{convertPrice(tour.price, targetCurrency)}
                            </p>
                            <div className="flex gap-2">
                               <button onClick={() => onNavigate('edit-tour', tour)} className="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors flex items-center">
@@ -477,7 +478,7 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
                           {fav.location}
                         </p>
                         <p className="font-black text-primary flex items-center gap-1 mt-auto">
-                           {getCurrencySymbol()}{convertPrice(fav.price)}
+                           {getCurrencySymbol(targetCurrency)}{convertPrice(fav.price, targetCurrency)}
                         </p>
                       </div>
                     </div>
