@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Language } from '../translations';
 import { User, fetchMyBookings, updateMe, uploadAvatar, fetchMyTours, deleteTour, initiatePasswordChange, completePasswordChange, deleteAccount } from '../api';
 import { useCurrency } from '../hooks/useCurrency';
+import { useWishlist } from '../hooks/useWishlist';
 import Toast from '../components/Toast';
 
 interface ProfileProps {
@@ -18,7 +19,7 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
     user.role === 'operator' ? 'my-tours' : 'favorites'
   );
   const [bookings, setBookings] = useState<any[]>([]);
-  const [favorites, setFavorites] = useState<any[]>([]);
+  const { wishlist: favorites } = useWishlist(!!user);
   const [myTours, setMyTours] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -144,8 +145,6 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
       .then(setBookings)
       .catch(console.error)
       .finally(() => setIsLoading(false));
-
-    setFavorites(JSON.parse(localStorage.getItem('saved_tours') || '[]'));
 
     if (user.role === 'operator') {
       fetchMyTours().then(setMyTours).catch(console.error);

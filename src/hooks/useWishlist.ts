@@ -1,13 +1,27 @@
 import { useState, useEffect } from 'react';
 import { Tour } from '../api';
 
-export function useWishlist() {
-    const [wishlist, setWishlist] = useState<Tour[]>(() => {
+export function useWishlist(isAuthenticated: boolean = false) {
+    const [wishlist, setWishlist] = useState<any[]>(() => {
         if (typeof window !== 'undefined') {
             const saved = localStorage.getItem('travel_georgia_wishlist');
             if (saved) {
                 try {
-                    return JSON.parse(saved);
+                    const items = JSON.parse(saved);
+                    const now = Date.now();
+                    const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+                    
+                    // Filter logic
+                    const validItems = items.filter((item: any) => {
+                        if (isAuthenticated) return true; // keep all if logged in
+                        if (!item.savedAt) return true; // safely keep older items
+                        return (now - item.savedAt) <= SEVEN_DAYS;
+                    });
+                    
+                    if (validItems.length !== items.length) {
+                        localStorage.setItem('travel_georgia_wishlist', JSON.stringify(validItems));
+                    }
+                    return validItems;
                 } catch (e) {
                     console.error('Failed to parse wishlist', e);
                 }
@@ -26,7 +40,7 @@ export function useWishlist() {
             if (isSaved) {
                 return prev.filter((t) => t.id !== tour.id);
             } else {
-                return [...prev, tour];
+                return [...prev, { ...tour, savedAt: Date.now() }];
             }
         });
     };

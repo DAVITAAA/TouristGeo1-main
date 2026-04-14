@@ -1,4 +1,3 @@
-import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect } from 'react';
 
 interface ToastProps {
@@ -27,17 +26,22 @@ export default function Toast({ message, type = 'success', onClose, duration = 3
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -20, x: '-50%' }}
-      animate={{ opacity: 1, y: 0, x: '-50%' }}
-      exit={{ opacity: 0, y: -20, x: '-50%' }}
-      className={`fixed top-8 left-1/2 z-[9999] flex items-center gap-3 px-6 py-4 rounded-2xl border-2 shadow-2xl font-bold min-w-[300px] max-w-md ${colors[type]}`}
+    <div
+      style={{
+        position: 'fixed',
+        top: '24px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 99999,
+        animation: 'fade-in-up 0.3s ease-out forwards'
+      }}
+      className={`flex items-center gap-3 px-6 py-4 rounded-2xl border-2 shadow-2xl font-bold min-w-[300px] max-w-md ${colors[type]}`}
     >
       <span className="material-symbols-outlined">{icons[type]}</span>
       <span className="flex-1">{message}</span>
       <button onClick={onClose} className="hover:opacity-70 transition-opacity">
         <span className="material-symbols-outlined text-sm">close</span>
       </button>
-    </motion.div>
+    </div>
   );
 }

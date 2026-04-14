@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Language, translations } from '../translations';
 import { Tour, fetchTours, createBooking, User } from '../api';
 import { useCurrency } from '../hooks/useCurrency';
+import { useWishlist } from '../hooks/useWishlist';
+import ReservationModal from '../components/ReservationModal';
 import Toast from '../components/Toast';
 
 interface TourDetailProps {
@@ -20,34 +22,25 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
   const [activeTab, setActiveTab] = useState('About');
   const [similarTours, setSimilarTours] = useState<Tour[]>([]);
   const [guests, setGuests] = useState(1);
-  const [isBooking, setIsBooking] = useState(false);
-  const [bookingSuccess, setBookingSuccess] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
-
-  useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem('saved_tours') || '[]');
-    setIsSaved(saved.some((t: any) => t.id === tour.id));
-  }, [tour.id]);
+  const [showReservation, setShowReservation] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; duration?: number } | null>(null);
+  const { toggleWishlist, isInWishlist } = useWishlist(!!user);
+  const isSaved = isInWishlist(tour.id);
 
   const toggleSave = () => {
-    const saved = JSON.parse(localStorage.getItem('saved_tours') || '[]');
-    if (isSaved) {
-      const newSaved = saved.filter((t: any) => t.id !== tour.id);
-      localStorage.setItem('saved_tours', JSON.stringify(newSaved));
-      setIsSaved(false);
-    } else {
-      saved.push({
-        id: tour.id,
-        title: tour.title,
-        image: tour.image,
-        location: tour.location,
-        price: tour.price,
-        duration: tour.duration,
-        rating: tour.rating
-      });
-      localStorage.setItem('saved_tours', JSON.stringify(saved));
-      setIsSaved(true);
+    const adding = !isSaved;
+    toggleWishlist(tour);
+    
+    if (adding) {
+      if (!user) {
+        setToast({ 
+          message: isKa 
+            ? 'ტური შენახულია. გაიარეთ ავტორიზაცია, რათა არ წაიშალოს 7 დღეში.' 
+            : 'Tour saved! Log in or register so it won\'t be removed after 7 days.', 
+          type: 'info',
+          duration: 6000
+        });
+      }
     }
   };
 
@@ -71,25 +64,7 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
     window.scrollTo(0, 0);
   }, [tour]);
 
-  const handleBooking = async () => {
-    setIsBooking(true);
-    try {
-      await createBooking({
-        tour_id: tour.id,
-        user_name: user?.name || 'Guest User',
-        user_email: user?.email || 'guest@example.com',
-        booking_date: new Date().toISOString().split('T')[0],
-        guests: guests,
-        total_price: tour.price * guests
-      });
-      setBookingSuccess(true);
-      setTimeout(() => setBookingSuccess(false), 5000);
-    } catch (error) {
-      console.error('Booking failed:', error);
-    } finally {
-      setIsBooking(false);
-    }
-  };
+
 
   const mainImage = tour.image;
   const sideImages = tour.gallery && tour.gallery.length > 0 
@@ -102,9 +77,9 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
 
         {/* Breadcrumbs */}
         <nav className="flex items-center gap-2 text-sm font-bold text-text-muted mb-6">
-          <button onClick={() => onNavigate('home')} className="hover:text-primary transition-colors">{t.breadcrumb_home}</button>
+          <button onClick={() => onNavigate('home')} className="hover:text-primary transition-colors cursor-pointer">{t.breadcrumb_home}</button>
           <span className="material-symbols-outlined text-sm">chevron_right</span>
-          <span className="text-text-main">{tour.location}</span>
+          <button onClick={() => onNavigate('tours')} className="hover:text-primary transition-colors cursor-pointer">{tour.location}</button>
           <span className="material-symbols-outlined text-sm">chevron_right</span>
           <span className="text-text-main truncate">{tour.title}</span>
         </nav>
@@ -121,7 +96,7 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
           <div className="flex gap-3">
             <button 
               onClick={handleShare}
-              className="flex items-center gap-2 px-5 py-2.5 bg-white rounded-2xl border border-border-light font-black text-sm shadow-sm hover:bg-gray-50 active:scale-95 transition-all"
+              className="flex items-center gap-2 px-5 py-2.5 bg-white rounded-2xl border border-border-light font-black text-sm shadow-sm hover:bg-gray-50 active:scale-95 transition-all text-text-main"
             >
               <span className="material-symbols-outlined text-lg">share</span>
               {t.tour_share}
@@ -259,25 +234,15 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
               </div>
 
               <div className="space-y-4">
-                <div className="bg-background-light p-4 rounded-xl border border-border-light space-y-3">
-                   <div className="flex items-center justify-between text-sm font-bold text-text-muted">
-                      <span>{getCurrencySymbol(targetCurrency)}{convertPrice(tour.price, targetCurrency)} × {guests}</span>
-                      <span>{getCurrencySymbol(targetCurrency)}{convertPrice(tour.price * guests, targetCurrency)}</span>
-                   </div>
-                   <div className="flex items-center justify-between font-black text-base text-text-main pt-3 border-t border-gray-200">
-                      <span>{isKa ? 'ჯამური ფასი' : 'Total Price'}</span>
-                      <span className="text-primary text-xl">{getCurrencySymbol(targetCurrency)}{convertPrice(tour.price * guests, targetCurrency)}</span>
-                   </div>
-                </div>
-
                 <button 
-                  onClick={handleBooking}
+                  onClick={() => setShowReservation(true)}
                   className="w-full py-4 bg-primary text-white rounded-2xl font-black text-base shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
                 >
-                  {isBooking ? <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin" /> : <>{t.tour_check_availability} <span className="material-symbols-outlined text-lg">arrow_right_alt</span></>}
+                  <span className="material-symbols-outlined text-lg">event_available</span>
+                  {isKa ? 'ტურის დაჯავშნა' : 'Reserve This Tour'}
                 </button>
                 
-                <p className="text-center text-[9px] font-black text-text-muted uppercase tracking-[0.15em]">{isKa ? 'მყისიერი დადასტურება • უსაფრთხო გადახდა' : 'Instant Confirmation • Secure Payment'}</p>
+                <p className="text-center text-[9px] font-black text-text-muted uppercase tracking-[0.15em]">{isKa ? 'ოპერატორი დაგიკავშირდებათ • უფასო გაუქმება' : 'Operator will contact you • Free cancellation'}</p>
               </div>
             </div>
 
@@ -342,23 +307,30 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
               </div>
             </div>
             <button
-              onClick={handleBooking}
+              onClick={() => setShowReservation(true)}
               className="px-6 py-3 bg-primary text-white rounded-xl font-black text-sm shadow-lg shadow-primary/20 active:scale-95 transition-all flex items-center gap-2"
             >
-              {isBooking ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <>{isKa ? 'დაჯავშნა' : 'Book Now'} <span className="material-symbols-outlined text-[16px]">arrow_right_alt</span></>}
+              {isKa ? 'დაჯავშნა' : 'Reserve'} <span className="material-symbols-outlined text-[16px]">event_available</span>
             </button>
           </div>
         </div>
 
-      <AnimatePresence>
-        {toast && (
-          <Toast 
-            message={toast.message} 
-            type={toast.type} 
-            onClose={() => setToast(null)} 
-          />
-        )}
-      </AnimatePresence>
+      {toast && (
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          duration={toast.duration}
+          onClose={() => setToast(null)} 
+        />
+      )}
+
+      {showReservation && (
+        <ReservationModal
+          tour={tour}
+          language={language}
+          onClose={() => setShowReservation(false)}
+        />
+      )}
     </div>
   );
 }

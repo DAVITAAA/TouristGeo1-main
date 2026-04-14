@@ -506,3 +506,104 @@ export const fetchMyBookings = async () => {
     if (!response.ok) throw new Error('Failed to fetch bookings');
     return response.json();
 };
+
+
+// ═══════════════════════════════════════
+// RESERVATION SYSTEM (localStorage-based, API-ready)
+// ═══════════════════════════════════════
+
+export interface Reservation {
+    id: string;
+    tour_id: number;
+    tour_title: string;
+    tour_image: string;
+    tour_location: string;
+    operator_id: string;       // Tour operator's user ID
+    tourist_name: string;
+    tourist_surname: string;
+    tourist_phone: string;
+    tourist_email: string;
+    guests: number;
+    start_date: string;        // YYYY-MM-DD
+    duration_days: number;
+    description?: string;
+    status: 'new' | 'read';
+    created_at: string;        // ISO date string
+}
+
+const RESERVATIONS_KEY = 'travel_georgia_reservations';
+
+const getReservations = (): Reservation[] => {
+    try {
+        return JSON.parse(localStorage.getItem(RESERVATIONS_KEY) || '[]');
+    } catch { return []; }
+};
+
+const saveReservations = (reservations: Reservation[]) => {
+    localStorage.setItem(RESERVATIONS_KEY, JSON.stringify(reservations));
+};
+
+/**
+ * Create a new reservation request.
+ * TODO: Replace with API call — POST /api/reservations
+ */
+export const createReservation = async (data: Omit<Reservation, 'id' | 'status' | 'created_at'>): Promise<Reservation> => {
+    // TODO: Replace localStorage with: const response = await fetch(`${API_BASE_URL}/reservations`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    const reservation: Reservation = {
+        ...data,
+        id: `res_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        status: 'new',
+        created_at: new Date().toISOString(),
+    };
+    const all = getReservations();
+    all.unshift(reservation);
+    saveReservations(all);
+    return reservation;
+};
+
+/**
+ * Fetch reservations for a specific operator.
+ * TODO: Replace with API call — GET /api/reservations/me
+ */
+export const fetchOperatorReservations = async (operatorId: string): Promise<Reservation[]> => {
+    // TODO: Replace localStorage with: const response = await fetch(`${API_BASE_URL}/reservations/me`, { headers: { 'Authorization': `Bearer ${getToken()}` } });
+    const all = getReservations();
+    return all.filter(r => r.operator_id === operatorId);
+};
+
+/**
+ * Get count of unread (new) reservations for an operator.
+ * TODO: Replace with API call — GET /api/reservations/unread-count
+ */
+export const getUnreadReservationCount = (operatorId: string): number => {
+    // TODO: Replace localStorage with API call
+    const all = getReservations();
+    return all.filter(r => r.operator_id === operatorId && r.status === 'new').length;
+};
+
+/**
+ * Mark a reservation as read.
+ * TODO: Replace with API call — PATCH /api/reservations/:id/read
+ */
+export const markReservationRead = async (reservationId: string): Promise<void> => {
+    // TODO: Replace localStorage with: await fetch(`${API_BASE_URL}/reservations/${reservationId}/read`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${getToken()}` } });
+    const all = getReservations();
+    const idx = all.findIndex(r => r.id === reservationId);
+    if (idx !== -1) {
+        all[idx].status = 'read';
+        saveReservations(all);
+    }
+};
+
+/**
+ * Mark all reservations as read for an operator.
+ * TODO: Replace with API call — PATCH /api/reservations/read-all
+ */
+export const markAllReservationsRead = async (operatorId: string): Promise<void> => {
+    // TODO: Replace localStorage with API call
+    const all = getReservations();
+    all.forEach(r => {
+        if (r.operator_id === operatorId) r.status = 'read';
+    });
+    saveReservations(all);
+};
