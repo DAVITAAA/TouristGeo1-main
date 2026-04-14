@@ -245,7 +245,7 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 // Google Auth
-app.post('/api/auth/google', async (req, res) => {
+app.post('/api/auth/oauth-g', async (req, res) => {
   const { credential, role } = req.body;
   if (!credential) return res.status(400).json({ error: 'Google credential is required' });
 

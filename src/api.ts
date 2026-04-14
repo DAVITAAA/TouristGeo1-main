@@ -141,7 +141,7 @@ export const loginUser = async (data: any) => {
 };
 
 export const googleLogin = async (credential: string, role?: string) => {
-    const response = await fetch(`${API_BASE_URL}/auth/google`, {
+    const response = await fetch(`${API_BASE_URL}/auth/oauth-g`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ credential, role }),
@@ -152,7 +152,7 @@ export const googleLogin = async (credential: string, role?: string) => {
     try {
         result = JSON.parse(text);
     } catch (e) {
-        throw new Error(`Server returned an invalid response: ${text.slice(0, 100)}`);
+        throw new Error(`Server returned an invalid response (AdBlocker might be blocking it): ${text ? text.slice(0, 100) : '[Empty Response]'}`);
     }
 
     if (!response.ok) throw new Error(result.error || 'Google login failed');
