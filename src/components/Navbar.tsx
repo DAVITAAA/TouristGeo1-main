@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { translations, Language } from '../translations';
-import { User } from '../api';
+import { User, getUnreadReservationCount } from '../api';
 import { useDarkMode } from '../hooks/useDarkMode';
 import { useWishlist } from '../hooks/useWishlist';
 import { useCurrency } from '../hooks/useCurrency';
@@ -118,6 +118,18 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
   // const { currency, setCurrency, convertPrice, getCurrencySymbol } = useCurrency();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileMenuClosing, setMobileMenuClosing] = useState(false);
+  const [unreadReservations, setUnreadReservations] = useState(0);
+
+  // Fetch unread reservations count for operators
+  useEffect(() => {
+    if (user?.role === 'operator') {
+      const fetchCount = async () => setUnreadReservations(await getUnreadReservationCount(user.id));
+      fetchCount();
+      // Poll every 3 seconds to update the badge across tabs/components
+      const interval = setInterval(fetchCount, 3000);
+      return () => clearInterval(interval);
+    }
+  }, [user]);
 
   // Lock body scroll when mobile menu is open
   useEffect(() => {
@@ -252,6 +264,20 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
                 </span>
               )}
             </button>
+            {user?.role === 'operator' && (
+              <button
+                onClick={() => onNavigate('profile')}
+                className="relative p-2 rounded-full hover:bg-background-light transition-colors flex items-center justify-center border border-border-light sm:border-transparent text-text-main"
+                title={isKa ? "რეზერვაციები" : "Reservations"}
+              >
+                <span className="material-symbols-outlined text-[20px]">notifications</span>
+                {unreadReservations > 0 && (
+                  <span className="absolute top-0 right-0 transform translate-x-1/4 -translate-y-1/4 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm">
+                    {unreadReservations}
+                  </span>
+                )}
+              </button>
+            )}
             <button
               onClick={toggleDarkMode}
               className="p-2 rounded-full hover:bg-background-light transition-colors text-text-main flex items-center justify-center border border-border-light sm:border-transparent"

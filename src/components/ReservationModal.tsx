@@ -42,7 +42,7 @@ export default function ReservationModal({ tour, language, onClose, onSuccess }:
         tour_title: tour.title,
         tour_image: tour.image,
         tour_location: tour.location,
-        operator_id: tour.operator || '',
+        operator_id: tour.operator_id || tour.operator || '',
         tourist_name: form.name,
         tourist_surname: form.surname,
         tourist_phone: form.phone,

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Language } from '../translations';
-import { User, fetchMyBookings, updateMe, uploadAvatar, fetchMyTours, deleteTour, initiatePasswordChange, completePasswordChange, deleteAccount } from '../api';
+import { User, fetchMyBookings, updateMe, uploadAvatar, fetchMyTours, deleteTour, initiatePasswordChange, completePasswordChange, deleteAccount, Reservation, fetchOperatorReservations, markReservationRead, markAllReservationsRead, renewTour, getMyExpiredTours } from '../api';
 import { useCurrency } from '../hooks/useCurrency';
 import { useWishlist } from '../hooks/useWishlist';
 import Toast from '../components/Toast';
@@ -15,14 +15,17 @@ interface ProfileProps {
 }
 
 export default function Profile({ onNavigate, language, user, onUpdateUser, onLogout }: ProfileProps) {
-  const [activeTab, setActiveTab] = useState<'bookings' | 'settings' | 'favorites' | 'my-tours' | 'security'>(
+  const [activeTab, setActiveTab] = useState<'settings' | 'favorites' | 'my-tours' | 'security' | 'reservations' | 'expired-tours'>(
     user.role === 'operator' ? 'my-tours' : 'favorites'
   );
-  const [bookings, setBookings] = useState<any[]>([]);
   const { wishlist: favorites } = useWishlist(!!user);
   const [myTours, setMyTours] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [expiredTours, setExpiredTours] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isRenewingTour, setIsRenewingTour] = useState<any | null>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [editForm, setEditForm] = useState({
     name: user.name,
     company_name: user.company_name || ''
@@ -45,6 +48,11 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
 
   const [tourToDelete, setTourToDelete] = useState<number | null>(null);
   const [isDeletingTour, setIsDeletingTour] = useState(false);
+
+  // Reservations Tab State
+  const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [isLoadingReservations, setIsLoadingReservations] = useState(false);
+  const [expandedReservation, setExpandedReservation] = useState<string | null>(null);
 
   const handleDeleteAccount = async () => {
     setIsDeletingAccount(true);
@@ -141,15 +149,41 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
   const targetCurrency = isKa ? 'GEL' : 'USD';
 
   useEffect(() => {
-    fetchMyBookings()
-      .then(setBookings)
-      .catch(console.error)
-      .finally(() => setIsLoading(false));
-
     if (user.role === 'operator') {
       fetchMyTours().then(setMyTours).catch(console.error);
+      getMyExpiredTours().then(setExpiredTours).catch(console.error);
     }
   }, [activeTab, user.role]);
+
+  // Load reservations when the tab is active
+  useEffect(() => {
+    if (activeTab === 'reservations' && user.role === 'operator') {
+      setIsLoadingReservations(true);
+      fetchOperatorReservations(user.id)
+        .then(setReservations)
+        .catch(console.error)
+        .finally(() => setIsLoadingReservations(false));
+    }
+  }, [activeTab, user.id, user.role]);
+
+  const handleMarkRead = async (id: string) => {
+    try {
+      await markReservationRead(id);
+      setReservations(prev => prev.map(r => r.id === id ? { ...r, status: 'read' } : r));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      await markAllReservationsRead(user.id);
+      setReservations(prev => prev.map(r => ({ ...r, status: 'read' })));
+      setToast({ message: isKa ? 'ყველა მონიშნულია წაკითხულად' : 'All marked as read', type: 'success' });
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const promptDeleteTour = (id: number) => {
     setTourToDelete(id);
@@ -170,6 +204,22 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
     }
   };
 
+  const getExpirationInfo = (createdAt: string) => {
+    const created = new Date(createdAt);
+    const expires = new Date(created.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const now = new Date();
+    const diff = expires.getTime() - now.getTime();
+    
+    const daysLeft = Math.ceil(diff / (1000 * 60 * 60 * 24));
+    
+    return {
+      published: created.toLocaleDateString(isKa ? 'ka-GE' : 'en-US'),
+      expires: expires.toLocaleDateString(isKa ? 'ka-GE' : 'en-US'),
+      daysLeft: daysLeft > 0 ? daysLeft : 0,
+      isUrgent: daysLeft <= 5
+    };
+  };
+
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
@@ -181,6 +231,31 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
       setToast({ message: isKa ? 'შეცდომა განახლებისას' : 'Failed to update profile', type: 'error' });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleRenew = async () => {
+    if (!isRenewingTour) return;
+    setIsProcessingPayment(true);
+    
+    try {
+      // Fake payment delay for demonstration
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      await renewTour(isRenewingTour.id);
+      
+      setToast({ message: isKa ? 'ტური წარმატებით განახლდა!' : 'Tour renewed successfully!', type: 'success' });
+      setShowPaymentModal(false);
+      
+      // Update local state: move from expired to active
+      setExpiredTours(prev => prev.filter(t => t.id !== isRenewingTour.id));
+      setMyTours(prev => [isRenewingTour, ...prev]);
+      
+      setIsRenewingTour(null);
+    } catch (err: any) {
+      setToast({ message: isKa ? `შეცდომა განახლებისას: ${err.message}` : `Error renewing tour: ${err.message}`, type: 'error' });
+    } finally {
+      setIsProcessingPayment(false);
     }
   };
 
@@ -225,15 +300,6 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
 
         {/* Tabs */}
         <div className="flex bg-white rounded-2xl p-1.5 shadow-md mb-8 border border-border-light overflow-x-auto no-scrollbar">
-          {user.role === 'operator' && (
-            <button
-              onClick={() => setActiveTab('bookings')}
-              className={`flex-1 min-w-fit py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${activeTab === 'bookings' ? 'bg-primary text-white shadow-lg' : 'text-text-muted hover:text-text-main'}`}
-            >
-              <span className="material-symbols-outlined text-[18px]">shopping_bag</span>
-              {isKa ? 'ჯავშნები' : 'Bookings'}
-            </button>
-          )}
           <button
             onClick={() => setActiveTab('favorites')}
             className={`flex-1 min-w-fit py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${activeTab === 'favorites' ? 'bg-primary text-white shadow-lg' : 'text-text-muted hover:text-text-main'}`}
@@ -258,6 +324,21 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
           
           {user.role === 'operator' && (
             <button
+              onClick={() => setActiveTab('reservations')}
+              className={`flex-1 min-w-fit py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-2 relative ${activeTab === 'reservations' ? 'bg-primary text-white shadow-lg' : 'text-text-muted hover:text-text-main'}`}
+            >
+              <span className="material-symbols-outlined text-[18px]">event_note</span>
+              {isKa ? 'რეზერვაციები' : 'Reservations'}
+              {reservations.filter(r => r.status === 'new').length > 0 && activeTab !== 'reservations' && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center shadow-md">
+                  {reservations.filter(r => r.status === 'new').length}
+                </span>
+              )}
+            </button>
+          )}
+          
+          {user.role === 'operator' && (
+            <button
               onClick={() => setActiveTab('my-tours')}
               className={`flex-1 min-w-fit py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${activeTab === 'my-tours' ? 'bg-primary text-white shadow-lg' : 'text-text-muted hover:text-text-main'}`}
             >
@@ -265,108 +346,25 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
               {isKa ? 'ჩემი ტურები' : 'My Tours'}
             </button>
           )}
+
+          {user.role === 'operator' && (
+            <button
+              onClick={() => setActiveTab('expired-tours')}
+              className={`flex-1 min-w-fit py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-2 relative ${activeTab === 'expired-tours' ? 'bg-primary text-white shadow-lg' : 'text-text-muted hover:text-text-main'}`}
+            >
+              <span className="material-symbols-outlined text-[18px]">history</span>
+              {isKa ? 'ვადაგასული' : 'Expired'}
+              {expiredTours.length > 0 && activeTab !== 'expired-tours' && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-amber-500 text-white text-[9px] font-black rounded-full flex items-center justify-center shadow-md">
+                  {expiredTours.length}
+                </span>
+              )}
+            </button>
+          )}
         </div>
 
-        {/* Tab Content */}
         <AnimatePresence mode="wait">
-          {activeTab === 'bookings' ? (
-            <motion.div
-              key="bookings"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              className="space-y-6"
-            >
-              <h2 className="text-2xl font-black text-text-main mb-6 flex items-center gap-3">
-                <span className="w-8 h-1 bg-primary rounded-full"></span>
-                {isKa ? 'ჩემი ჯავშნები' : 'My Bookings'}
-                <span className="ml-auto bg-gray-100 text-gray-500 text-sm px-3 py-1 rounded-lg">
-                  {bookings.length} {isKa ? 'ჯამში' : 'total'}
-                </span>
-              </h2>
-
-              {isLoading ? (
-                <div className="flex flex-col items-center justify-center py-20 gap-4">
-                  <span className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></span>
-                  <p className="font-bold text-text-muted italic">{isKa ? 'იტვირთება...' : 'Loading bookings...'}</p>
-                </div>
-              ) : bookings.length === 0 ? (
-                <div className="bg-white rounded-3xl p-12 text-center border-2 border-dashed border-gray-200">
-                  <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-300">
-                    <span className="material-symbols-outlined text-5xl">event_busy</span>
-                  </div>
-                  <h3 className="text-xl font-black text-text-main mb-2">
-                    {isKa ? 'ჯავშნები არ არის' : 'No bookings found'}
-                  </h3>
-                  <p className="text-text-muted mb-8 max-w-sm mx-auto font-medium">
-                    {isKa ? 'თქვენ ჯერ არ გაგიკეთებიათ არცერთი ჯავშანი. დაათვალიერეთ ჩვენი ტურები.' : 'You haven\'t booked any tours yet. Explore our exciting destinations!'}
-                  </p>
-                  <button
-                    onClick={() => onNavigate('tours')}
-                    className="px-8 py-4 bg-primary text-white rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
-                  >
-                    {isKa ? 'ტურების დათვალიერება' : 'Explore Tours'}
-                  </button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-6">
-                  {bookings.map((booking) => (
-                    <motion.div
-                      layout
-                      key={booking.id}
-                      className="bg-white rounded-3xl p-6 shadow-lg border border-border-light flex flex-col md:flex-row gap-6 relative group overflow-hidden"
-                    >
-                      <div className="absolute top-0 right-0 w-2 h-full bg-primary/20"></div>
-                      <div className="w-full md:w-48 h-32 rounded-2xl overflow-hidden shadow-md">
-                        <img src={booking.tour_image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="" />
-                      </div>
-                      <div className="flex-1 space-y-4">
-                        <div className="flex flex-wrap items-start justify-between gap-4">
-                          <div>
-                            <h3 className="font-black text-xl text-text-main mb-1 group-hover:text-primary transition-colors cursor-pointer" onClick={() => onNavigate('tour-detail', { id: booking.tour_id, title: booking.tour_title, image: booking.tour_image })}>
-                              {booking.tour_title}
-                            </h3>
-                            <p className="text-sm text-text-muted font-bold flex items-center gap-1.5 uppercase tracking-widest">
-                              <span className="material-symbols-outlined text-[18px]">calendar_month</span>
-                              {booking.booking_date}
-                            </p>
-                          </div>
-                          <div className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest ${
-                            booking.status === 'confirmed' ? 'bg-green-100 text-green-700' : 
-                            booking.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
-                          }`}>
-                            {booking.status}
-                          </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 pt-4 border-t border-gray-50">
-                          <div>
-                            <p className="text-[10px] text-text-muted font-bold uppercase tracking-widest mb-1">{isKa ? 'რაოდენობა' : 'Guests'}</p>
-                            <p className="font-black text-text-main flex items-center gap-1.5">
-                              <span className="material-symbols-outlined text-[18px] text-primary">groups</span>
-                              {booking.guests} {isKa ? 'პირი' : 'person'}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-[10px] text-text-muted font-bold uppercase tracking-widest mb-1">{isKa ? 'ფასი' : 'Total Price'}</p>
-                            <p className="font-black text-primary text-lg">
-                              {getCurrencySymbol(targetCurrency)}{convertPrice(booking.total_price, targetCurrency)}
-                            </p>
-                          </div>
-                          <div className="col-span-2 flex items-center justify-end">
-                            <button className="flex items-center gap-2 text-primary font-black text-sm hover:underline">
-                              {isKa ? 'დეატლები' : 'View Details'}
-                              <span className="material-symbols-outlined text-[18px]">chevron_right</span>
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              )}
-            </motion.div>
-          ) : activeTab === 'my-tours' && user.role === 'operator' ? (
+          {activeTab === 'my-tours' && user.role === 'operator' ? (
             <motion.div
               key="my-tours"
               initial={{ opacity: 0, x: -20 }}
@@ -413,6 +411,25 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
                           <span className="material-symbols-outlined text-[16px]">location_on</span>
                           {tour.location}
                         </p>
+                        
+                        {tour.created_at && (
+                          <div className="flex flex-wrap gap-3 mb-4">
+                            <div className="bg-gray-50 px-3 py-2 rounded-xl border border-gray-100">
+                              <p className="text-[9px] font-black text-text-muted uppercase tracking-tighter mb-0.5">{isKa ? 'გამოქვეყნდა' : 'Published'}</p>
+                              <p className="text-xs font-bold text-text-main">{getExpirationInfo(tour.created_at).published}</p>
+                            </div>
+                            <div className="bg-gray-50 px-3 py-2 rounded-xl border border-gray-100">
+                              <p className="text-[9px] font-black text-text-muted uppercase tracking-tighter mb-0.5">{isKa ? 'იწურება' : 'Expires'}</p>
+                              <p className="text-xs font-bold text-text-main">{getExpirationInfo(tour.created_at).expires}</p>
+                            </div>
+                            <div className={`px-3 py-2 rounded-xl border flex items-center gap-2 ${getExpirationInfo(tour.created_at).isUrgent ? 'bg-red-50 border-red-100 text-red-700' : 'bg-primary/5 border-primary/10 text-primary'}`}>
+                              <span className="material-symbols-outlined text-[16px] font-black">{getExpirationInfo(tour.created_at).isUrgent ? 'timer' : 'schedule'}</span>
+                              <p className="text-xs font-black uppercase tracking-widest">
+                                {getExpirationInfo(tour.created_at).daysLeft} {isKa ? 'დღე დარჩა' : 'Days Left'}
+                              </p>
+                            </div>
+                          </div>
+                        )}
                         <div className="mt-auto flex items-center justify-between border-t border-gray-50 pt-4">
                            <p className="font-black text-primary flex items-center gap-1">
                               {getCurrencySymbol(targetCurrency)}{convertPrice(tour.price, targetCurrency)}
@@ -425,6 +442,74 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
                                  <span className="material-symbols-outlined">delete</span>
                               </button>
                            </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          ) : activeTab === 'expired-tours' && user.role === 'operator' ? (
+            <motion.div
+              key="expired-tours"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              className="space-y-6"
+            >
+              <div className="flex flex-wrap items-center justify-between mb-6 gap-4">
+                 <h2 className="text-2xl font-black text-text-main flex items-center gap-3">
+                   <span className="w-8 h-1 bg-amber-500 rounded-full"></span>
+                   {isKa ? 'ვადაგასული ტურები' : 'Expired Tours'}
+                   <span className="bg-gray-100 text-gray-500 text-sm px-3 py-1 rounded-lg">
+                     {expiredTours.length} {isKa ? 'ჯამში' : 'total'}
+                   </span>
+                 </h2>
+              </div>
+
+              {expiredTours.length === 0 ? (
+                <div className="bg-white rounded-3xl p-12 text-center border-2 border-dashed border-gray-200">
+                  <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-300">
+                    <span className="material-symbols-outlined text-5xl">history</span>
+                  </div>
+                  <h3 className="text-xl font-black text-text-main mb-2">
+                    {isKa ? 'ვადაგასული ტურები არ არის' : 'No expired tours found'}
+                  </h3>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-6">
+                  {expiredTours.map((tour) => (
+                    <div key={tour.id} className="group flex flex-col md:flex-row gap-6 bg-white p-6 rounded-3xl border border-border-light shadow-sm hover:shadow-lg transition-all relative overflow-hidden grayscale-[0.5] opacity-80 hover:grayscale-0 hover:opacity-100">
+                      <div className="w-full md:w-48 h-32 rounded-2xl overflow-hidden shrink-0">
+                        <img src={tour.image} alt={tour.title} className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1 flex flex-col min-w-0">
+                        <div className="flex justify-between items-start gap-4">
+                           <h4 className="font-black text-xl text-text-main mb-1 truncate">{tour.title}</h4>
+                           <span className="px-3 py-1 text-[10px] shrink-0 font-black uppercase tracking-widest rounded-lg bg-amber-100 text-amber-700">EXPIRED</span>
+                        </div>
+                        <p className="text-xs font-bold text-text-muted flex items-center gap-1 mb-4 uppercase tracking-widest mt-1">
+                          <span className="material-symbols-outlined text-[16px]">location_on</span>
+                          {tour.location}
+                        </p>
+                        
+                        {tour.created_at && (
+                          <div className="bg-amber-50/50 px-3 py-2 rounded-xl border border-amber-100 w-fit mb-4">
+                             <p className="text-[9px] font-black text-amber-700 uppercase tracking-tighter mb-0.5">{isKa ? 'თავდაპირველად გამოქვეყნდა' : 'Originally Published'}</p>
+                             <p className="text-xs font-bold text-amber-900">{getExpirationInfo(tour.created_at).published}</p>
+                          </div>
+                        )}
+                        <div className="mt-auto flex items-center justify-between border-t border-gray-50 pt-4">
+                           <p className="font-black text-primary flex items-center gap-1">
+                              {getCurrencySymbol(targetCurrency)}{convertPrice(tour.price, targetCurrency)}
+                           </p>
+                           <button 
+                            onClick={() => { setIsRenewingTour(tour); setShowPaymentModal(true); }}
+                            className="px-6 py-2.5 bg-primary text-white rounded-xl font-black text-sm hover:scale-105 transition-all shadow-lg shadow-primary/20 flex items-center gap-2"
+                           >
+                              <span className="material-symbols-outlined text-[18px]">publish</span>
+                              {isKa ? 'განახლება' : 'Renew / Re-upload'}
+                           </button>
                         </div>
                       </div>
                     </div>
@@ -851,6 +936,243 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
                 )}
               </div>
             </motion.div>
+          ) : activeTab === 'reservations' && user.role === 'operator' ? (
+            <motion.div
+              key="reservations"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              className="space-y-6"
+            >
+              <div className="flex flex-wrap items-center justify-between mb-6 gap-4">
+                <h2 className="text-2xl font-black text-text-main flex items-center gap-3">
+                  <span className="w-8 h-1 bg-primary rounded-full"></span>
+                  {isKa ? 'რეზერვაციის მოთხოვნები' : 'Reservation Requests'}
+                  <span className="bg-gray-100 text-gray-500 text-sm px-3 py-1 rounded-lg">
+                    {reservations.length} {isKa ? 'ჯამში' : 'total'}
+                  </span>
+                </h2>
+                {reservations.some(r => r.status === 'new') && (
+                  <button
+                    onClick={handleMarkAllRead}
+                    className="px-5 py-2.5 bg-primary/10 text-primary border border-primary/20 rounded-xl font-black text-sm hover:bg-primary/20 transition-all flex items-center gap-2"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">done_all</span>
+                    {isKa ? 'ყველას წაკითხულად მონიშვნა' : 'Mark All Read'}
+                  </button>
+                )}
+              </div>
+
+              {isLoadingReservations ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-4">
+                  <span className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></span>
+                  <p className="font-bold text-text-muted italic">{isKa ? 'იტვირთება...' : 'Loading reservations...'}</p>
+                </div>
+              ) : reservations.length === 0 ? (
+                <div className="bg-white rounded-3xl p-12 text-center border-2 border-dashed border-gray-200">
+                  <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-300">
+                    <span className="material-symbols-outlined text-5xl">event_busy</span>
+                  </div>
+                  <h3 className="text-xl font-black text-text-main mb-2">
+                    {isKa ? 'რეზერვაციები არ არის' : 'No reservations yet'}
+                  </h3>
+                  <p className="text-text-muted mb-8 max-w-sm mx-auto font-medium">
+                    {isKa
+                      ? 'როცა ტურისტი გამოგიგზავნით რეზერვაციის მოთხოვნას, ის აქ გამოჩნდება.'
+                      : 'When tourists send you reservation requests, they will appear here.'}
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-5">
+                  {reservations.map((res) => {
+                    const isNew = res.status === 'new';
+                    const isExpanded = expandedReservation === res.id;
+                    const createdDate = new Date(res.created_at);
+                    const formattedDate = createdDate.toLocaleDateString(isKa ? 'ka-GE' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+                    const formattedTime = createdDate.toLocaleTimeString(isKa ? 'ka-GE' : 'en-US', { hour: '2-digit', minute: '2-digit' });
+
+                    return (
+                      <motion.div
+                        layout
+                        key={res.id}
+                        className={`bg-white rounded-3xl shadow-lg border overflow-hidden transition-all cursor-pointer hover:shadow-xl ${
+                          isNew ? 'border-primary/30 ring-2 ring-primary/10' : 'border-border-light'
+                        }`}
+                        onClick={() => {
+                          setExpandedReservation(isExpanded ? null : res.id);
+                          if (isNew) handleMarkRead(res.id);
+                        }}
+                      >
+                        {/* Card Header */}
+                        <div className="p-5 sm:p-6">
+                          <div className="flex flex-col sm:flex-row gap-4">
+                            {/* Tour thumbnail */}
+                            <div className="w-full sm:w-20 h-28 sm:h-20 rounded-2xl overflow-hidden shadow-md flex-shrink-0">
+                              <img src={res.tour_image} alt={res.tour_title} className="w-full h-full object-cover" />
+                            </div>
+
+                            {/* Main info */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between gap-3 mb-2">
+                                <div className="min-w-0">
+                                  <h3 className="font-black text-lg text-text-main truncate leading-tight">
+                                    {res.tourist_name} {res.tourist_surname}
+                                  </h3>
+                                  <p className="text-sm font-bold text-text-muted truncate mt-0.5">
+                                    {res.tour_title}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                  <span className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap ${
+                                    isNew
+                                      ? 'bg-primary/10 text-primary ring-1 ring-primary/20'
+                                      : 'bg-gray-100 text-gray-500'
+                                  }`}>
+                                    {isNew
+                                      ? (isKa ? '● ახალი' : '● New')
+                                      : (isKa ? 'ნანახი' : 'Viewed')}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Quick info row */}
+                              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs font-bold text-text-muted">
+                                <span className="flex items-center gap-1">
+                                  <span className="material-symbols-outlined text-[14px] text-primary">calendar_month</span>
+                                  {res.start_date}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <span className="material-symbols-outlined text-[14px] text-primary">schedule</span>
+                                  {res.duration_days} {isKa ? 'დღე' : 'days'}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <span className="material-symbols-outlined text-[14px] text-primary">groups</span>
+                                  {res.guests} {isKa ? 'სტუმარი' : 'guests'}
+                                </span>
+                                <span className="flex items-center gap-1 ml-auto text-[10px] text-gray-400">
+                                  {formattedDate} · {formattedTime}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Expanded Details */}
+                        <AnimatePresence>
+                          {isExpanded && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+                              className="overflow-hidden"
+                            >
+                              <div className="px-5 sm:px-6 pb-6 border-t border-gray-100 pt-5">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                  {/* Contact Info */}
+                                  <div className="space-y-3">
+                                    <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">
+                                      {isKa ? 'საკონტაქტო ინფორმაცია' : 'Contact Information'}
+                                    </p>
+                                    <div className="bg-gray-50 rounded-2xl p-4 space-y-3">
+                                      <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                          <span className="material-symbols-outlined text-primary text-[16px]">call</span>
+                                        </div>
+                                        <div>
+                                          <p className="text-[9px] font-black text-text-muted uppercase tracking-widest">{isKa ? 'ტელეფონი' : 'Phone'}</p>
+                                          <a href={`tel:${res.tourist_phone}`} className="font-black text-sm text-text-main hover:text-primary transition-colors" onClick={(e) => e.stopPropagation()}>
+                                            {res.tourist_phone}
+                                          </a>
+                                        </div>
+                                      </div>
+                                      {res.tourist_email && (
+                                        <div className="flex items-center gap-3">
+                                          <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                                            <span className="material-symbols-outlined text-blue-500 text-[16px]">mail</span>
+                                          </div>
+                                          <div>
+                                            <p className="text-[9px] font-black text-text-muted uppercase tracking-widest">{isKa ? 'ელ-ფოსტა' : 'Email'}</p>
+                                            <a href={`mailto:${res.tourist_email}`} className="font-black text-sm text-text-main hover:text-primary transition-colors" onClick={(e) => e.stopPropagation()}>
+                                              {res.tourist_email}
+                                            </a>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Tour & Trip Details */}
+                                  <div className="space-y-3">
+                                    <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">
+                                      {isKa ? 'ტურის დეტალები' : 'Trip Details'}
+                                    </p>
+                                    <div className="bg-gray-50 rounded-2xl p-4 space-y-3">
+                                      <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center flex-shrink-0">
+                                          <span className="material-symbols-outlined text-amber-500 text-[16px]">location_on</span>
+                                        </div>
+                                        <div>
+                                          <p className="text-[9px] font-black text-text-muted uppercase tracking-widest">{isKa ? 'ლოკაცია' : 'Location'}</p>
+                                          <p className="font-black text-sm text-text-main">{res.tour_location}</p>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center flex-shrink-0">
+                                          <span className="material-symbols-outlined text-purple-500 text-[16px]">date_range</span>
+                                        </div>
+                                        <div>
+                                          <p className="text-[9px] font-black text-text-muted uppercase tracking-widest">{isKa ? 'პერიოდი' : 'Period'}</p>
+                                          <p className="font-black text-sm text-text-main">{res.start_date} → {res.duration_days} {isKa ? 'დღე' : 'days'}</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Description */}
+                                {res.description && (
+                                  <div className="mt-5">
+                                    <p className="text-[10px] font-black text-text-muted uppercase tracking-widest mb-2">
+                                      {isKa ? 'დამატებითი შენიშვნები' : 'Additional Notes'}
+                                    </p>
+                                    <div className="bg-gray-50 rounded-2xl p-4">
+                                      <p className="text-sm text-text-main font-medium leading-relaxed">{res.description}</p>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Action Buttons */}
+                                <div className="mt-5 flex flex-wrap gap-3">
+                                  <a
+                                    href={`tel:${res.tourist_phone}`}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="flex-1 min-w-[140px] py-3 bg-primary text-white rounded-xl font-black text-sm shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
+                                  >
+                                    <span className="material-symbols-outlined text-[18px]">call</span>
+                                    {isKa ? 'დარეკვა' : 'Call Now'}
+                                  </a>
+                                  {res.tourist_email && (
+                                    <a
+                                      href={`mailto:${res.tourist_email}`}
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="flex-1 min-w-[140px] py-3 bg-blue-50 text-blue-600 border border-blue-100 rounded-xl font-black text-sm hover:bg-blue-100 active:scale-95 transition-all flex items-center justify-center gap-2"
+                                    >
+                                      <span className="material-symbols-outlined text-[18px]">mail</span>
+                                      {isKa ? 'ელ-ფოსტა' : 'Send Email'}
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              )}
+            </motion.div>
           ) : null}
         </AnimatePresence>
       </div>
@@ -900,6 +1222,105 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
                     </>
                   )}
                 </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Payment Modal for Renewal */}
+      <AnimatePresence>
+        {showPaymentModal && isRenewingTour && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => { setShowPaymentModal(false); setIsRenewingTour(null); }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
+          >
+            <motion.div
+              initial={{ y: 50, scale: 0.9, opacity: 0 }}
+              animate={{ y: 0, scale: 1, opacity: 1 }}
+              exit={{ y: 50, scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-[40px] p-1 shadow-2xl max-w-lg w-full overflow-hidden relative"
+            >
+              <div className="bg-gradient-to-br from-primary to-green-600 p-8 text-white rounded-[36px] relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl"></div>
+                <div className="absolute bottom-0 left-0 w-48 h-48 bg-black/10 rounded-full -ml-10 -mb-10 blur-2xl"></div>
+                
+                <button 
+                  onClick={() => { setShowPaymentModal(false); setIsRenewingTour(null); }}
+                  className="absolute top-6 right-6 w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-colors z-20"
+                >
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+
+                <div className="relative z-10">
+                  <h3 className="text-3xl font-black mb-2">{isKa ? 'ტურის განახლება' : 'Renew Your Tour'}</h3>
+                  <p className="text-white/80 font-bold uppercase tracking-widest text-[10px]">
+                    {isKa ? 'გაახანგრძლივეთ 1 თვით' : 'Extend visibility for 1 month'}
+                  </p>
+                  
+                  <div className="mt-8 flex items-end gap-2">
+                    <span className="text-5xl font-black">29</span>
+                    <span className="text-xl font-black mb-1">GEL</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-8 space-y-6">
+                <div className="space-y-4">
+                  <div className="p-4 bg-gray-50 rounded-2xl border-2 border-gray-100 flex items-center gap-4">
+                    <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center">
+                      <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" className="w-8" alt="Visa" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs font-black text-text-muted uppercase tracking-tighter">{isKa ? 'ბარათის ნომერი' : 'Card Number'}</p>
+                      <p className="font-bold text-text-main tracking-widest">•••• •••• •••• 4242</p>
+                    </div>
+                    <span className="material-symbols-outlined text-green-500">check_circle</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                      <p className="text-[10px] font-black text-text-muted uppercase tracking-tighter mb-1">{isKa ? 'ვადა' : 'Expiry'}</p>
+                      <p className="font-bold text-text-main">12 / 28</p>
+                    </div>
+                    <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                      <p className="text-[10px] font-black text-text-muted uppercase tracking-tighter mb-1">CVC</p>
+                      <p className="font-bold text-text-main">***</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100 flex gap-3">
+                  <span className="material-symbols-outlined text-amber-500">info</span>
+                  <p className="text-[11px] font-bold text-amber-800 leading-relaxed">
+                    {isKa 
+                      ? 'ეს არის გადახდის დემონსტრაცია. რეალური თანხა არ ჩამოგეჭრებათ.' 
+                      : 'This is a payment demonstration. No real funds will be deducted.'}
+                  </p>
+                </div>
+
+                <button
+                  onClick={handleRenew}
+                  disabled={isProcessingPayment}
+                  className="w-full py-5 bg-primary text-white rounded-2xl font-black shadow-2xl shadow-primary/30 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 relative overflow-hidden"
+                >
+                  {isProcessingPayment ? (
+                    <span className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin"></span>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined">payments</span>
+                      {isKa ? 'გადახდა და განახლება' : 'Pay & Renew Now'}
+                    </>
+                  )}
+                </button>
+                
+                <p className="text-center text-[10px] text-text-muted font-bold uppercase tracking-widest">
+                  Secure payment powered by GeoPay
+                </p>
               </div>
             </motion.div>
           </motion.div>

@@ -1,5 +1,7 @@
 const API_BASE_URL = '/api';
-import { supabase } from './supabase';export interface Tour {
+import { supabase } from './supabase';
+
+export interface Tour {
     id: number;
     title: string;
     duration: string;
@@ -12,6 +14,7 @@ import { supabase } from './supabase';export interface Tour {
     gallery?: string[];
     description?: string;
     operator?: string;
+    operator_id?: string;
     operator_name?: string;
     company_name?: string;
     badges?: string[];
@@ -22,6 +25,7 @@ import { supabase } from './supabase';export interface Tour {
     languages?: string[];
     itinerary?: { day: number; title: string; description: string; activities: string[] }[];
     status?: string;
+    created_at: string;
 }
 
 export const fetchTours = async (category?: string, search?: string): Promise<Tour[]> => {
@@ -131,9 +135,9 @@ export const loginUser = async (data: any) => {
         result = JSON.parse(text);
     } catch (e) {
         if (text.trim().startsWith('<!DOCTYPE html>')) {
-             throw new Error("Proxy error: The server is returning the website's HTML instead of a data response. Please ensure you restarted 'npm run dev:all'.");
+             throw new Error("Proxy error: The server is returning HTML. Please ensure you restarted 'npm run dev:all'.");
         }
-        throw new Error(`Server returned an invalid response (Status ${response.status}): ${text.slice(0, 100) || '[Empty Response]'}`);
+        throw new Error(`Login Error: Backend returned an empty or invalid response. Please hard refresh the page (Ctrl+F5).`);
     }
 
     if (!response.ok) throw new Error(result.error || `Login failed (${response.status})`);
@@ -152,7 +156,7 @@ export const googleLogin = async (credential: string, role?: string) => {
     try {
         result = JSON.parse(text);
     } catch (e) {
-        throw new Error(`Server returned an invalid response (AdBlocker might be blocking it): ${text ? text.slice(0, 100) : '[Empty Response]'}`);
+        throw new Error(`Google Login Error: Backend returned an empty response. If you use an AdBlocker, please disable it. Otherwise, hard refresh the page (Ctrl+F5).`);
     }
 
     if (!response.ok) throw new Error(result.error || 'Google login failed');
@@ -486,6 +490,30 @@ export const deleteTour = async (id: number) => {
     return response.json();
 };
 
+export const renewTour = async (id: number) => {
+    const token = getToken();
+    if (!token) throw new Error('Not authenticated');
+    const response = await fetch(`${API_BASE_URL}/tours/${id}/renew`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error || 'Failed to renew tour');
+    }
+    return response.json();
+};
+
+export const getMyExpiredTours = async (): Promise<Tour[]> => {
+    const token = getToken();
+    if (!token) throw new Error('Not authenticated');
+    const response = await fetch(`${API_BASE_URL}/tours/my-expired`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error('Failed to fetch expired tours');
+    return response.json();
+};
+
 export const createBooking = async (data: any) => {
     const response = await fetch(`${API_BASE_URL}/bookings`, {
         method: 'POST',
@@ -509,7 +537,7 @@ export const fetchMyBookings = async () => {
 
 
 // ═══════════════════════════════════════
-// RESERVATION SYSTEM (localStorage-based, API-ready)
+// RESERVATION SYSTEM (API-based)
 // ═══════════════════════════════════════
 
 export interface Reservation {
@@ -518,92 +546,94 @@ export interface Reservation {
     tour_title: string;
     tour_image: string;
     tour_location: string;
-    operator_id: string;       // Tour operator's user ID
+    operator_id: string;
     tourist_name: string;
     tourist_surname: string;
     tourist_phone: string;
     tourist_email: string;
     guests: number;
-    start_date: string;        // YYYY-MM-DD
+    start_date: string;
     duration_days: number;
     description?: string;
     status: 'new' | 'read';
-    created_at: string;        // ISO date string
+    created_at: string;
 }
 
-const RESERVATIONS_KEY = 'travel_georgia_reservations';
-
-const getReservations = (): Reservation[] => {
-    try {
-        return JSON.parse(localStorage.getItem(RESERVATIONS_KEY) || '[]');
-    } catch { return []; }
-};
-
-const saveReservations = (reservations: Reservation[]) => {
-    localStorage.setItem(RESERVATIONS_KEY, JSON.stringify(reservations));
-};
-
-/**
- * Create a new reservation request.
- * TODO: Replace with API call — POST /api/reservations
- */
 export const createReservation = async (data: Omit<Reservation, 'id' | 'status' | 'created_at'>): Promise<Reservation> => {
-    // TODO: Replace localStorage with: const response = await fetch(`${API_BASE_URL}/reservations`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-    const reservation: Reservation = {
-        ...data,
-        id: `res_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-        status: 'new',
-        created_at: new Date().toISOString(),
-    };
-    const all = getReservations();
-    all.unshift(reservation);
-    saveReservations(all);
-    return reservation;
+    const response = await fetch(`${API_BASE_URL}/reservations`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    });
+    
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create reservation');
+    }
+    
+    return response.json();
 };
 
-/**
- * Fetch reservations for a specific operator.
- * TODO: Replace with API call — GET /api/reservations/me
- */
 export const fetchOperatorReservations = async (operatorId: string): Promise<Reservation[]> => {
-    // TODO: Replace localStorage with: const response = await fetch(`${API_BASE_URL}/reservations/me`, { headers: { 'Authorization': `Bearer ${getToken()}` } });
-    const all = getReservations();
-    return all.filter(r => r.operator_id === operatorId);
+    const token = getToken();
+    if (!token) throw new Error('Not authenticated');
+    
+    const response = await fetch(`${API_BASE_URL}/reservations/me`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (!response.ok) {
+        throw new Error('Failed to fetch reservations');
+    }
+    
+    return response.json();
 };
 
-/**
- * Get count of unread (new) reservations for an operator.
- * TODO: Replace with API call — GET /api/reservations/unread-count
- */
-export const getUnreadReservationCount = (operatorId: string): number => {
-    // TODO: Replace localStorage with API call
-    const all = getReservations();
-    return all.filter(r => r.operator_id === operatorId && r.status === 'new').length;
-};
-
-/**
- * Mark a reservation as read.
- * TODO: Replace with API call — PATCH /api/reservations/:id/read
- */
-export const markReservationRead = async (reservationId: string): Promise<void> => {
-    // TODO: Replace localStorage with: await fetch(`${API_BASE_URL}/reservations/${reservationId}/read`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${getToken()}` } });
-    const all = getReservations();
-    const idx = all.findIndex(r => r.id === reservationId);
-    if (idx !== -1) {
-        all[idx].status = 'read';
-        saveReservations(all);
+export const getUnreadReservationCount = async (operatorId: string): Promise<number> => {
+    const token = getToken();
+    if (!token) return 0;
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/reservations/unread-count`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            return data.count;
+        }
+        return 0;
+    } catch {
+        return 0;
     }
 };
 
-/**
- * Mark all reservations as read for an operator.
- * TODO: Replace with API call — PATCH /api/reservations/read-all
- */
-export const markAllReservationsRead = async (operatorId: string): Promise<void> => {
-    // TODO: Replace localStorage with API call
-    const all = getReservations();
-    all.forEach(r => {
-        if (r.operator_id === operatorId) r.status = 'read';
+export const markReservationRead = async (reservationId: string): Promise<void> => {
+    const token = getToken();
+    if (!token) throw new Error('Not authenticated');
+    
+    const response = await fetch(`${API_BASE_URL}/reservations/${reservationId}/read`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}` }
     });
-    saveReservations(all);
+    
+    if (!response.ok) {
+        throw new Error('Failed to mark reservation as read');
+    }
+};
+
+export const markAllReservationsRead = async (operatorId: string): Promise<void> => {
+    const token = getToken();
+    if (!token) throw new Error('Not authenticated');
+    
+    const response = await fetch(`${API_BASE_URL}/reservations/read-all`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (!response.ok) {
+        throw new Error('Failed to mark all reservations as read');
+    }
 };

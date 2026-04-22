@@ -178,6 +178,19 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
                   </div>
                 ))}
               </div>
+
+              {/* Operator Info (Mobile/Small Screen) */}
+              {(tour.company_name || tour.operator_name) && (
+                <div className="lg:hidden bg-white p-5 rounded-2xl border border-border-light flex items-center gap-4 mt-6">
+                  <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center text-white flex-shrink-0">
+                    <span className="material-symbols-outlined text-2xl">account_circle</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">{t.tour_provided_by}</p>
+                    <p className="font-black text-text-main truncate text-sm">{tour.company_name || tour.operator_name}</p>
+                  </div>
+                </div>
+              )}
             </section>
 
             {/* Itinerary */}
@@ -246,15 +259,15 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
               </div>
             </div>
 
-            {/* Operator Info - only show if company_name exists */}
-            {tour.company_name && (
+            {/* Operator Info */}
+            {(tour.company_name || tour.operator_name) && (
               <div className="bg-white p-5 rounded-2xl border border-border-light flex items-center gap-4">
                  <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center text-white flex-shrink-0">
                     <span className="material-symbols-outlined text-2xl">account_circle</span>
                  </div>
                  <div className="flex-1 min-w-0">
                     <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">{t.tour_provided_by}</p>
-                    <p className="font-black text-text-main truncate text-sm">{tour.company_name}</p>
+                    <p className="font-black text-text-main truncate text-sm">{tour.company_name || tour.operator_name}</p>
                  </div>
                  <button className="w-9 h-9 rounded-full border border-border-light flex items-center justify-center text-text-muted hover:border-primary hover:text-primary transition-all flex-shrink-0">
                     <span className="material-symbols-outlined text-lg">forum</span>

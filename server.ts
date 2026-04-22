@@ -671,10 +671,13 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
 app.get('/api/tours', async (req, res) => {
   try {
     const { category, search } = req.query;
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    
     let query = supabase
       .from('tours')
       .select('*, profiles(name, company_name)')
-      .eq('status', 'published');
+      .eq('status', 'published')
+      .gte('created_at', thirtyDaysAgo);
 
     if (category) {
       query = query.eq('category', category);
@@ -760,17 +763,44 @@ app.get('/api/tours/me', async (req, res) => {
   if (!payload) return res.status(401).json({ error: 'Invalid token' });
 
   try {
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
     const { data: tours, error } = await supabase
       .from('tours')
       .select('*')
       .eq('operator_id', payload.id)
+      .gte('created_at', thirtyDaysAgo)
       .order('id', { ascending: false });
 
     if (error) throw error;
     res.json(tours);
   } catch (error) {
     console.error('Error fetching my tours:', error);
-    res.status(500).json({ error: 'Failed to fetch tours' });
+    res.status(500).json({ error: 'Failed to fetch my tours' });
+  }
+});
+
+app.get('/api/tours/my-expired', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+
+  const token = authHeader.split(' ')[1];
+  const payload = verifyToken(token);
+  if (!payload) return res.status(401).json({ error: 'Invalid token' });
+
+  try {
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: tours, error } = await supabase
+      .from('tours')
+      .select('*')
+      .eq('operator_id', payload.id)
+      .lt('created_at', thirtyDaysAgo)
+      .order('id', { ascending: false });
+
+    if (error) throw error;
+    res.json(tours);
+  } catch (error) {
+    console.error('Error fetching expired tours:', error);
+    res.status(500).json({ error: 'Failed to fetch expired tours' });
   }
 });
 
@@ -846,6 +876,29 @@ app.put('/api/tours/:id/status', async (req, res) => {
   } catch (error) {
     console.error('Error updating tour status:', error);
     res.status(500).json({ error: 'Failed to update tour status' });
+  }
+});
+
+app.post('/api/tours/:id/renew', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+  const payload = verifyToken(authHeader.split(' ')[1]);
+  if (!payload) return res.status(401).json({ error: 'Invalid token' });
+
+  try {
+    const { data: tour } = await supabase.from('tours').select('operator_id').eq('id', req.params.id).single();
+    if (!tour || tour.operator_id !== payload.id) return res.status(403).json({ error: 'Forbidden' });
+
+    const { error } = await supabase
+      .from('tours')
+      .update({ created_at: new Date().toISOString() })
+      .eq('id', req.params.id);
+      
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error('Renew tour error:', error);
+    res.status(500).json({ error: error.message || 'Failed to renew tour' });
   }
 });
 
@@ -941,6 +994,124 @@ app.get('/api/bookings/me', async (req, res) => {
   } catch (error) {
     console.error('Error fetching my bookings:', error);
     res.status(500).json({ error: 'Failed to fetch bookings' });
+  }
+});
+
+// --- RESERVATIONS ROUTES ---
+
+app.post('/api/reservations', async (req, res) => {
+  const { tour_id, tour_title, tour_image, tour_location, operator_id, tourist_name, tourist_surname, tourist_phone, tourist_email, guests, start_date, duration_days, description } = req.body;
+  
+  const missing = [];
+  if (!tour_id) missing.push('tour_id');
+  if (!operator_id) missing.push('operator_id');
+  if (!tourist_name) missing.push('tourist_name');
+  if (!start_date) missing.push('start_date');
+
+  if (missing.length > 0) {
+    console.error('Missing reservation fields:', missing, 'Body:', req.body);
+    fs.appendFileSync('error.log', `[${new Date().toISOString()}] Missing reservation fields: ${missing.join(', ')} - Body: ${JSON.stringify(req.body)}\n`);
+    return res.status(400).json({ error: `Missing required fields: ${missing.join(', ')}` });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('reservations')
+      .insert([
+        { tour_id, tour_title, tour_image, tour_location, operator_id, tourist_name, tourist_surname, tourist_phone, tourist_email, guests, start_date, duration_days, description, status: 'new' }
+      ])
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    console.error('Error creating reservation:', error);
+    res.status(500).json({ error: 'Reservation failed' });
+  }
+});
+
+app.get('/api/reservations/me', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+  const payload = verifyToken(authHeader.split(' ')[1]);
+  if (!payload) return res.status(401).json({ error: 'Invalid token' });
+
+  try {
+    const { data: reservations, error } = await supabase
+      .from('reservations')
+      .select('*')
+      .eq('operator_id', payload.id)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    res.json(reservations);
+  } catch (error) {
+    console.error('Error fetching reservations:', error);
+    res.status(500).json({ error: 'Failed to fetch reservations' });
+  }
+});
+
+app.get('/api/reservations/unread-count', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+  const payload = verifyToken(authHeader.split(' ')[1]);
+  if (!payload) return res.status(401).json({ error: 'Invalid token' });
+
+  try {
+    const { count, error } = await supabase
+      .from('reservations')
+      .select('*', { count: 'exact', head: true })
+      .eq('operator_id', payload.id)
+      .eq('status', 'new');
+
+    if (error) throw error;
+    res.json({ count: count || 0 });
+  } catch (error) {
+    console.error('Error counting reservations:', error);
+    res.status(500).json({ error: 'Failed to count reservations' });
+  }
+});
+
+app.patch('/api/reservations/:id/read', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+  const payload = verifyToken(authHeader.split(' ')[1]);
+  if (!payload) return res.status(401).json({ error: 'Invalid token' });
+
+  try {
+    const { error } = await supabase
+      .from('reservations')
+      .update({ status: 'read' })
+      .eq('id', req.params.id)
+      .eq('operator_id', payload.id);
+
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error updating reservation:', error);
+    res.status(500).json({ error: 'Failed to update reservation' });
+  }
+});
+
+app.patch('/api/reservations/read-all', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+  const payload = verifyToken(authHeader.split(' ')[1]);
+  if (!payload) return res.status(401).json({ error: 'Invalid token' });
+
+  try {
+    const { error } = await supabase
+      .from('reservations')
+      .update({ status: 'read' })
+      .eq('operator_id', payload.id)
+      .eq('status', 'new');
+
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error updating reservations:', error);
+    res.status(500).json({ error: 'Failed to update reservations' });
   }
 });
 
