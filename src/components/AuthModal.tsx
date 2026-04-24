@@ -20,6 +20,7 @@ export default function AuthModal({ language, onClose, onSuccess }: AuthModalPro
 
     const [step, setStep] = useState<'form' | 'verify' | 'forgot_email' | 'forgot_verify' | 'forgot_new_password' | 'forgot_success'>('form');
     const [verificationCode, setVerificationCode] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
 
     const isPasswordValid = {
         length: formData.password.length >= 8,
@@ -33,6 +34,7 @@ export default function AuthModal({ language, onClose, onSuccess }: AuthModalPro
         setStep('form');
         setError(null);
         setSuccess(null);
+        setShowPassword(false);
         setFormData({ name: '', email: '', password: '', company_name: '', phone: '', role: 'tourist' });
     };
 
@@ -86,10 +88,17 @@ export default function AuthModal({ language, onClose, onSuccess }: AuthModalPro
             }
         } catch (err: any) {
             let msg = err.message || t.auth_error;
-            if (msg.includes('401')) msg = (t as any).login_failed || 'Invalid credentials';
+            if (msg.includes('401') || msg.includes('Invalid credentials')) msg = (t as any).login_failed || 'Invalid credentials';
             if (msg.includes('404')) msg = (t as any).user_not_found || 'User not found';
-            if (msg.includes('failed to fetch') || msg.toLowerCase().includes('json')) {
-                msg = (t as any).server_offline || 'Server is temporarily offline';
+            if (msg.includes('Email already registered')) msg = (t as any).email_exists || 'Email already registered';
+            if (msg.includes('Name already taken')) msg = (t as any).name_exists || 'Name already taken';
+            if (msg.includes('Company name already taken')) msg = (t as any).company_exists || 'Company name already taken';
+            
+            const lowerMsg = msg.toLowerCase();
+            if (lowerMsg.includes('failed to fetch') || lowerMsg.includes('json')) {
+                msg = language === 'ka' 
+                    ? 'ვერ მოხერხდა სერვერთან დაკავშირება. დარწმუნდით, რომ "npm run dev:all" გაშვებულია.' 
+                    : 'Cannot connect to the server. Please ensure "npm run dev:all" is running.';
             }
             setError(msg);
         } finally {
@@ -280,7 +289,12 @@ export default function AuthModal({ language, onClose, onSuccess }: AuthModalPro
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-text-muted mb-1.5">{language === 'ka' ? 'ახალი პაროლი' : 'New Password'}</label>
-                                    <input required type="password" name="password" value={formData.password} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-border-light bg-background-light focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all font-medium text-text-main text-sm" placeholder="••••••••" autoFocus minLength={8} />
+                                    <div className="relative">
+                                        <input required type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-border-light bg-background-light focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all font-medium text-text-main text-sm" placeholder="••••••••" autoFocus minLength={8} />
+                                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-primary transition-colors flex items-center justify-center">
+                                            <span className="material-symbols-outlined text-[20px]">{showPassword ? 'visibility_off' : 'visibility'}</span>
+                                        </button>
+                                    </div>
                                     <div className="mt-3 space-y-2 animate-fade-in p-4 bg-surface-dark/5 rounded-2xl border border-border-light">
                                         <div className={`flex items-center gap-2 text-xs font-bold transition-all ${isPasswordValid.length ? 'text-green-600' : 'text-text-muted'}`}>
                                             <span className="material-symbols-outlined text-[16px]">{isPasswordValid.length ? 'check_circle' : 'radio_button_unchecked'}</span>
@@ -328,7 +342,12 @@ export default function AuthModal({ language, onClose, onSuccess }: AuthModalPro
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-text-muted mb-1.5">{t.password}</label>
-                                    <input required type="password" name="password" value={formData.password} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-border-light bg-background-light focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all font-medium text-text-main text-sm" placeholder="••••••••" minLength={isLogin ? undefined : 8} />
+                                    <div className="relative">
+                                        <input required type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleChange} className="w-full px-4 py-3 pr-11 rounded-xl border border-border-light bg-background-light focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all font-medium text-text-main text-sm" placeholder="••••••••" minLength={isLogin ? undefined : 8} />
+                                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-primary transition-colors flex items-center justify-center">
+                                            <span className="material-symbols-outlined text-[20px]">{showPassword ? 'visibility_off' : 'visibility'}</span>
+                                        </button>
+                                    </div>
                                     {!isLogin && (
                                         <div className="mt-3 space-y-2 animate-fade-in p-4 bg-surface-dark/5 rounded-2xl border border-border-light">
                                             <div className={`flex items-center gap-2 text-xs font-bold transition-all ${isPasswordValid.length ? 'text-green-600' : 'text-text-muted'}`}>

@@ -23,12 +23,12 @@ const supabase = createClient(
 const app = express();
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-const RESEND_ENABLED = !!process.env.RESEND_API_KEY; // Automatically disable if key is missing
+const RESEND_ENABLED = !!process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== 'your-resend-api-key';
 console.log('--- SERVER CODE IS ACTIVE ---');
-if (!process.env.RESEND_API_KEY) {
-  console.warn('[WARN] RESEND_API_KEY is not set in .env');
+if (!process.env.RESEND_API_KEY || process.env.RESEND_API_KEY === 'your-resend-api-key') {
+  console.warn('[WARN] RESEND_API_KEY is not set or using placeholder. Email sending is DISABLED.');
 } else {
-  console.log('[INFO] RESEND_API_KEY is detected (sending disabled via RESEND_ENABLED flag)');
+  console.log('[INFO] RESEND_API_KEY is detected. Email sending is ENABLED.');
 }
 
 const LOG_FILE = path.join(__dirname, 'error.log');
@@ -100,8 +100,18 @@ app.post('/api/auth/register/initiate', async (req, res) => {
   }
 
   try {
-    const { data: existing } = await supabase.from('profiles').select('id').eq('email', email).single();
-    if (existing) return res.status(400).json({ error: 'Email already registered' });
+    const { data: existingEmail } = await supabase.from('profiles').select('id').eq('email', email).single();
+    if (existingEmail) return res.status(400).json({ error: 'Email already registered' });
+
+    if (name) {
+      const { data: existingName } = await supabase.from('profiles').select('id').eq('name', name).single();
+      if (existingName) return res.status(400).json({ error: 'Name already taken' });
+    }
+
+    if (company_name) {
+      const { data: existingCompany } = await supabase.from('profiles').select('id').eq('company_name', company_name).single();
+      if (existingCompany) return res.status(400).json({ error: 'Company name already taken' });
+    }
 
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
     console.log(`[AUTH] Email OTP for ${email}: ${otp}`);

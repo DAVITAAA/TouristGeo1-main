@@ -1,6 +1,13 @@
 const API_BASE_URL = '/api';
 import { supabase } from './supabase';
 
+const handleFetchError = (error: any) => {
+    if (error.name === 'TypeError' && error.message.toLowerCase().includes('failed to fetch')) {
+        throw new Error('Cannot connect to the server. Is "npm run dev:all" running?');
+    }
+    throw error;
+};
+
 export interface Tour {
     id: number;
     title: string;
@@ -87,22 +94,26 @@ export const deleteAccount = async () => {
 
 
 export const initiateRegistration = async (data: any) => {
-    const response = await fetch(`${API_BASE_URL}/auth/register/initiate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-    });
-    
-    const text = await response.text();
-    let result;
     try {
-        result = JSON.parse(text);
-    } catch (e) {
-        throw new Error(`Server error: ${text.slice(0, 100)}`);
-    }
+        const response = await fetch(`${API_BASE_URL}/auth/register/initiate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+        
+        const text = await response.text();
+        let result;
+        try {
+            result = JSON.parse(text);
+        } catch (e) {
+            throw new Error(`Server error: ${text.slice(0, 100)}`);
+        }
 
-    if (!response.ok) throw new Error(result.error || 'Failed to initiate registration');
-    return result; // Should return { phone }
+        if (!response.ok) throw new Error(result.error || 'Failed to initiate registration');
+        return result; // Should return { phone }
+    } catch (error) {
+        return handleFetchError(error);
+    }
 };
 
 export const completeRegistration = async (email: string, code: string) => {
@@ -133,15 +144,18 @@ export const loginUser = async (data: any) => {
         const text = await response.text();
         
         if (!response.ok) {
+            let errorMsg = `Login failed (${response.status})`;
             try {
                 const errorData = JSON.parse(text);
-                throw new Error(errorData.error || `Login failed (${response.status})`);
+                errorMsg = errorData.error || errorData.message || errorMsg;
             } catch (e) {
                 if (text.includes('<!DOCTYPE html>')) {
-                    throw new Error("Proxy error: The server is returning HTML. Please ensure you restarted 'npm run dev:all'.");
+                    errorMsg = "Proxy error: Server returned HTML. Please restart 'npm run dev:all'.";
+                } else if (text) {
+                    errorMsg = text;
                 }
-                throw new Error(text || "Backend returned an empty or invalid response. Please hard refresh (Ctrl+F5).");
             }
+            throw new Error(errorMsg);
         }
 
         return JSON.parse(text);
@@ -164,15 +178,18 @@ export const googleLogin = async (credential: string, role?: string) => {
         const text = await response.text();
         
         if (!response.ok) {
+            let errorMsg = `Google login failed (${response.status})`;
             try {
                 const errorData = JSON.parse(text);
-                throw new Error(errorData.error || errorData.details || `Server error (${response.status})`);
+                errorMsg = errorData.error || errorData.details || errorData.message || errorMsg;
             } catch (e) {
                 if (text.includes('<!DOCTYPE html>')) {
-                    throw new Error(`Server crashed or returned HTML. Please check if 'npm run server' is running.`);
+                    errorMsg = "Server crashed or returned HTML. Please check if 'npm run server' is running.";
+                } else if (text) {
+                    errorMsg = text;
                 }
-                throw new Error(text || `Request failed with status ${response.status}`);
             }
+            throw new Error(errorMsg);
         }
 
         try {

@@ -15,7 +15,7 @@ interface ProfileProps {
 }
 
 export default function Profile({ onNavigate, language, user, onUpdateUser, onLogout }: ProfileProps) {
-  const [activeTab, setActiveTab] = useState<'settings' | 'favorites' | 'my-tours' | 'security' | 'reservations' | 'expired-tours'>(
+  const [activeTab, setActiveTab] = useState<'settings' | 'favorites' | 'my-tours' | 'reservations' | 'expired-tours'>(
     user.role === 'operator' ? 'my-tours' : 'favorites'
   );
   const { wishlist: favorites } = useWishlist(!!user);
@@ -261,109 +261,113 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20 pt-10">
-      <div className="container mx-auto px-4 max-w-5xl">
-        {/* Profile Header */}
-        <div className="bg-white rounded-3xl p-8 shadow-xl mb-8 flex flex-col md:flex-row items-center gap-8 border border-border-light">
-          <div className="relative">
-            <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden bg-primary/10 flex items-center justify-center border-4 border-primary/20">
-              {user.avatar_url ? (
-                <img src={user.avatar_url} className="w-full h-full object-cover" alt="" />
-              ) : (
-                <span className="material-symbols-outlined text-4xl md:text-6xl text-primary font-black">person</span>
-              )}
-            </div>
-            <label className="absolute bottom-1 right-1 w-8 h-8 md:w-10 md:h-10 rounded-full bg-white shadow-lg border border-border-light flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-all cursor-pointer">
-              <span className="material-symbols-outlined text-[18px] md:text-[20px]">photo_camera</span>
-              <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
-            </label>
-          </div>
-          <div className="text-center md:text-left">
-            <h1 className="text-3xl font-black text-text-main mb-1">{user.name}</h1>
-            <p className="text-text-muted font-bold flex items-center justify-center md:justify-start gap-2">
-              <span className="material-symbols-outlined text-[18px]">mail</span>
-              {user.email}
-            </p>
-            <div className="flex flex-wrap gap-2 mt-4 justify-center md:justify-start">
-              <span className="bg-primary/10 text-primary px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest">
-                {user.role === 'operator' 
-                  ? (isKa ? 'ტურ-ოპერატორი' : 'Tour Operator') 
-                  : (isKa ? 'ტურისტი' : 'Traveler')}
-              </span>
-              {user.company_name && (
-                <span className="bg-gray-100 text-gray-600 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest">
-                  {user.company_name}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex bg-white rounded-2xl p-1.5 shadow-md mb-8 border border-border-light overflow-x-auto no-scrollbar">
-          <button
-            onClick={() => setActiveTab('favorites')}
-            className={`flex-1 min-w-fit py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${activeTab === 'favorites' ? 'bg-primary text-white shadow-lg' : 'text-text-muted hover:text-text-main'}`}
-          >
-            <span className="material-symbols-outlined text-[18px]">favorite</span>
-            {isKa ? 'რჩეულები' : 'Favorites'}
-          </button>
-          <button
-            onClick={() => setActiveTab('settings')}
-            className={`flex-1 min-w-fit py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${activeTab === 'settings' ? 'bg-primary text-white shadow-lg' : 'text-text-muted hover:text-text-main'}`}
-          >
-            <span className="material-symbols-outlined text-[18px]">settings</span>
-            {isKa ? 'პარამეტრები' : 'Settings'}
-          </button>
-          <button
-            onClick={() => { setActiveTab('security'); setSecurityStep('start'); setPasswordError(null); setPasswordSuccess(null); setNewPassword(''); setVerificationCode(''); setTypedEmail(''); }}
-            className={`flex-1 min-w-fit py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${activeTab === 'security' ? 'bg-primary text-white shadow-lg' : 'text-text-muted hover:text-text-main'}`}
-          >
-            <span className="material-symbols-outlined text-[18px]">lock</span>
-            {isKa ? 'უსაფრთხოება' : 'Security'}
-          </button>
+      <div className="container mx-auto px-4 max-w-6xl">
+        <div className="flex flex-col lg:flex-row gap-8 items-start">
           
-          {user.role === 'operator' && (
-            <button
-              onClick={() => setActiveTab('reservations')}
-              className={`flex-1 min-w-fit py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-2 relative ${activeTab === 'reservations' ? 'bg-primary text-white shadow-lg' : 'text-text-muted hover:text-text-main'}`}
-            >
-              <span className="material-symbols-outlined text-[18px]">event_note</span>
-              {isKa ? 'რეზერვაციები' : 'Reservations'}
-              {reservations.filter(r => r.status === 'new').length > 0 && activeTab !== 'reservations' && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center shadow-md">
-                  {reservations.filter(r => r.status === 'new').length}
-                </span>
-              )}
-            </button>
-          )}
-          
-          {user.role === 'operator' && (
-            <button
-              onClick={() => setActiveTab('my-tours')}
-              className={`flex-1 min-w-fit py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${activeTab === 'my-tours' ? 'bg-primary text-white shadow-lg' : 'text-text-muted hover:text-text-main'}`}
-            >
-              <span className="material-symbols-outlined text-[18px]">tour</span>
-              {isKa ? 'ჩემი ტურები' : 'My Tours'}
-            </button>
-          )}
+          {/* Sidebar Navigation */}
+          <aside className="w-full lg:w-80 shrink-0 lg:sticky lg:top-24 z-20">
+            {/* Profile Brief Card */}
+            <div className="bg-white rounded-3xl p-6 shadow-xl mb-6 border border-border-light relative overflow-hidden group">
+              <div className="absolute top-0 left-0 w-2 h-full bg-primary"></div>
+              <div className="flex items-center gap-4">
+                <div className="relative shrink-0">
+                  <div className="w-16 h-16 rounded-2xl overflow-hidden bg-primary/10 flex items-center justify-center border-2 border-primary/20">
+                    {user.avatar_url ? (
+                      <img src={user.avatar_url} className="w-full h-full object-cover" alt="" />
+                    ) : (
+                      <span className="material-symbols-outlined text-3xl text-primary font-black">person</span>
+                    )}
+                  </div>
+                  <label className="absolute -bottom-1 -right-1 w-6 h-6 rounded-lg bg-white shadow-md border border-border-light flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-all cursor-pointer">
+                    <span className="material-symbols-outlined text-[14px]">photo_camera</span>
+                    <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+                  </label>
+                </div>
+                <div className="min-w-0">
+                  <h2 className="text-xl font-black text-text-main truncate mb-0.5">{user.name}</h2>
+                  <p className="text-[11px] font-bold text-text-muted truncate mb-2">{user.email}</p>
+                  <span className="inline-block bg-primary/10 text-primary px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest">
+                    {user.role === 'operator' 
+                      ? (isKa ? 'ოპერატორი' : 'Operator') 
+                      : (isKa ? 'ტურისტი' : 'Traveler')}
+                  </span>
+                </div>
+              </div>
+            </div>
 
-          {user.role === 'operator' && (
-            <button
-              onClick={() => setActiveTab('expired-tours')}
-              className={`flex-1 min-w-fit py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-2 relative ${activeTab === 'expired-tours' ? 'bg-primary text-white shadow-lg' : 'text-text-muted hover:text-text-main'}`}
-            >
-              <span className="material-symbols-outlined text-[18px]">history</span>
-              {isKa ? 'ვადაგასული' : 'Expired'}
-              {expiredTours.length > 0 && activeTab !== 'expired-tours' && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-amber-500 text-white text-[9px] font-black rounded-full flex items-center justify-center shadow-md">
-                  {expiredTours.length}
-                </span>
-              )}
-            </button>
-          )}
-        </div>
+            {/* Navigation Menu */}
+            <nav className="bg-white rounded-3xl p-2 shadow-xl border border-border-light flex lg:flex-col overflow-x-auto no-scrollbar gap-1">
+              <button
+                onClick={() => setActiveTab('favorites')}
+                className={`flex-1 lg:flex-none py-4 px-5 rounded-2xl font-black text-[11px] uppercase tracking-wider transition-all flex items-center gap-3 whitespace-nowrap ${activeTab === 'favorites' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-text-muted hover:bg-gray-50 hover:text-text-main'}`}
+              >
+                <span className="material-symbols-outlined text-[20px]">favorite</span>
+                {isKa ? 'რჩეულები' : 'Favorites'}
+              </button>
+              
+              <button
+                onClick={() => setActiveTab('settings')}
+                className={`flex-1 lg:flex-none py-4 px-5 rounded-2xl font-black text-[11px] uppercase tracking-wider transition-all flex items-center gap-3 whitespace-nowrap ${activeTab === 'settings' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-text-muted hover:bg-gray-50 hover:text-text-main'}`}
+              >
+                <span className="material-symbols-outlined text-[20px]">manage_accounts</span>
+                {isKa ? 'პარამეტრები' : 'Account & Security'}
+              </button>
+              
+              {user.role === 'operator' && (
+                <>
+                  <div className="hidden lg:block h-px bg-gray-100 my-2 mx-4"></div>
+                  
+                  <button
+                    onClick={() => setActiveTab('reservations')}
+                    className={`flex-1 lg:flex-none py-4 px-5 rounded-2xl font-black text-[11px] uppercase tracking-wider transition-all flex items-center gap-3 relative whitespace-nowrap ${activeTab === 'reservations' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-text-muted hover:bg-gray-50 hover:text-text-main'}`}
+                  >
+                    <span className="material-symbols-outlined text-[20px]">event_note</span>
+                    {isKa ? 'რეზერვაციები' : 'Reservations'}
+                    {reservations.filter(r => r.status === 'new').length > 0 && (
+                      <span className="absolute top-3 right-3 w-5 h-5 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center shadow-md border-2 border-white">
+                        {reservations.filter(r => r.status === 'new').length}
+                      </span>
+                    )}
+                  </button>
+                  
+                  <button
+                    onClick={() => setActiveTab('my-tours')}
+                    className={`flex-1 lg:flex-none py-4 px-5 rounded-2xl font-black text-[11px] uppercase tracking-wider transition-all flex items-center gap-3 whitespace-nowrap ${activeTab === 'my-tours' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-text-muted hover:bg-gray-50 hover:text-text-main'}`}
+                  >
+                    <span className="material-symbols-outlined text-[20px]">tour</span>
+                    {isKa ? 'ჩემი ტურები' : 'My Tours'}
+                  </button>
 
-        <AnimatePresence mode="wait">
+                  <button
+                    onClick={() => setActiveTab('expired-tours')}
+                    className={`flex-1 lg:flex-none py-4 px-5 rounded-2xl font-black text-[11px] uppercase tracking-wider transition-all flex items-center gap-3 relative whitespace-nowrap ${activeTab === 'expired-tours' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-text-muted hover:bg-gray-50 hover:text-text-main'}`}
+                  >
+                    <span className="material-symbols-outlined text-[20px]">history</span>
+                    {isKa ? 'ვადაგასული' : 'Expired'}
+                    {expiredTours.length > 0 && (
+                      <span className="absolute top-3 right-3 w-5 h-5 bg-amber-500 text-white text-[9px] font-black rounded-full flex items-center justify-center shadow-md border-2 border-white">
+                        {expiredTours.length}
+                      </span>
+                    )}
+                  </button>
+                </>
+              )}
+
+              <div className="hidden lg:block h-px bg-gray-100 my-2 mx-4"></div>
+              
+              <button
+                onClick={onLogout}
+                className="flex-1 lg:flex-none py-4 px-5 rounded-2xl font-black text-[11px] uppercase tracking-wider transition-all flex items-center gap-3 text-red-500 hover:bg-red-50 whitespace-nowrap mt-auto"
+              >
+                <span className="material-symbols-outlined text-[20px]">logout</span>
+                {isKa ? 'გასვლა' : 'Logout'}
+              </button>
+            </nav>
+          </aside>
+
+          {/* Main Content Area */}
+          <div className="flex-1 w-full min-w-0">
+            <AnimatePresence mode="wait">
           {activeTab === 'my-tours' && user.role === 'operator' ? (
             <motion.div
               key="my-tours"
@@ -631,10 +635,219 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
                   </button>
                 </div>
               </form>
-              
-              <div className="mt-8 p-6 rounded-3xl bg-red-50 border border-red-100">
-                <h3 className="text-red-800 font-black mb-2 flex items-center gap-2">
-                  <span className="material-symbols-outlined">dangerous</span>
+
+              {/* Security Section (Unified) */}
+              <div className="mt-12 pt-12 border-t-2 border-dashed border-gray-100">
+                <h2 className="text-2xl font-black text-text-main mb-8 flex items-center gap-3">
+                  <span className="w-8 h-1 bg-primary rounded-full"></span>
+                  {isKa ? 'პაროლის შეცვლა' : 'Security & Password'}
+                </h2>
+
+                <div className="bg-white rounded-3xl p-8 shadow-xl border border-border-light space-y-8">
+                  {/* Progress Steps */}
+                  <div className="flex items-center justify-center gap-3">
+                    <div className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+                      securityStep === 'verify' ? 'bg-primary text-white shadow-lg' : securityStep === 'password' || securityStep === 'done' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'
+                    }`}>
+                      <span className="material-symbols-outlined text-[16px]">{securityStep !== 'verify' ? 'check_circle' : 'phone_android'}</span>
+                      {isKa ? 'ვერიფიკაცია' : 'Verify'}
+                    </div>
+                    <div className="w-8 h-0.5 bg-gray-200"></div>
+                    <div className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+                      securityStep === 'password' ? 'bg-primary text-white shadow-lg' : securityStep === 'done' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'
+                    }`}>
+                      <span className="material-symbols-outlined text-[16px]">{securityStep === 'done' ? 'check_circle' : 'lock'}</span>
+                      {isKa ? 'ახალი პაროლი' : 'New Password'}
+                    </div>
+                  </div>
+
+                  {/* Step 0: Start */}
+                  {securityStep === 'start' && (
+                    <div className="text-center space-y-6 animate-fade-in py-10">
+                      <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <span className="material-symbols-outlined text-5xl text-primary font-black">lock_reset</span>
+                      </div>
+                      <h3 className="text-xl font-black text-text-main mb-2">
+                        {isKa ? 'გსურთ პაროლის შეცვლა?' : 'Change Your Password?'}
+                      </h3>
+                      <p className="text-text-muted font-medium max-w-sm mx-auto mb-6">
+                        {isKa ? 'უსაფრთხოებისთვის, გთხოვთ შეიყვანოთ თქვენი ანგარიშის ელ-ფოსტა:' : 'For your security, please type your account email address:'}
+                      </p>
+                      <div className="max-w-xs mx-auto space-y-4">
+                        <input
+                          type="email"
+                          value={typedEmail}
+                          onChange={(e) => setTypedEmail(e.target.value)}
+                          className="w-full text-center p-4 rounded-2xl bg-gray-50 border-2 border-primary/20 focus:border-primary outline-none transition-all font-bold"
+                          placeholder="your@email.com"
+                        />
+                        {passwordError && (
+                          <div className="p-3 bg-red-50 text-red-600 rounded-xl text-xs font-medium animate-fade-in border border-red-100 flex items-center gap-2">
+                            <span className="material-symbols-outlined text-sm">error</span>
+                            {passwordError}
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={handleSendVerification}
+                          disabled={isSavingPassword || typedEmail.toLowerCase() !== user.email.toLowerCase()}
+                          className="w-full py-4 bg-primary text-white rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 flex justify-center items-center gap-2"
+                        >
+                          {isSavingPassword ? (
+                            <span className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></span>
+                          ) : (
+                            <>
+                              <span className="material-symbols-outlined">send</span>
+                              {isKa ? 'კოდის გაგზავნა' : 'Send Verification Code'}
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Step 1: Verify Email */}
+                  {securityStep === 'verify' && (
+                    <div className="space-y-6 animate-fade-in">
+                      <div className="text-center">
+                        <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <span className="material-symbols-outlined text-3xl text-primary">mail</span>
+                        </div>
+                        <h3 className="text-lg font-black text-text-main mb-1">
+                          {isKa ? 'ვერიფიკაციის კოდი' : 'Enter Verification Code'}
+                        </h3>
+                        <p className="text-sm text-text-muted font-medium">
+                          {isKa ? 'შეიყვანეთ 4-ნიშნა კოდი, რომელიც გაიგზავნა ელ-ფოსტაზე:' : 'Enter the 4-digit code sent to your email:'}
+                          {user.email && <span className="block text-primary font-black mt-1">{user.email}</span>}
+                        </p>
+                      </div>
+                      <input
+                        type="text"
+                        maxLength={4}
+                        value={verificationCode}
+                        onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
+                        className="w-full text-text-main text-center text-3xl font-black tracking-[1em] px-4 py-5 rounded-2xl border-2 border-primary/30 focus:border-primary focus:ring-4 focus:ring-primary/20 outline-none transition-all placeholder:text-gray-300 bg-gray-50"
+                        placeholder="0000"
+                        autoFocus
+                      />
+                      <div className="flex justify-center">
+                        <button 
+                          type="button" 
+                          onClick={handleSendVerification}
+                          disabled={isSavingPassword}
+                          className="text-primary text-xs font-black hover:underline flex items-center gap-1"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">refresh</span>
+                          {isKa ? 'კოდის ხელახლა გაგზავნა' : 'Resend Code'}
+                        </button>
+                      </div>
+                      {passwordError && (
+                        <div className="mt-4 p-3 bg-red-50 text-red-600 rounded-xl text-xs font-medium animate-fade-in border border-red-100 flex items-center gap-2">
+                          <span className="material-symbols-outlined text-sm">error</span>
+                          {passwordError}
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={handleVerifyCode}
+                        disabled={isSavingPassword || verificationCode.length !== 4}
+                        className="w-full mt-6 py-4 bg-primary text-white rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 flex justify-center items-center gap-2"
+                      >
+                        {isSavingPassword ? (
+                          <span className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></span>
+                        ) : (
+                          <>
+                            <span className="material-symbols-outlined">verified</span>
+                            {isKa ? 'დადასტურება' : 'Verify Identity'}
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Step 2: New Password */}
+                  {securityStep === 'password' && (
+                    <div className="space-y-6 animate-fade-in">
+                      <div className="grid grid-cols-1 gap-6">
+                        <div className="space-y-2">
+                          <label className="text-sm font-black text-text-main uppercase tracking-widest flex items-center gap-2">
+                            <span className="material-symbols-outlined text-primary text-[18px]">lock</span>
+                            {isKa ? 'ახალი პაროლი' : 'New Password'}
+                          </label>
+                          <input
+                            type="password"
+                            value={newPassword}
+                            onChange={(e) => { setNewPassword(e.target.value); setPasswordError(null); }}
+                            className="w-full text-text-main p-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-primary focus:bg-white outline-none transition-all font-bold"
+                            placeholder={isKa ? 'შეიყვანეთ ახალი პაროლი' : 'Enter new password'}
+                            autoFocus
+                          />
+                        </div>
+                      </div>
+                      {newPassword && (
+                        <div className="space-y-2 p-4 bg-surface-dark/5 rounded-2xl border border-border-light">
+                          <div className={`flex items-center gap-2 text-xs font-bold transition-all ${isPasswordValid.length ? 'text-green-600' : 'text-text-muted'}`}>
+                            <span className="material-symbols-outlined text-[16px]">{isPasswordValid.length ? 'check_circle' : 'radio_button_unchecked'}</span>
+                            {isKa ? 'მინიმუმ 8 სიმბოლო' : 'At least 8 characters'}
+                          </div>
+                          <div className={`flex items-center gap-2 text-xs font-bold transition-all ${isPasswordValid.uppercase ? 'text-green-600' : 'text-text-muted'}`}>
+                            <span className="material-symbols-outlined text-[16px]">{isPasswordValid.uppercase ? 'check_circle' : 'radio_button_unchecked'}</span>
+                            {isKa ? 'მინიმუმ 1 დიდი ასო (A-Z)' : '1 uppercase letter (A-Z)'}
+                          </div>
+                          <div className={`flex items-center gap-2 text-xs font-bold transition-all ${isPasswordValid.number ? 'text-green-600' : 'text-gray-400'}`}>
+                            <span className="material-symbols-outlined text-[16px]">{isPasswordValid.number ? 'check_circle' : 'radio_button_unchecked'}</span>
+                            {isKa ? 'მინიმუმ 1 ციფრი (0-9)' : '1 number (0-9)'}
+                          </div>
+                          <div className={`flex items-center gap-2 text-xs font-bold transition-all ${isPasswordValid.special ? 'text-green-600' : 'text-gray-400'}`}>
+                            <span className="material-symbols-outlined text-[16px]">{isPasswordValid.special ? 'check_circle' : 'radio_button_unchecked'}</span>
+                            {isKa ? 'მინიმუმ 1 სპეციალური სიმბოლო' : '1 special symbol'}
+                          </div>
+                        </div>
+                      )}
+                      {passwordError && (
+                        <div className="p-3 bg-red-50 text-red-600 rounded-xl text-sm font-medium animate-fade-in border border-red-100 flex items-center gap-2">
+                          <span className="material-symbols-outlined text-sm">error</span>
+                          {passwordError}
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={handleSaveNewPassword}
+                        disabled={isSavingPassword || !allPasswordValid}
+                        className="w-full py-4 bg-primary text-white rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 flex justify-center items-center gap-2"
+                      >
+                        {isSavingPassword ? (
+                          <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                        ) : (
+                          <>
+                            <span className="material-symbols-outlined">save</span>
+                            {isKa ? 'პაროლის შენახვა' : 'Save New Password'}
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Step 3: Success */}
+                  {securityStep === 'done' && (
+                    <div className="text-center space-y-4 animate-fade-in py-8">
+                      <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                        <span className="material-symbols-outlined text-5xl text-green-600">check_circle</span>
+                      </div>
+                      <h3 className="text-xl font-black text-text-main">
+                        {isKa ? 'პაროლი წარმატებით შეიცვალა!' : 'Password Changed Successfully!'}
+                      </h3>
+                      <p className="text-sm text-text-muted font-medium">
+                        {passwordSuccess}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-12 p-8 rounded-3xl bg-red-50 border border-red-100">
+                <h3 className="text-red-800 font-black mb-2 flex items-center gap-3 text-lg">
+                  <span className="material-symbols-outlined text-2xl">dangerous</span>
                   {isKa ? 'საშიში ზონა' : 'Danger Zone'}
                 </h3>
                 <p className="text-sm text-red-600 mb-4 font-medium">
@@ -696,243 +909,6 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
                     <span className="material-symbols-outlined text-[18px]">delete</span>
                     {isKa ? 'ანგარიშის წაშლა' : 'Delete Account'}
                   </button>
-                )}
-              </div>
-            </motion.div>
-          ) : activeTab === 'security' ? (
-            <motion.div
-              key="security"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="max-w-2xl mx-auto md:mx-0"
-            >
-              <h2 className="text-2xl font-black text-text-main mb-8 flex items-center gap-3">
-                <span className="w-8 h-1 bg-primary rounded-full"></span>
-                {isKa ? 'პაროლის შეცვლა' : 'Change Password'}
-              </h2>
-
-              <div className="bg-white rounded-3xl p-8 shadow-xl border border-border-light space-y-8">
-                {/* Progress Steps */}
-                <div className="flex items-center justify-center gap-3">
-                  <div className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
-                    securityStep === 'verify' ? 'bg-primary text-white shadow-lg' : securityStep === 'password' || securityStep === 'done' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'
-                  }`}>
-                    <span className="material-symbols-outlined text-[16px]">{securityStep !== 'verify' ? 'check_circle' : 'phone_android'}</span>
-                    {isKa ? 'ვერიფიკაცია' : 'Verify'}
-                  </div>
-                  <div className="w-8 h-0.5 bg-gray-200"></div>
-                  <div className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
-                    securityStep === 'password' ? 'bg-primary text-white shadow-lg' : securityStep === 'done' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'
-                  }`}>
-                    <span className="material-symbols-outlined text-[16px]">{securityStep === 'done' ? 'check_circle' : 'lock'}</span>
-                    {isKa ? 'ახალი პაროლი' : 'New Password'}
-                  </div>
-                </div>
-
-                {/* Step 0: Start */}
-                {securityStep === 'start' && (
-                  <div className="text-center space-y-6 animate-fade-in py-10">
-                    <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                      <span className="material-symbols-outlined text-5xl text-primary font-black">lock_reset</span>
-                    </div>
-                    <h3 className="text-xl font-black text-text-main mb-2">
-                      {isKa ? 'გსურთ პაროლის შეცვლა?' : 'Change Your Password?'}
-                    </h3>
-                    <p className="text-text-muted font-medium max-w-sm mx-auto mb-6">
-                      {isKa ? 'უსაფრთხოებისთვის, გთხოვთ შეიყვანოთ თქვენი ანგარიშის ელ-ფოსტა:' : 'For your security, please type your account email address:'}
-                    </p>
-                    <div className="max-w-xs mx-auto space-y-4">
-                      <input
-                        type="email"
-                        value={typedEmail}
-                        onChange={(e) => setTypedEmail(e.target.value)}
-                        className="w-full text-center p-4 rounded-2xl bg-gray-50 border-2 border-primary/20 focus:border-primary outline-none transition-all font-bold"
-                        placeholder="your@email.com"
-                      />
-                      {passwordError && (
-                        <div className="p-3 bg-red-50 text-red-600 rounded-xl text-xs font-medium animate-fade-in border border-red-100 flex items-center gap-2">
-                          <span className="material-symbols-outlined text-sm">error</span>
-                          {passwordError}
-                        </div>
-                      )}
-                      <button
-                        type="button"
-                        onClick={handleSendVerification}
-                        disabled={isSavingPassword || typedEmail.toLowerCase() !== user.email.toLowerCase()}
-                        className="w-full py-4 bg-primary text-white rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 flex justify-center items-center gap-2"
-                      >
-                        {isSavingPassword ? (
-                          <span className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></span>
-                        ) : (
-                          <>
-                            <span className="material-symbols-outlined">send</span>
-                            {isKa ? 'კოდის გაგზავნა' : 'Send Verification Code'}
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Step 1: Verify Email */}
-                {securityStep === 'verify' && (
-                  <div className="space-y-6 animate-fade-in">
-                    <div className="text-center">
-                      <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <span className="material-symbols-outlined text-3xl text-primary">mail</span>
-                      </div>
-                      <h3 className="text-lg font-black text-text-main mb-1">
-                        {isKa ? 'ვერიფიკაციის კოდი' : 'Enter Verification Code'}
-                      </h3>
-                      <p className="text-sm text-text-muted font-medium">
-                        {isKa ? 'შეიყვანეთ 4-ნიშნა კოდი, რომელიც გაიგზავნა ელ-ფოსტაზე:' : 'Enter the 4-digit code sent to your email:'}
-                        {user.email && <span className="block text-primary font-black mt-1">{user.email}</span>}
-                      </p>
-                    </div>
-                    <input
-                      type="text"
-                      maxLength={4}
-                      value={verificationCode}
-                      onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
-                      className="w-full text-text-main text-center text-3xl font-black tracking-[1em] px-4 py-5 rounded-2xl border-2 border-primary/30 focus:border-primary focus:ring-4 focus:ring-primary/20 outline-none transition-all placeholder:text-gray-300 bg-gray-50"
-                      placeholder="0000"
-                      autoFocus
-                    />
-                    <div className="flex justify-center">
-                      <button 
-                        type="button" 
-                        onClick={handleSendVerification}
-                        disabled={isSavingPassword}
-                        className="text-primary text-xs font-black hover:underline flex items-center gap-1"
-                      >
-                        <span className="material-symbols-outlined text-[14px]">refresh</span>
-                        {isKa ? 'კოდის ხელახლა გაგზავნა' : 'Resend Code'}
-                      </button>
-                    </div>
-                    {passwordError && (
-                      <div className="p-3 bg-red-50 text-red-600 rounded-xl text-sm font-medium animate-fade-in border border-red-100 flex items-center gap-2">
-                        <span className="material-symbols-outlined text-sm">error</span>
-                        {passwordError}
-                      </div>
-                    )}
-                    <button
-                      type="button"
-                      onClick={handleVerifyCode}
-                      disabled={isSavingPassword || verificationCode.length !== 4}
-                      className="w-full py-4 bg-primary text-white rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 flex justify-center items-center gap-2"
-                    >
-                      {isSavingPassword ? (
-                        <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                      ) : (
-                        <>
-                          <span className="material-symbols-outlined">verified</span>
-                          {isKa ? 'დადასტურება' : 'Verify Identity'}
-                        </>
-                      )}
-                    </button>
-                    <button 
-                      type="button" 
-                      onClick={() => setSecurityStep('start')}
-                      className="w-full text-sm font-bold text-text-muted hover:text-text-main transition-colors"
-                    >
-                      {isKa ? 'უკან' : 'Go Back'}
-                    </button>
-                  </div>
-                )}
-
-                {/* Step 2: Enter New Password */}
-                {securityStep === 'password' && (
-                  <div className="space-y-6 animate-fade-in">
-                    <div className="text-center">
-                      <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <span className="material-symbols-outlined text-3xl text-green-600">check_circle</span>
-                      </div>
-                      <h3 className="text-lg font-black text-text-main mb-1">
-                        {isKa ? 'ვერიფიკაცია წარმატებულია!' : 'Identity Verified!'}
-                      </h3>
-                      <p className="text-sm text-text-muted font-medium">
-                        {isKa ? 'ახლა შეიყვანეთ თქვენი ახალი პაროლი' : 'Now enter your new password'}
-                      </p>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-black text-text-main uppercase tracking-widest flex items-center gap-2">
-                        <span className="material-symbols-outlined text-primary text-[18px]">lock</span>
-                        {isKa ? 'ახალი პაროლი' : 'New Password'}
-                      </label>
-                      <input
-                        type="password"
-                        value={newPassword}
-                        onChange={(e) => { setNewPassword(e.target.value); setPasswordError(null); }}
-                        className="w-full text-text-main p-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-primary focus:bg-white outline-none transition-all font-bold"
-                        placeholder={isKa ? 'შეიყვანეთ ახალი პაროლი' : 'Enter new password'}
-                        autoFocus
-                      />
-                    </div>
-                    {newPassword && (
-                      <div className="space-y-2 p-4 bg-surface-dark/5 rounded-2xl border border-border-light">
-                        <div className={`flex items-center gap-2 text-xs font-bold transition-all ${isPasswordValid.length ? 'text-green-600' : 'text-text-muted'}`}>
-                          <span className="material-symbols-outlined text-[16px]">{isPasswordValid.length ? 'check_circle' : 'radio_button_unchecked'}</span>
-                          {isKa ? 'მინიმუმ 8 სიმბოლო' : 'At least 8 characters'}
-                        </div>
-                        <div className={`flex items-center gap-2 text-xs font-bold transition-all ${isPasswordValid.uppercase ? 'text-green-600' : 'text-text-muted'}`}>
-                          <span className="material-symbols-outlined text-[16px]">{isPasswordValid.uppercase ? 'check_circle' : 'radio_button_unchecked'}</span>
-                          {isKa ? 'მინიმუმ 1 დიდი ასო (A-Z)' : '1 uppercase letter (A-Z)'}
-                        </div>
-                        <div className={`flex items-center gap-2 text-xs font-bold transition-all ${isPasswordValid.number ? 'text-green-600' : 'text-text-muted'}`}>
-                          <span className="material-symbols-outlined text-[16px]">{isPasswordValid.number ? 'check_circle' : 'radio_button_unchecked'}</span>
-                          {isKa ? 'მინიმუმ 1 ციფრი (0-9)' : '1 number (0-9)'}
-                        </div>
-                        <div className={`flex items-center gap-2 text-xs font-bold transition-all ${isPasswordValid.special ? 'text-green-600' : 'text-text-muted'}`}>
-                          <span className="material-symbols-outlined text-[16px]">{isPasswordValid.special ? 'check_circle' : 'radio_button_unchecked'}</span>
-                          {isKa ? 'მინიმუმ 1 სპეციალური სიმბოლო' : '1 special symbol'}
-                        </div>
-                      </div>
-                    )}
-                    {passwordError && (
-                      <div className="p-3 bg-red-50 text-red-600 rounded-xl text-sm font-medium animate-fade-in border border-red-100 flex items-center gap-2">
-                        <span className="material-symbols-outlined text-sm">error</span>
-                        {passwordError}
-                      </div>
-                    )}
-                    <button
-                      type="button"
-                      onClick={handleSaveNewPassword}
-                      disabled={isSavingPassword || !allPasswordValid}
-                      className="w-full py-4 bg-primary text-white rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 flex justify-center items-center gap-2"
-                    >
-                      {isSavingPassword ? (
-                        <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                      ) : (
-                        <>
-                          <span className="material-symbols-outlined">save</span>
-                          {isKa ? 'პაროლის შენახვა' : 'Save New Password'}
-                        </>
-                      )}
-                    </button>
-                  </div>
-                )}
-
-                {/* Step 3: Success */}
-                {securityStep === 'done' && (
-                  <div className="text-center space-y-4 animate-fade-in py-8">
-                    <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                      <span className="material-symbols-outlined text-5xl text-green-600">check_circle</span>
-                    </div>
-                    <h3 className="text-xl font-black text-text-main">
-                      {isKa ? 'პაროლი წარმატებით შეიცვალა!' : 'Password Changed Successfully!'}
-                    </h3>
-                    <p className="text-sm text-text-muted font-medium">
-                      {isKa ? 'თქვენი პაროლი განახლებულია. შემდეგ შესვლისას გამოიყენეთ ახალი პაროლი.' : 'Your password has been updated. Use your new password next time you log in.'}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('settings')}
-                      className="mt-4 px-8 py-3 bg-primary/10 text-primary rounded-xl font-black hover:bg-primary/20 transition-all"
-                    >
-                      {isKa ? 'პარამეტრები' : 'Back to Settings'}
-                    </button>
-                  </div>
                 )}
               </div>
             </motion.div>
@@ -1175,6 +1151,8 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
             </motion.div>
           ) : null}
         </AnimatePresence>
+          </div>
+        </div>
       </div>
       <AnimatePresence>
         {tourToDelete !== null && (
