@@ -8,6 +8,10 @@ import bcrypt from 'bcryptjs';
 import { Resend } from 'resend';
 import { OAuth2Client } from 'google-auth-library';
 import multer from 'multer';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 dotenv.config();
 
@@ -333,22 +337,28 @@ app.post('/api/auth/oauth-g', async (req, res) => {
 
     if (profileError) {
       console.error('--- GOOGLE PROFILE ERROR ---', profileError);
-      fs.appendFileSync('error.log', `[${new Date().toISOString()}] Google Profile Error: ${JSON.stringify(profileError)}\n`);
-      await supabase.auth.admin.deleteUser(authData.user.id);
-      return res.status(500).json({ error: 'Failed to create profile', details: profileError.message });
+      logError(`Google Profile Error: ${JSON.stringify(profileError)}`);
+      try {
+        await supabase.auth.admin.deleteUser(authUserId);
+      } catch (e) {}
+      return res.status(500).json({ error: 'Failed to create profile', details: profileError.message, code: profileError.code });
     }
     logError('[DEBUG] Google Auth: Success!');
     const userData = { id: profileData.id, name: profileData.name, email: profileData.email, role: profileData.role, avatar_url: profileData.avatar_url };
     return res.json({ user: userData, token: createToken(userData) });
   } catch (error: any) {
     const errorMsg = error.message || (typeof error === 'string' ? error : 'Google Authentication failed');
-    logError(`Google Auth Fatal: ${errorMsg}\nStack: ${error.stack}`);
+    const errorCode = error.code || 'AUTH_FAILURE';
+    const errorDetails = error.details || (error.response ? JSON.stringify(error.response.data) : 'No extra details');
+    
+    logError(`Google Auth Fatal: ${errorMsg}\nCode: ${errorCode}\nDetails: ${errorDetails}\nStack: ${error.stack}`);
 
     if (!res.headersSent) {
       res.status(500).json({ 
         error: 'Google login failed', 
         details: errorMsg,
-        code: error.code || 'AUTH_FAILURE'
+        extra: errorDetails,
+        code: errorCode
       });
     }
   }
@@ -1240,18 +1250,16 @@ app.post('/api/reviews', async (req, res) => {
 
     res.json(review);
   } catch (error: any) {
-<<<<<<< HEAD
     logError(`Review Error: ${error.message}`);
-=======
-    console.error('Review Error:', error);
->>>>>>> bc9b3f3f3c3cbfbbf2e3d7c0b1b3e614b96c5519
     res.status(500).json({ error: 'Failed to post review', details: error.message });
   }
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`--- Server listening on port ${PORT} ---`);
-});
+if (process.env.NODE_ENV !== 'production' || !process.env.NETLIFY && !process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`--- Server listening on port ${PORT} ---`);
+  });
+}
 
 export default app;
