@@ -17,9 +17,9 @@ const supabase = createClient(
 );
 
 const app = express();
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-const RESEND_ENABLED = false; // Set to true when you have a valid Resend API key
+const RESEND_ENABLED = !!process.env.RESEND_API_KEY; // Automatically disable if key is missing
 console.log('--- SERVER CODE IS ACTIVE ---');
 if (!process.env.RESEND_API_KEY) {
   console.warn('[WARN] RESEND_API_KEY is not set in .env');
@@ -153,12 +153,12 @@ app.post('/api/auth/register/initiate', async (req, res) => {
     // Send OTP email via Resend (disabled — check console for OTP)
     if (RESEND_ENABLED) {
       try {
-        const { data, error: emailErr } = await resend.emails.send({
+        const { data, error: emailErr } = resend ? await resend.emails.send({
           from: 'TouristGeo <onboarding@resend.dev>',
           to: email,
           subject: 'TouristGeo - Verification Code',
           html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#fff;border-radius:16px;"><h1 style="color:#22c55e;text-align:center;">TouristGeo</h1><div style="text-align:center;padding:24px;background:#f0fdf4;border-radius:12px;"><p style="color:#6b7280;">Your verification code is:</p><div style="font-size:36px;font-weight:900;letter-spacing:8px;color:#16a34a;padding:12px;">${otp}</div></div><p style="color:#9ca3af;font-size:12px;text-align:center;">This code expires in 10 minutes.</p></div>`,
-        });
+        }) : { data: null, error: new Error('Resend client not initialized') };
         if (emailErr) {
           console.error('Resend API Error (registration):', emailErr);
           return res.status(500).json({ error: `Email service error: ${emailErr.message || 'Unknown error'}. Note: If you are using the onboarding email, you can only send to your own Resend account email.` });
@@ -291,17 +291,39 @@ app.post('/api/auth/oauth-g', async (req, res) => {
       return res.json({ user: userData, token: createToken(userData) });
     }
 
+    // Create Auth User
+    let authUserId = '';
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email,
       email_confirm: true,
       user_metadata: { name: name || email.split('@')[0] },
     });
-    if (authError) return res.status(500).json({ error: 'Failed to create account', details: authError.message });
+
+    if (authError) {
+      if (authError.message.includes('already registered') || authError.message.includes('already exists')) {
+         // User exists in Auth but not in Profiles - get their ID
+         const { data: listData, error: listError } = await supabase.auth.admin.listUsers();
+         if (listError || !listData) {
+            console.error('List users error:', listError);
+            return res.status(500).json({ error: 'Failed to find existing account' });
+         }
+         const existingAuth = listData.users.find((u: any) => u.email === email);
+         if (existingAuth) {
+           authUserId = existingAuth.id;
+         } else {
+           return res.status(500).json({ error: 'Account exists but profile creation failed' });
+         }
+      } else {
+        return res.status(500).json({ error: 'Failed to create account', details: authError.message });
+      }
+    } else {
+      authUserId = authData.user.id;
+    }
 
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .upsert([{ 
-        id: authData.user.id, 
+        id: authUserId, 
         name: name || email.split('@')[0], 
         email, 
         role: role || 'tourist', 
@@ -1218,7 +1240,11 @@ app.post('/api/reviews', async (req, res) => {
 
     res.json(review);
   } catch (error: any) {
+<<<<<<< HEAD
     logError(`Review Error: ${error.message}`);
+=======
+    console.error('Review Error:', error);
+>>>>>>> bc9b3f3f3c3cbfbbf2e3d7c0b1b3e614b96c5519
     res.status(500).json({ error: 'Failed to post review', details: error.message });
   }
 });
