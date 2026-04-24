@@ -67,6 +67,7 @@ export default function App() {
   const handleLogout = async () => {
     removeToken();
     setUser(null);
+    handleNavigate('home');
   };
 
   const handleNavigate = (page: string, data?: any) => {
@@ -139,6 +140,7 @@ export default function App() {
           onSuccess={(u) => {
             setUser(u);
             setShowAuthModal(false);
+            handleNavigate('home');
           }}
         />
       )}
