@@ -1153,6 +1153,70 @@ app.get('/api/categories', async (req, res) => {
   }
 });
 
+app.get('/api/tours/:id/reviews', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('reviews')
+      .select('*, profiles(name, avatar_url)')
+      .eq('tour_id', req.params.id)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch reviews' });
+  }
+});
+
+app.post('/api/reviews', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+  const payload = verifyToken(authHeader.split(' ')[1]);
+  if (!payload) return res.status(401).json({ error: 'Invalid token' });
+
+  const { tour_id, rating, comment } = req.body;
+  if (!tour_id || !rating) return res.status(400).json({ error: 'Tour ID and rating are required' });
+
+  try {
+    // 1. Insert the review
+    const { data: review, error } = await supabase
+      .from('reviews')
+      .insert([{
+        tour_id,
+        user_id: payload.id,
+        rating: Number(rating),
+        comment,
+        created_at: new Date().toISOString()
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // 2. Update the Tour's average rating
+    const { data: allReviews } = await supabase
+      .from('reviews')
+      .select('rating')
+      .eq('tour_id', tour_id);
+
+    if (allReviews && allReviews.length > 0) {
+      const avgRating = allReviews.reduce((acc: any, curr: any) => acc + curr.rating, 0) / allReviews.length;
+      await supabase
+        .from('tours')
+        .update({ 
+          rating: Number(avgRating.toFixed(1)), 
+          reviews: allReviews.length 
+        })
+        .eq('id', tour_id);
+    }
+
+    res.json(review);
+  } catch (error: any) {
+    console.error('Review Error:', error);
+    res.status(500).json({ error: 'Failed to post review', details: error.message });
+  }
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`--- Server listening on port ${PORT} ---`);
