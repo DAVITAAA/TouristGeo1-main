@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Language, translations } from '../translations';
-import { Tour, fetchTours, createBooking, User } from '../api';
+import { Tour, fetchTours, createBooking, User, Review, fetchReviews, createReview } from '../api';
 import { useCurrency } from '../hooks/useCurrency';
 import { useWishlist } from '../hooks/useWishlist';
 import ReservationModal from '../components/ReservationModal';
@@ -26,6 +26,38 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; duration?: number } | null>(null);
   const { toggleWishlist, isInWishlist } = useWishlist(!!user);
   const isSaved = isInWishlist(tour.id);
+
+  // Reviews state
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [newReview, setNewReview] = useState({ rating: 5, comment: '' });
+  const [reviewSuccess, setReviewSuccess] = useState(false);
+  const [hoveredStar, setHoveredStar] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetchReviews(tour.id).then(setReviews).catch(console.error);
+  }, [tour.id]);
+
+  const handleReviewSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    setIsSubmittingReview(true);
+    try {
+      const result = await createReview({
+        tour_id: tour.id,
+        rating: newReview.rating,
+        comment: newReview.comment
+      });
+      setReviews(prev => [{ ...result, profiles: { name: user.name, avatar_url: user.avatar_url } }, ...prev]);
+      setNewReview({ rating: 5, comment: '' });
+      setReviewSuccess(true);
+      setTimeout(() => setReviewSuccess(false), 3000);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
 
   const toggleSave = () => {
     const adding = !isSaved;
@@ -224,6 +256,98 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
                 </div>
               </section>
             )}
+
+            {/* Reviews Section */}
+            <section className="space-y-8 pt-8 border-t border-border-light">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-2xl font-black text-text-main">{t.reviews_title}</h2>
+                    <div className="flex items-center gap-2 px-3 py-1 bg-yellow-50 rounded-lg border border-yellow-100">
+                        <span className="material-symbols-outlined text-yellow-400 text-lg fill-1">star</span>
+                        <span className="font-black text-yellow-700">{tour.rating || '5.0'}</span>
+                    </div>
+                </div>
+
+                {/* Write Review */}
+                {user ? (
+                    <div className="bg-white p-6 rounded-2xl border border-border-light space-y-6 shadow-sm">
+                        <h3 className="font-black text-text-main flex items-center gap-2">
+                            <span className="material-symbols-outlined text-primary">chat_bubble</span>
+                            {t.reviews_write}
+                        </h3>
+                        <form onSubmit={handleReviewSubmit} className="space-y-5">
+                            <div className="flex gap-2">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                    <button
+                                        key={star}
+                                        type="button"
+                                        onClick={() => setNewReview(prev => ({ ...prev, rating: star }))}
+                                        onMouseEnter={() => setHoveredStar(star)}
+                                        onMouseLeave={() => setHoveredStar(null)}
+                                        className="transition-transform active:scale-90"
+                                    >
+                                        <span className={`material-symbols-outlined text-3xl transition-colors ${
+                                            star <= (hoveredStar ?? newReview.rating) ? 'text-yellow-400 fill-1' : 'text-gray-200'
+                                        }`}>star</span>
+                                    </button>
+                                ))}
+                            </div>
+                            <textarea
+                                required
+                                value={newReview.comment}
+                                onChange={(e) => setNewReview(prev => ({ ...prev, comment: e.target.value }))}
+                                className="w-full px-4 py-3 rounded-xl bg-background-light border border-border-light focus:border-primary outline-none min-h-[100px] font-medium text-text-main"
+                                placeholder="..."
+                            />
+                            <button
+                                type="submit"
+                                disabled={isSubmittingReview || !newReview.comment}
+                                className="w-full py-3.5 bg-primary text-white rounded-xl font-black shadow-lg shadow-primary/20 hover:scale-[1.01] active:scale-95 transition-all disabled:opacity-50"
+                            >
+                                {isSubmittingReview ? t.reviews_submitting : t.reviews_submit}
+                            </button>
+                        </form>
+                    </div>
+                ) : (
+                    <div className="bg-white p-6 rounded-2xl border border-border-light border-dashed text-center">
+                        <p className="text-text-muted font-bold">{t.reviews_login}</p>
+                    </div>
+                )}
+
+                {/* Review List */}
+                <div className="space-y-4">
+                    {reviews.length > 0 ? (
+                        reviews.map((review) => (
+                            <div key={review.id} className="bg-white p-6 rounded-2xl border border-border-light space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary font-black">
+                                            {review.profiles?.avatar_url ? (
+                                                <img src={review.profiles.avatar_url} alt="" className="w-full h-full object-cover rounded-xl" />
+                                            ) : review.profiles?.name.charAt(0)}
+                                        </div>
+                                        <div>
+                                            <p className="font-black text-text-main text-sm">{review.profiles?.name}</p>
+                                            <div className="flex">
+                                                {[...Array(5)].map((_, i) => (
+                                                    <span key={i} className={`material-symbols-outlined text-xs ${i < review.rating ? 'text-yellow-400 fill-1' : 'text-gray-200'}`}>star</span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <span className="text-[10px] font-bold text-text-muted">
+                                        {new Date(review.created_at).toLocaleDateString(isKa ? 'ka-GE' : 'en-US')}
+                                    </span>
+                                </div>
+                                <p className="text-text-muted text-sm font-medium italic">"{review.comment}"</p>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="text-center py-10 bg-white rounded-2xl border border-border-light border-dashed">
+                            <p className="text-text-muted font-bold">{t.reviews_empty}</p>
+                        </div>
+                    )}
+                </div>
+            </section>
           </div>
 
           {/* Sidebar */}

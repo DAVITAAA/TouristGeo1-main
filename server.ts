@@ -27,16 +27,31 @@ if (!process.env.RESEND_API_KEY) {
   console.log('[INFO] RESEND_API_KEY is detected (sending disabled via RESEND_ENABLED flag)');
 }
 
+const LOG_FILE = path.join(__dirname, 'error.log');
+const logError = (msg: string) => {
+  const entry = `[${new Date().toISOString()}] ${msg}\n`;
+  console.error(entry);
+  try {
+    fs.appendFileSync(LOG_FILE, entry);
+  } catch (e) {}
+};
+
+// Global error handlers
+process.on('unhandledRejection', (reason, promise) => {
+  logError(`Unhandled Rejection: ${reason}`);
+});
+process.on('uncaughtException', (err) => {
+  logError(`Uncaught Exception: ${err.message}\n${err.stack}`);
+});
+
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 const upload = multer({ storage: multer.memoryStorage() });
-// Removed local static uploads path as files are now on Supabase
 
-// Global error handler
+// Global error handler for Express
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Unhandled Error:', err);
-  fs.appendFileSync('error.log', `Unhandled Error: ${err.message} - ${err.stack}\n`);
+  logError(`Express Error: ${err.message}\n${err.stack}`);
   if (!res.headersSent) {
     res.status(500).json({ error: 'Internal Server Error', details: err.message });
   }
@@ -45,10 +60,20 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 app.get('/', (req, res) => res.send('TouristGeo API Server is running. Visit <a href="http://localhost:5173">port 5173</a> for the website.'));
 
 // Simple Token Helper for Demo
-const JWT_SECRET = 'super-secret-key-123';
+const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-123';
 const createToken = (user: any) => {
-  const payload = Buffer.from(JSON.stringify({ id: user.id, email: user.email, exp: Date.now() + 86400000 })).toString('base64');
-  return payload; // Very simplistic "token" for local dev
+  try {
+    const payload = Buffer.from(JSON.stringify({ 
+      id: user.id, 
+      email: user.email, 
+      role: user.role,
+      exp: Date.now() + 86400000 
+    })).toString('base64');
+    return payload;
+  } catch (e: any) {
+    logError(`Token Creation Error: ${e.message}`);
+    return 'error-token';
+  }
 };
 const verifyToken = (token: string) => {
   try {
@@ -290,20 +315,23 @@ app.post('/api/auth/oauth-g', async (req, res) => {
       await supabase.auth.admin.deleteUser(authData.user.id);
       return res.status(500).json({ error: 'Failed to create profile', details: profileError.message });
     }
-
+    logError('[DEBUG] Google Auth: Success!');
     const userData = { id: profileData.id, name: profileData.name, email: profileData.email, role: profileData.role, avatar_url: profileData.avatar_url };
-    res.json({ user: userData, token: createToken(userData) });
+    return res.json({ user: userData, token: createToken(userData) });
   } catch (error: any) {
     const errorMsg = error.message || (typeof error === 'string' ? error : 'Google Authentication failed');
-    console.error('--- GOOGLE AUTH FATAL ERROR ---', errorMsg);
-    fs.appendFileSync('error.log', `[${new Date().toISOString()}] Google Fatal Error: ${errorMsg} - ${error.stack || 'No stack'}\n`);
-    res.status(500).json({ 
-        error: 'Google authentication failed', 
+    logError(`Google Auth Fatal: ${errorMsg}\nStack: ${error.stack}`);
+
+    if (!res.headersSent) {
+      res.status(500).json({ 
+        error: 'Google login failed', 
         details: errorMsg,
-        code: error.code || 'UNKNOWN'
-    });
+        code: error.code || 'AUTH_FAILURE'
+      });
+    }
   }
 });
+
 app.delete('/api/auth/me', async (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
@@ -1128,6 +1156,70 @@ app.get('/api/categories', async (req, res) => {
     res.json(categories);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch categories' });
+  }
+});
+
+app.get('/api/tours/:id/reviews', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('reviews')
+      .select('*, profiles(name, avatar_url)')
+      .eq('tour_id', req.params.id)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch reviews' });
+  }
+});
+
+app.post('/api/reviews', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+  const payload = verifyToken(authHeader.split(' ')[1]);
+  if (!payload) return res.status(401).json({ error: 'Invalid token' });
+
+  const { tour_id, rating, comment } = req.body;
+  if (!tour_id || !rating) return res.status(400).json({ error: 'Tour ID and rating are required' });
+
+  try {
+    // 1. Insert the review
+    const { data: review, error } = await supabase
+      .from('reviews')
+      .insert([{
+        tour_id,
+        user_id: payload.id,
+        rating: Number(rating),
+        comment,
+        created_at: new Date().toISOString()
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // 2. Update the Tour's average rating
+    const { data: allReviews } = await supabase
+      .from('reviews')
+      .select('rating')
+      .eq('tour_id', tour_id);
+
+    if (allReviews && allReviews.length > 0) {
+      const avgRating = allReviews.reduce((acc: any, curr: any) => acc + curr.rating, 0) / allReviews.length;
+      await supabase
+        .from('tours')
+        .update({ 
+          rating: Number(avgRating.toFixed(1)), 
+          reviews: allReviews.length 
+        })
+        .eq('id', tour_id);
+    }
+
+    res.json(review);
+  } catch (error: any) {
+    logError(`Review Error: ${error.message}`);
+    res.status(500).json({ error: 'Failed to post review', details: error.message });
   }
 });
 

@@ -83,7 +83,7 @@ const modalJSX = `      </div>
       <AnimatePresence>
         {toast && (`;
 
-c = c.replace(/<AnimatePresence>\\s*\\{\\s*toast && \\(/g, modalJSX);
+c = c.replace(/<AnimatePresence>\s*\{\s*toast && \(/g, modalJSX + ')');
 
 fs.writeFileSync(p, c);
 console.log('Done!');

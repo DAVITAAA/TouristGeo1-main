@@ -123,44 +123,69 @@ export const registerUser = async (data: any) => {
 };
 
 export const loginUser = async (data: any) => {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-    });
-
-    const text = await response.text();
-    let result;
     try {
-        result = JSON.parse(text);
-    } catch (e) {
-        if (text.trim().startsWith('<!DOCTYPE html>')) {
-             throw new Error("Proxy error: The server is returning HTML. Please ensure you restarted 'npm run dev:all'.");
-        }
-        throw new Error(`Login Error: Backend returned an empty or invalid response. Please hard refresh the page (Ctrl+F5).`);
-    }
+        const response = await fetch(`${API_BASE_URL}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
 
-    if (!response.ok) throw new Error(result.error || `Login failed (${response.status})`);
-    return result;
+        const text = await response.text();
+        
+        if (!response.ok) {
+            try {
+                const errorData = JSON.parse(text);
+                throw new Error(errorData.error || `Login failed (${response.status})`);
+            } catch (e) {
+                if (text.includes('<!DOCTYPE html>')) {
+                    throw new Error("Proxy error: The server is returning HTML. Please ensure you restarted 'npm run dev:all'.");
+                }
+                throw new Error(text || "Backend returned an empty or invalid response. Please hard refresh (Ctrl+F5).");
+            }
+        }
+
+        return JSON.parse(text);
+    } catch (error: any) {
+        if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+            throw new Error('Cannot connect to the server. Is "npm run dev:all" running?');
+        }
+        throw error;
+    }
 };
 
 export const googleLogin = async (credential: string, role?: string) => {
-    const response = await fetch(`${API_BASE_URL}/auth/oauth-g`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ credential, role }),
-    });
-
-    const text = await response.text();
-    let result;
     try {
-        result = JSON.parse(text);
-    } catch (e) {
-        throw new Error(`Google Login Error: Backend returned an empty response. If you use an AdBlocker, please disable it. Otherwise, hard refresh the page (Ctrl+F5).`);
-    }
+        const response = await fetch(`${API_BASE_URL}/auth/oauth-g`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ credential, role }),
+        });
 
-    if (!response.ok) throw new Error(result.error || 'Google login failed');
-    return result;
+        const text = await response.text();
+        
+        if (!response.ok) {
+            try {
+                const errorData = JSON.parse(text);
+                throw new Error(errorData.error || errorData.details || `Server error (${response.status})`);
+            } catch (e) {
+                if (text.includes('<!DOCTYPE html>')) {
+                    throw new Error(`Server crashed or returned HTML. Please check if 'npm run server' is running.`);
+                }
+                throw new Error(text || `Request failed with status ${response.status}`);
+            }
+        }
+
+        try {
+            return JSON.parse(text);
+        } catch (e) {
+            throw new Error('Server returned an invalid response. Please refresh and try again.');
+        }
+    } catch (error: any) {
+        if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+            throw new Error('Cannot connect to the server. Is "npm run dev:all" running?');
+        }
+        throw error;
+    }
 };
 
 
@@ -636,4 +661,43 @@ export const markAllReservationsRead = async (operatorId: string): Promise<void>
     if (!response.ok) {
         throw new Error('Failed to mark all reservations as read');
     }
+};
+export interface Review {
+    id: string;
+    tour_id: number;
+    user_id: string;
+    rating: number;
+    comment: string;
+    created_at: string;
+    profiles?: {
+        name: string;
+        avatar_url?: string;
+    };
+}
+
+export const fetchReviews = async (tourId: number): Promise<Review[]> => {
+    const response = await fetch(`${API_BASE_URL}/tours/${tourId}/reviews`);
+    if (!response.ok) throw new Error('Failed to fetch reviews');
+    return response.json();
+};
+
+export const createReview = async (data: { tour_id: number; rating: number; comment: string }): Promise<Review> => {
+    const token = getToken();
+    if (!token) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_BASE_URL}/reviews`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to post review');
+    }
+
+    return response.json();
 };
