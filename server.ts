@@ -30,6 +30,8 @@ if (!process.env.RESEND_API_KEY || process.env.RESEND_API_KEY === 'your-resend-a
 } else {
   console.log('[INFO] RESEND_API_KEY is detected. Email sending is ENABLED.');
 }
+console.log('[DEBUG] GOOGLE_CLIENT_ID:', process.env.GOOGLE_CLIENT_ID ? 'LOADED' : 'MISSING');
+console.log('[DEBUG] GOOGLE_CLIENT_SECRET:', process.env.GOOGLE_CLIENT_SECRET ? 'LOADED' : 'MISSING');
 
 const LOG_FILE = path.join(__dirname, 'error.log');
 const logError = (msg: string) => {
@@ -289,6 +291,8 @@ app.post('/api/auth/oauth-g', async (req, res) => {
   if (!credential) return res.status(400).json({ error: 'Google credential is required' });
 
   try {
+    console.log('[DEBUG] Google Auth Attempt - Credential present:', !!credential);
+    console.log('[DEBUG] Using Audience:', process.env.GOOGLE_CLIENT_ID);
     const ticket = await googleClient.verifyIdToken({
       idToken: credential,
       audience: process.env.GOOGLE_CLIENT_ID,
@@ -297,6 +301,7 @@ app.post('/api/auth/oauth-g', async (req, res) => {
     if (!payload || !payload.email) return res.status(400).json({ error: 'Invalid Google token' });
 
     const { email, name, picture } = payload;
+    console.log('[DEBUG] Google Payload - Email:', email, 'Name:', name);
 
     const { data: existingUser } = await supabase.from('profiles').select('*').eq('email', email).single();
 
@@ -361,7 +366,8 @@ app.post('/api/auth/oauth-g', async (req, res) => {
     const errorCode = error.code || 'AUTH_FAILURE';
     const errorDetails = error.details || (error.response ? JSON.stringify(error.response.data) : 'No extra details');
     
-    logError(`Google Auth Fatal: ${errorMsg}\nCode: ${errorCode}\nDetails: ${errorDetails}\nStack: ${error.stack}`);
+    logError(`Google Auth Fatal: ${errorMsg}\nCode: ${errorCode}\nDetails: ${errorDetails}\nFull Error: ${JSON.stringify(error)}`);
+    console.error('[DEBUG] FULL GOOGLE AUTH ERROR:', error);
 
     if (!res.headersSent) {
       res.status(500).json({ 
