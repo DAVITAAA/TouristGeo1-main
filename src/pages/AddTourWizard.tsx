@@ -41,7 +41,7 @@ export default function AddTourWizard({ onNavigate, language, user, tourToEdit }
     price: tourToEdit?.price || 250,
     maxGroupSize: tourToEdit?.maxGroupSize || 12,
     duration: tourToEdit?.duration || 5,
-    itinerary: tourToEdit?.itinerary?.length ? tourToEdit.itinerary : [{ day: 1, title: '', activities: [''], description: '' }],
+    itinerary: tourToEdit?.itinerary?.length ? tourToEdit.itinerary : [],
     image: tourToEdit?.image || '',
     gallery: tourToEdit?.gallery || [] as string[]
   });
@@ -96,7 +96,6 @@ export default function AddTourWizard({ onNavigate, language, user, tourToEdit }
   };
 
   const removeDay = (index: number) => {
-    if (formData.itinerary.length <= 1) return;
     const newItinerary = formData.itinerary
       .filter((_, i) => i !== index)
       .map((day, i) => ({ ...day, day: i + 1 }));
@@ -178,10 +177,6 @@ export default function AddTourWizard({ onNavigate, language, user, tourToEdit }
           <div className="space-y-1">
             <h1 className="text-3xl font-black text-text-main">{tourToEdit ? (isKa ? 'ტურის რედაქტირება' : 'Edit Tour') : t.wizard_title}</h1>
             <p className="text-sm font-medium text-text-muted">{tourToEdit ? (isKa ? 'განაახლეთ თქვენი ტური' : 'Update your tour details') : t.wizard_subtitle}</p>
-          </div>
-          <div className="flex gap-3">
-             <button className="px-5 py-2.5 rounded-xl bg-white border border-border-light text-xs font-black uppercase tracking-widest text-text-muted hover:text-text-main transition-all">{isKa ? 'შენახვა' : 'Save Draft'}</button>
-             <button className="px-5 py-2.5 rounded-xl bg-primary/10 text-primary text-xs font-black uppercase tracking-widest border border-primary/20">{isKa ? 'გზამკვლევი' : 'Listing Guide'}</button>
           </div>
         </div>
 
@@ -285,11 +280,6 @@ export default function AddTourWizard({ onNavigate, language, user, tourToEdit }
                <h2 className="text-xl font-black text-text-main uppercase tracking-widest">{t.wizard_description}</h2>
             </div>
             <div className="bg-white rounded-[32px] border border-border-light overflow-hidden shadow-sm">
-               <div className="p-4 border-b border-border-light flex gap-4">
-                  <button className="material-symbols-outlined text-gray-400 hover:text-text-main">format_bold</button>
-                  <button className="material-symbols-outlined text-gray-400 hover:text-text-main">format_italic</button>
-                  <button className="material-symbols-outlined text-gray-400 hover:text-text-main">format_list_bulleted</button>
-               </div>
                <textarea 
                 rows={8}
                 placeholder={isKa ? 'აღწერეთ თქვენი ტურის უნიკალური გამოცდილება, ისტორია და მახასიათებლები...' : "Describe the magical experience, the history, and the unique selling points of your tour..."}
@@ -307,51 +297,85 @@ export default function AddTourWizard({ onNavigate, language, user, tourToEdit }
                <h2 className="text-xl font-black text-text-main uppercase tracking-widest">{isKa ? 'ფასი & რაოდენობა' : 'Pricing & Capacity'}</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-               <div className="p-6 bg-white rounded-3xl border border-border-light space-y-4 shadow-sm">
-                  <label className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em]">{isKa ? 'ფასი ერთ კაცზე' : 'Price Per Person'}</label>
-                  <div className="flex items-center gap-2 text-2xl font-black text-text-main">
-                     <select 
-                       value={inputCurrency}
-                       onChange={(e) => setInputCurrency(e.target.value as any)}
-                       className="text-text-muted bg-transparent outline-none text-lg cursor-pointer font-bold border-b-2 border-transparent hover:border-border-light focus:border-primary transition-all pb-1"
-                     >
-                       <option value="USD">$</option>
-                       <option value="EUR">€</option>
-                       <option value="GEL">₾</option>
-                     </select>
-                     <input 
-                      type="number" 
-                      value={formData.price} 
-                      onChange={(e) => setFormData({...formData, price: parseInt(e.target.value)})}
-                      className="w-full outline-none" 
-                    />
-                  </div>
-               </div>
-               <div className="p-6 bg-white rounded-3xl border border-border-light space-y-4 shadow-sm">
-                  <label className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em]">{isKa ? 'ჯგუფის მაქს. ზომა' : 'Max Group Size'}</label>
-                  <div className="flex items-center gap-3 text-2xl font-black text-text-main">
-                     <span className="material-symbols-outlined text-text-muted">group</span>
-                     <input 
-                      type="number" 
-                      value={formData.maxGroupSize} 
-                      onChange={(e) => setFormData({...formData, maxGroupSize: parseInt(e.target.value)})}
-                      className="w-full outline-none" 
-                    />
-                  </div>
-               </div>
-               <div className="p-6 bg-white rounded-3xl border border-border-light space-y-4 shadow-sm">
-                  <label className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em]">{isKa ? 'ხანგრძლივობა (დღე)' : 'Duration (Days)'}</label>
-                  <div className="flex items-center gap-3 text-2xl font-black text-text-main">
-                     <span className="material-symbols-outlined text-text-muted">schedule</span>
-                     <input 
-                      type="number" 
-                      value={formData.duration} 
-                      onChange={(e) => setFormData({...formData, duration: parseInt(e.target.value)})}
-                      className="w-full outline-none" 
-                    />
-                  </div>
-               </div>
-            </div>
+                {/* Price Card */}
+                <div className="relative p-8 bg-white rounded-3xl border border-border-light flex flex-col justify-between min-h-[160px] shadow-sm">
+                   <div className="flex items-start justify-between">
+                      <label className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em]">{isKa ? 'ფასი ერთ კაცზე' : 'Price Per Person'}</label>
+                      <div className="flex gap-1 p-1 bg-background-light rounded-xl">
+                        {(['USD', 'EUR', 'GEL'] as const).map(curr => (
+                          <button
+                            key={curr}
+                            type="button"
+                            onClick={() => setInputCurrency(curr)}
+                            className={`px-2 py-1 rounded-lg text-[9px] font-black transition-all ${inputCurrency === curr ? 'bg-white text-primary shadow-sm' : 'text-text-muted hover:text-text-main'}`}
+                          >
+                            {curr}
+                          </button>
+                        ))}
+                      </div>
+                   </div>
+                   <div className="flex items-center gap-2 text-4xl font-black text-text-main mt-auto">
+                      <span className="text-primary text-3xl">{inputCurrency === 'USD' ? '$' : inputCurrency === 'EUR' ? '€' : '₾'}</span>
+                      <input 
+                       type="number" 
+                       value={formData.price} 
+                       onChange={(e) => setFormData({...formData, price: parseInt(e.target.value)})}
+                       className="w-full bg-transparent outline-none placeholder:text-gray-200" 
+                       placeholder="0"
+                     />
+                   </div>
+                </div>
+
+                {/* Group Size Card */}
+                <div className="p-8 bg-white rounded-3xl border border-border-light flex flex-col justify-between min-h-[160px] shadow-sm">
+                   <label className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em]">{isKa ? 'ჯგუფის მაქს. ზომა' : 'Max Group Size'}</label>
+                   <div className="flex items-center gap-6 mt-auto">
+                      <button 
+                        type="button" 
+                        onClick={() => setFormData(p => ({ ...p, maxGroupSize: Math.max(1, p.maxGroupSize - 1) }))}
+                        className="w-12 h-12 rounded-2xl bg-background-light flex items-center justify-center text-text-muted hover:bg-primary/10 hover:text-primary transition-all active:scale-90"
+                      >
+                        <span className="material-symbols-outlined font-black">remove</span>
+                      </button>
+                      <span className="text-4xl font-black text-text-main min-w-[40px] text-center">{formData.maxGroupSize}</span>
+                      <button 
+                        type="button" 
+                        onClick={() => setFormData(p => ({ ...p, maxGroupSize: p.maxGroupSize + 1 }))}
+                        className="w-12 h-12 rounded-2xl bg-background-light flex items-center justify-center text-text-muted hover:bg-primary/10 hover:text-primary transition-all active:scale-90"
+                      >
+                        <span className="material-symbols-outlined font-black">add</span>
+                      </button>
+                   </div>
+                </div>
+
+                {/* Duration Card */}
+                <div className="p-8 bg-white rounded-3xl border border-border-light flex flex-col justify-between min-h-[160px] shadow-sm">
+                   <label className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em]">{isKa ? 'ხანგრძლივობა (დღე)' : 'Duration (Days)'}</label>
+                   <div className="flex items-center gap-6 mt-auto">
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          const newVal = Math.max(1, formData.duration - 1);
+                          setFormData(p => ({ ...p, duration: newVal }));
+                        }}
+                        className="w-12 h-12 rounded-2xl bg-background-light flex items-center justify-center text-text-muted hover:bg-primary/10 hover:text-primary transition-all active:scale-90"
+                      >
+                        <span className="material-symbols-outlined font-black">remove</span>
+                      </button>
+                      <span className="text-4xl font-black text-text-main min-w-[40px] text-center">{formData.duration}</span>
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          const newVal = formData.duration + 1;
+                          setFormData(p => ({ ...p, duration: newVal }));
+                        }}
+                        className="w-12 h-12 rounded-2xl bg-background-light flex items-center justify-center text-text-muted hover:bg-primary/10 hover:text-primary transition-all active:scale-90"
+                      >
+                        <span className="material-symbols-outlined font-black">add</span>
+                      </button>
+                   </div>
+                </div>
+             </div>
           </section>
 
           {/* Section 5: Itinerary */}
@@ -359,7 +383,7 @@ export default function AddTourWizard({ onNavigate, language, user, tourToEdit }
              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <span className="material-symbols-outlined text-primary font-bold">route</span>
-                  <h2 className="text-xl font-black text-text-main uppercase tracking-widest">{t.wizard_step_2_title}</h2>
+                  <h2 className="text-xl font-black text-text-main uppercase tracking-widest">{t.wizard_step_2_title} <span className="text-sm font-bold text-text-muted normal-case ml-2">({isKa ? 'არასავალდებულო' : 'Optional'})</span></h2>
                </div>
                <button onClick={addDay} className="flex items-center gap-2 text-[10px] font-black text-primary uppercase tracking-widest">
                   <span className="material-symbols-outlined text-base">add_circle</span> {isKa ? 'დღის დამატება' : 'Add Another Day'}

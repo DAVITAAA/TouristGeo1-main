@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { translations, Language } from '../translations';
 import { User, getUnreadReservationCount } from '../api';
-import { useDarkMode } from '../hooks/useDarkMode';
 import { useWishlist } from '../hooks/useWishlist';
 import { useCurrency } from '../hooks/useCurrency';
-import { Moon, Sun, Heart } from 'lucide-react';
+import { Heart } from 'lucide-react';
 
 interface NavbarProps {
   onNavigate: (page: string) => void;
@@ -113,7 +112,6 @@ const sightsItems = [
 export default function Navbar({ onNavigate, currentPage, language, setLanguage, user, onLoginClick, onLogout }: NavbarProps) {
   const t = translations[language];
   const isKa = language === 'ka';
-  const { isDark, toggleDarkMode } = useDarkMode();
   const { wishlist } = useWishlist();
   // const { currency, setCurrency, convertPrice, getCurrencySymbol } = useCurrency();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -278,13 +276,7 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
                 )}
               </button>
             )}
-            <button
-              onClick={toggleDarkMode}
-              className="p-2 rounded-full hover:bg-background-light transition-colors text-text-main flex items-center justify-center border border-border-light sm:border-transparent"
-              title={isDark ? "Light Mode" : "Dark Mode"}
-            >
-              {isDark ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
+
             {/* Language Toggle */}
             <button
               onClick={() => setLanguage(language === 'ka' ? 'en' : 'ka')}
@@ -433,14 +425,7 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
 
 
 
-                {/* Dark Mode Toggle */}
-                <button
-                  onClick={toggleDarkMode}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-bold text-sm text-text-main hover:bg-background-light transition-colors"
-                >
-                  <span className="material-symbols-outlined text-[20px]">{isDark ? 'light_mode' : 'dark_mode'}</span>
-                  {isDark ? (isKa ? 'ნათელი რეჟიმი' : 'Light Mode') : (isKa ? 'მუქი რეჟიმი' : 'Dark Mode')}
-                </button>
+
               </div>
             </div>
 
