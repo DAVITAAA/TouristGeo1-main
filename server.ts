@@ -34,11 +34,24 @@ console.log('[DEBUG] GOOGLE_CLIENT_ID:', process.env.GOOGLE_CLIENT_ID ? 'LOADED'
 console.log('[DEBUG] GOOGLE_CLIENT_SECRET:', process.env.GOOGLE_CLIENT_SECRET ? 'LOADED' : 'MISSING');
 
 const LOG_FILE = path.join(__dirname, 'error.log');
+
+// Safe JSON stringify helper to prevent crashes with circular references
+const safeStringify = (obj: any) => {
+  try {
+    return JSON.stringify(obj);
+  } catch (e) {
+    return String(obj);
+  }
+};
+
 const logError = (msg: string) => {
   const entry = `[${new Date().toISOString()}] ${msg}\n`;
   console.error(entry);
   try {
-    fs.appendFileSync(LOG_FILE, entry);
+    // Only attempt to write if we're not in a read-only environment like Netlify functions
+    if (process.env.NODE_ENV !== 'production' || !process.env.NETLIFY) {
+      fs.appendFileSync(LOG_FILE, entry);
+    }
   } catch (e) {}
 };
 
@@ -58,6 +71,21 @@ const upload = multer({ storage: multer.memoryStorage() });
 // Global error handler will be moved to the end
 
 app.get('/', (req, res) => res.send('TouristGeo API Server is running. Visit <a href="http://localhost:5173">port 5173</a> for the website.'));
+
+// Diagnostics endpoint to help debug Netlify environment issues
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    environment: {
+      is_netlify: !!process.env.NETLIFY,
+      is_production: process.env.NODE_ENV === 'production',
+      google_client_id: process.env.GOOGLE_CLIENT_ID ? 'LOADED' : 'MISSING',
+      supabase_url: (process.env.SUPABASE_URL || process.env.SUPABASE_DATABASE_URL) ? 'LOADED' : 'MISSING',
+      supabase_service_role_key: process.env.SUPABASE_SERVICE_ROLE_KEY ? 'LOADED' : 'MISSING',
+      resend_api_key: (process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== 'your-resend-api-key') ? 'LOADED' : 'MISSING'
+    }
+  });
+});
 
 // Simple Token Helper for Demo
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-123';
@@ -265,12 +293,8 @@ app.post('/api/auth/login', async (req, res) => {
     const userData = { id: user.id, name: user.name, email: user.email, role: user.role };
     res.json({ user: userData, token: createToken(userData) });
   } catch (error: any) {
-    const errorMsg = error.message || (typeof error === 'string' ? error : 'Internal Server Error');
-    console.error('--- LOGIN ERROR ---', errorMsg);
-    if (error.code) console.error('Error Code:', error.code);
-    
-    fs.appendFileSync('error.log', `[${new Date().toISOString()}] Login Error: ${errorMsg} - ${error.stack || 'No stack'}\n`);
-    
+    const errorMsg = error.message || 'Internal Server Error';
+    logError(`Login Error: ${errorMsg}`);
     res.status(500).json({ 
         error: 'Login failed due to a server error.', 
         details: errorMsg,
@@ -347,7 +371,7 @@ app.post('/api/auth/oauth-g', async (req, res) => {
 
     if (profileError) {
       console.error('--- GOOGLE PROFILE ERROR ---', profileError);
-      logError(`Google Profile Error: ${JSON.stringify(profileError)}`);
+      logError(`Google Profile Error: ${safeStringify(profileError)}`);
       try {
         await supabase.auth.admin.deleteUser(authUserId);
       } catch (e) {}
@@ -359,9 +383,9 @@ app.post('/api/auth/oauth-g', async (req, res) => {
   } catch (error: any) {
     const errorMsg = error.message || (typeof error === 'string' ? error : 'Google Authentication failed');
     const errorCode = error.code || 'AUTH_FAILURE';
-    const errorDetails = error.details || (error.response ? JSON.stringify(error.response.data) : 'No extra details');
+    const errorDetails = error.details || (error.response ? safeStringify(error.response.data) : 'No extra details');
     
-    logError(`Google Auth Fatal: ${errorMsg}\nCode: ${errorCode}\nDetails: ${errorDetails}\nFull Error: ${JSON.stringify(error)}`);
+    logError(`Google Auth Fatal: ${errorMsg}\nCode: ${errorCode}\nDetails: ${errorDetails}\nFull Error: ${safeStringify(error)}`);
     console.error('[DEBUG] FULL GOOGLE AUTH ERROR:', error);
 
     if (!res.headersSent) {
@@ -369,7 +393,8 @@ app.post('/api/auth/oauth-g', async (req, res) => {
         error: 'Google login failed', 
         details: errorMsg,
         extra: errorDetails,
-        code: errorCode
+        code: errorCode,
+        hint: !process.env.GOOGLE_CLIENT_ID ? 'GOOGLE_CLIENT_ID environment variable is missing on server.' : undefined
       });
     }
   }
