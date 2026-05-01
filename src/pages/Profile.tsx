@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Language } from '../translations';
-import { User, fetchMyBookings, updateMe, uploadAvatar, fetchMyTours, deleteTour, initiatePasswordChange, completePasswordChange, deleteAccount, Reservation, fetchOperatorReservations, markReservationRead, markAllReservationsRead, renewTour, getMyExpiredTours } from '../api';
+import { User, fetchMyBookings, updateMe, uploadAvatar, fetchMyTours, deleteTour, initiatePasswordChange, completePasswordChange, deleteAccount, Reservation, fetchOperatorReservations, markReservationRead, markAllReservationsRead, renewTour, getMyExpiredTours, getToken, fetchPendingVerifications, updateVerificationStatus } from '../api';
 import { useCurrency } from '../hooks/useCurrency';
 import { useWishlist } from '../hooks/useWishlist';
 import Toast from '../components/Toast';
@@ -15,9 +15,14 @@ interface ProfileProps {
 }
 
 export default function Profile({ onNavigate, language, user, onUpdateUser, onLogout }: ProfileProps) {
-  const [activeTab, setActiveTab] = useState<'settings' | 'favorites' | 'my-tours' | 'reservations' | 'expired-tours'>(
+  const [activeTab, setActiveTab] = useState<'settings' | 'favorites' | 'my-tours' | 'reservations' | 'expired-tours' | 'verification' | 'admin-dashboard'>(
     user.role === 'operator' ? 'my-tours' : 'favorites'
   );
+  const ADMIN_EMAIL = 'datonaxucrishvili64@gmail.com';
+  const isAdmin = user.email === ADMIN_EMAIL;
+  
+  const [pendingVerifications, setPendingVerifications] = useState<any[]>([]);
+  const [isApproving, setIsApproving] = useState<string | null>(null);
   const { wishlist: favorites } = useWishlist(!!user);
   const [myTours, setMyTours] = useState<any[]>([]);
   const [expiredTours, setExpiredTours] = useState<any[]>([]);
@@ -45,6 +50,10 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteToursChecked, setDeleteToursChecked] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+
+  // Verification state
+  const [verificationDoc, setVerificationDoc] = useState<File | null>(null);
+  const [isSubmittingVerification, setIsSubmittingVerification] = useState(false);
 
   const [tourToDelete, setTourToDelete] = useState<number | null>(null);
   const [isDeletingTour, setIsDeletingTour] = useState(false);
@@ -166,6 +175,33 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
     }
   }, [activeTab, user.id, user.role]);
 
+  // Load pending verifications for admin
+  useEffect(() => {
+    if (activeTab === 'admin-dashboard' && isAdmin) {
+      setIsLoading(true);
+      fetchPendingVerifications()
+        .then(setPendingVerifications)
+        .catch(console.error)
+        .finally(() => setIsLoading(false));
+    }
+  }, [activeTab, isAdmin]);
+
+  const handleVerifyOperator = async (profileId: string, status: 'verified' | 'rejected') => {
+    setIsApproving(profileId);
+    try {
+      await updateVerificationStatus(profileId, status);
+      setPendingVerifications(prev => prev.filter(p => p.id !== profileId));
+      setToast({ 
+        message: status === 'verified' ? (isKa ? 'ოპერატორი ვერიფიცირებულია!' : 'Operator verified!') : (isKa ? 'მოთხოვნა უარყოფილია' : 'Request rejected'), 
+        type: 'success' 
+      });
+    } catch (err) {
+      setToast({ message: isKa ? 'შეცდომა განახლებისას' : 'Failed to update status', type: 'error' });
+    } finally {
+      setIsApproving(null);
+    }
+  };
+
   const handleMarkRead = async (id: string) => {
     try {
       await markReservationRead(id);
@@ -256,6 +292,45 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
       setToast({ message: isKa ? `შეცდომა განახლებისას: ${err.message}` : `Error renewing tour: ${err.message}`, type: 'error' });
     } finally {
       setIsProcessingPayment(false);
+    }
+  };
+
+  const handleVerifyRequest = async () => {
+    if (!verificationDoc) return;
+    setIsSubmittingVerification(true);
+    try {
+      // 1. Upload the doc
+      const uploadFormData = new FormData();
+      uploadFormData.append('file', verificationDoc);
+      uploadFormData.append('bucket', 'tours'); // Reuse tours bucket for now
+
+      const uploadRes = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+        body: uploadFormData
+      });
+      const uploadData = await uploadRes.json();
+      if (uploadData.error) throw new Error(uploadData.error);
+
+      // 2. Submit verification request
+      const verifyRes = await fetch('/api/auth/verify', {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${getToken()}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ document_url: uploadData.url })
+      });
+      const verifyData = await verifyRes.json();
+      if (verifyData.error) throw new Error(verifyData.error);
+
+      setToast({ message: isKa ? 'მოთხოვნა გაგზავნილია!' : 'Verification request submitted!', type: 'success' });
+      onUpdateUser({ verification_status: 'pending' });
+    } catch (err: any) {
+      setToast({ message: err.message, type: 'error' });
+    } finally {
+      setIsSubmittingVerification(false);
+      setVerificationDoc(null);
     }
   };
 
@@ -350,6 +425,34 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
                       </span>
                     )}
                   </button>
+
+                  <button
+                    onClick={() => setActiveTab('verification')}
+                    className={`flex-1 lg:flex-none py-4 px-5 rounded-2xl font-black text-[11px] uppercase tracking-wider transition-all flex items-center gap-3 relative whitespace-nowrap ${activeTab === 'verification' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-text-muted hover:bg-gray-50 hover:text-text-main'}`}
+                  >
+                    <span className="material-symbols-outlined text-[20px]">verified_user</span>
+                    {isKa ? 'ვერიფიკაცია' : 'Trust & Safety'}
+                    {user.is_verified && (
+                      <span className="absolute top-3 right-3 w-5 h-5 bg-blue-500 text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white">
+                        <span className="material-symbols-outlined text-[10px] filled">verified</span>
+                      </span>
+                    )}
+                  </button>
+
+                  {isAdmin && (
+                    <button
+                      onClick={() => setActiveTab('admin-dashboard')}
+                      className={`flex-1 lg:flex-none py-4 px-5 rounded-2xl font-black text-[11px] uppercase tracking-wider transition-all flex items-center gap-3 relative whitespace-nowrap ${activeTab === 'admin-dashboard' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-text-muted hover:bg-gray-50 hover:text-text-main'}`}
+                    >
+                      <span className="material-symbols-outlined text-[20px]">admin_panel_settings</span>
+                      {isKa ? 'ადმინ პანელი' : 'Admin Panel'}
+                      {pendingVerifications.length > 0 && (
+                        <span className="absolute top-3 right-3 w-5 h-5 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center shadow-md border-2 border-white">
+                          {pendingVerifications.length}
+                        </span>
+                      )}
+                    </button>
+                  )}
                 </>
               )}
 
@@ -1148,6 +1251,191 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
                   })}
                 </div>
               )}
+            </motion.div>
+          ) : activeTab === 'verification' && user.role === 'operator' ? (
+            <motion.div
+              key="verification"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              className="space-y-8"
+            >
+              <div className="flex flex-wrap items-center justify-between mb-2 gap-4">
+                 <h2 className="text-2xl font-black text-text-main flex items-center gap-3">
+                   <span className="w-8 h-1 bg-blue-500 rounded-full"></span>
+                   {isKa ? 'ვერიფიკაცია და ნდობა' : 'Trust & Verification'}
+                 </h2>
+              </div>
+
+              {/* Status Banner */}
+              <div className={`p-8 rounded-[32px] border-2 flex flex-col md:flex-row items-center gap-8 transition-all ${
+                user.is_verified 
+                  ? 'bg-blue-50 border-blue-100 text-blue-900' 
+                  : user.verification_status === 'pending'
+                  ? 'bg-amber-50 border-amber-100 text-amber-900'
+                  : user.verification_status === 'rejected'
+                  ? 'bg-red-50 border-red-100 text-red-900'
+                  : 'bg-white border-border-light text-text-main'
+              }`}>
+                <div className={`w-24 h-24 rounded-full flex items-center justify-center shrink-0 shadow-inner ${
+                   user.is_verified ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-400'
+                }`}>
+                  <span className="material-symbols-outlined text-[48px] filled">
+                    {user.is_verified ? 'verified' : 'shield_person'}
+                  </span>
+                </div>
+                
+                <div className="flex-1 text-center md:text-left space-y-2">
+                  <h3 className="text-2xl font-black">
+                    {user.is_verified 
+                      ? (isKa ? 'თქვენ ვერიფიცირებული ხართ!' : 'You are Verified!') 
+                      : user.verification_status === 'pending'
+                      ? (isKa ? 'ვერიფიკაცია პროცესშია' : 'Verification Pending')
+                      : (isKa ? 'გახდით ვერიფიცირებული' : 'Get Verified')}
+                  </h3>
+                  <p className="text-sm font-medium opacity-80 leading-relaxed">
+                    {user.is_verified 
+                      ? (isKa ? 'თქვენს ყველა ტურს ექნება ლურჯი ნიშანი, რაც ზრდის მომხმარებლების ნდობას და გაყიდვებს.' : 'All your tours now display a blue badge, increasing traveler trust and booking rates.') 
+                      : (isKa ? 'ატვირთეთ საბუთები ან მიიღეთ ვერიფიკაცია ავტომატურად 50+ შეფასებისა და 4.5+ რეიტინგის შემდეგ.' : 'Upload documents or get verified automatically after reaching 50+ reviews with a 4.5+ average rating.')}
+                  </p>
+                </div>
+
+                {user.is_verified && (
+                  <div className="bg-white/50 backdrop-blur-sm px-6 py-4 rounded-2xl border border-blue-200 text-center">
+                    <p className="text-[10px] font-black uppercase tracking-widest mb-1">Status</p>
+                    <p className="text-xl font-black text-blue-600">PRO OPERATOR</p>
+                  </div>
+                )}
+              </div>
+
+              {!user.is_verified && user.verification_status !== 'pending' && (
+                <div className="bg-white rounded-[32px] p-8 border border-border-light shadow-sm space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-black text-text-main uppercase tracking-widest flex items-center gap-2">
+                      <span className="material-symbols-outlined text-primary text-[20px]">upload_file</span>
+                      {isKa ? 'ატვირთეთ დოკუმენტი (ID / ლიცენზია)' : 'Upload Document (ID / License)'}
+                    </label>
+                    <div className="relative group">
+                      <div className={`w-full aspect-[3/1] border-2 border-dashed rounded-2xl flex flex-col items-center justify-center transition-all ${verificationDoc ? 'border-primary bg-primary/5' : 'border-gray-200 bg-gray-50 group-hover:border-primary/50'}`}>
+                        <span className="material-symbols-outlined text-4xl text-gray-300 mb-2">{verificationDoc ? 'check_circle' : 'cloud_upload'}</span>
+                        <p className="text-sm font-black text-text-muted">
+                          {verificationDoc ? verificationDoc.name : (isKa ? 'აირჩიეთ ფაილი (PDF, JPG, PNG)' : 'Select File (PDF, JPG, PNG)')}
+                        </p>
+                        <input 
+                          type="file" 
+                          onChange={(e) => e.target.files && setVerificationDoc(e.target.files[0])}
+                          className="absolute inset-0 opacity-0 cursor-pointer" 
+                          accept=".pdf,.jpg,.jpeg,.png"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleVerifyRequest}
+                    disabled={!verificationDoc || isSubmittingVerification}
+                    className="w-full py-5 bg-primary text-white rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 flex justify-center items-center gap-3"
+                  >
+                    {isSubmittingVerification ? (
+                      <span className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin"></span>
+                    ) : (
+                      <>
+                        <span className="material-symbols-outlined">send</span>
+                        {isKa ? 'მოთხოვნის გაგზავნა' : 'Submit Verification Request'}
+                      </>
+                    )}
+                  </button>
+                  
+                  <p className="text-[10px] text-text-muted font-bold text-center leading-relaxed px-10">
+                    {isKa ? 'თქვენი დოკუმენტები დაცულია და გამოიყენება მხოლოდ ვერიფიკაციისთვის. განხილვას სჭირდება 24-48 საათი.' : 'Your documents are encrypted and used only for verification purposes. Review takes 24-48 hours.'}
+                  </p>
+                </div>
+              )}
+
+              {user.verification_status === 'pending' && (
+                <div className="bg-amber-50 rounded-[32px] p-10 border border-amber-100 text-center space-y-4">
+                  <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm">
+                    <div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                  <h4 className="text-xl font-black text-amber-900">{isKa ? 'განხილვა პროცესშია' : 'Under Review'}</h4>
+                  <p className="text-sm text-amber-700 font-medium max-w-sm mx-auto">
+                    {isKa ? 'თქვენი მოთხოვნა მიღებულია. ჩვენ დაგიკავშირდებით ან მოგცემთ ნიშანს უახლოეს 48 საათში.' : 'We have received your documents. Our team is reviewing them. You will see the badge once approved (usually within 48h).'}
+                  </p>
+                </div>
+              )}
+            </motion.div>
+          ) : activeTab === 'admin-dashboard' && isAdmin ? (
+            <motion.div
+              key="admin-dashboard"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-8"
+            >
+              <div className="bg-indigo-600 rounded-[32px] p-8 text-white shadow-xl shadow-indigo-600/20">
+                <h3 className="text-2xl font-black mb-2">{isKa ? 'ადმინ პანელი' : 'Admin Dashboard'}</h3>
+                <p className="text-indigo-100 font-bold">{isKa ? 'ოპერატორების ვერიფიკაციის მართვა' : 'Manage operator verification requests'}</p>
+              </div>
+
+              <div className="grid gap-6">
+                {pendingVerifications.length === 0 ? (
+                  <div className="bg-white rounded-[32px] p-20 border border-border-light text-center space-y-4">
+                    <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto">
+                      <span className="material-symbols-outlined text-4xl text-gray-300">done_all</span>
+                    </div>
+                    <p className="text-lg font-black text-text-muted">{isKa ? 'მოდერაციისთვის არაფერია' : 'No pending requests'}</p>
+                  </div>
+                ) : (
+                  pendingVerifications.map((profile) => (
+                    <div key={profile.id} className="bg-white rounded-3xl p-6 border border-border-light shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+                      <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 rounded-2xl bg-indigo-50 flex items-center justify-center overflow-hidden">
+                          {profile.avatar_url ? (
+                            <img src={profile.avatar_url} className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="material-symbols-outlined text-indigo-300">person</span>
+                          )}
+                        </div>
+                        <div>
+                          <h4 className="font-black text-text-main">{profile.name}</h4>
+                          <p className="text-xs font-bold text-text-muted">{profile.email}</p>
+                          <p className="text-[10px] font-black text-indigo-600 uppercase mt-1">Operator</p>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-3">
+                        <a 
+                          href={profile.verification_document} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="px-5 py-3 bg-gray-100 text-text-main rounded-xl font-black text-[11px] uppercase tracking-wider flex items-center gap-2 hover:bg-gray-200 transition-all"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">visibility</span>
+                          {isKa ? 'საბუთის ნახვა' : 'View Document'}
+                        </a>
+                        
+                        <button
+                          onClick={() => handleVerifyOperator(profile.id, 'verified')}
+                          disabled={isApproving === profile.id}
+                          className="px-5 py-3 bg-green-500 text-white rounded-xl font-black text-[11px] uppercase tracking-wider flex items-center gap-2 hover:bg-green-600 shadow-lg shadow-green-500/20 transition-all disabled:opacity-50"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                          {isApproving === profile.id ? '...' : (isKa ? 'დადასტურება' : 'Approve')}
+                        </button>
+
+                        <button
+                          onClick={() => handleVerifyOperator(profile.id, 'rejected')}
+                          disabled={isApproving === profile.id}
+                          className="px-5 py-3 bg-red-50 text-red-500 rounded-xl font-black text-[11px] uppercase tracking-wider flex items-center gap-2 hover:bg-red-100 transition-all disabled:opacity-50"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">cancel</span>
+                          {isKa ? 'უარყოფა' : 'Reject'}
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </motion.div>
           ) : null}
         </AnimatePresence>

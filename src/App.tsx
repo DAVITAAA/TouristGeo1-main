@@ -9,6 +9,7 @@ import AddTourWizard from './pages/AddTourWizard.tsx';
 import Tours from './pages/Tours.tsx';
 import Profile from './pages/Profile.tsx';
 import TourDetail from './pages/TourDetail.tsx';
+import Operator from './pages/Operator.tsx';
 import Favorites from './pages/Favorites';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -25,6 +26,7 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null);
+  const [selectedOperator, setSelectedOperator] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     // Attempt to restore session on load
@@ -47,6 +49,8 @@ export default function App() {
       if (state && state.page) {
         if (state.page === 'tour-detail' && state.tour) {
           setSelectedTour(state.tour);
+        } else if (state.page === 'operator' && state.operator) {
+          setSelectedOperator(state.operator);
         }
         setCurrentPage(state.page);
       } else {
@@ -72,16 +76,21 @@ export default function App() {
 
   const handleNavigate = (page: string, data?: any) => {
     let tourData = null;
+    let operatorData = null;
+    
     if ((page === 'tour-detail' || page === 'edit-tour') && data) {
       setSelectedTour(data as Tour);
       tourData = data;
+    } else if (page === 'operator' && data) {
+      setSelectedOperator({ id: data.operator_id, name: data.operator_name });
+      operatorData = { id: data.operator_id, name: data.operator_name };
     }
 
     // Only push to history if it's a new state transition
-    if (page !== currentPage || ((page === 'tour-detail' || page === 'edit-tour') && tourData && selectedTour?.id !== tourData.id)) {
+    if (page !== currentPage || ((page === 'tour-detail' || page === 'edit-tour') && tourData && selectedTour?.id !== tourData.id) || (page === 'operator' && operatorData && selectedOperator?.id !== operatorData.id)) {
       const pathSuffix = page === 'home' ? '' : `#${page}`;
       window.history.pushState(
-        { page, tour: tourData },
+        { page, tour: tourData, operator: operatorData },
         '',
         window.location.pathname + pathSuffix
       );
@@ -102,6 +111,7 @@ export default function App() {
       case 'edit-tour': return selectedTour ? <AddTourWizard onNavigate={handleNavigate} language={language} user={user} tourToEdit={selectedTour} /> : <Home onNavigate={handleNavigate} language={language} />;
       case 'profile': return user ? <Profile onNavigate={handleNavigate} language={language} user={user} onUpdateUser={(u) => setUser({ ...user, ...u })} onLogout={handleLogout} /> : null;
       case 'tour-detail': return selectedTour ? <TourDetail tour={selectedTour} onNavigate={handleNavigate} language={language} user={user} /> : <Home onNavigate={handleNavigate} language={language} />;
+      case 'operator': return <Operator onNavigate={handleNavigate} language={language} operator={selectedOperator} />;
       case 'favorites': return <Favorites onNavigate={handleNavigate} language={language} />;
       default: return <Home onNavigate={handleNavigate} language={language} />;
     }
@@ -121,7 +131,7 @@ export default function App() {
       <main className="flex-1">
         <AnimatePresence mode="wait">
           <motion.div
-            key={currentPage}
+            key={currentPage + (selectedTour?.id || '') + (selectedOperator?.id || '')}
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}

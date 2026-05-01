@@ -62,9 +62,17 @@ export default function TourCard({ tour, onNavigate, language }: TourCardProps) 
         {/* Content Section */}
         <div className="flex-1 p-6 flex flex-col">
           {/* Location & Tags */}
-          <div className="flex items-center gap-2 mb-3">
-            <span className="material-symbols-outlined text-primary text-[16px]">location_on</span>
-            <span className="text-[10px] font-black text-primary uppercase tracking-widest">{tour.location.toUpperCase()}</span>
+           <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary text-[16px]">location_on</span>
+              <span className="text-[10px] font-black text-primary uppercase tracking-widest">{(tour.location || '').toUpperCase()}</span>
+            </div>
+            {tour.is_verified && (
+              <div className="flex items-center gap-1 bg-blue-50 text-blue-600 px-2 py-1 rounded-lg">
+                <span className="material-symbols-outlined text-[14px] filled">verified</span>
+                <span className="text-[9px] font-black uppercase tracking-tighter">{isKa ? 'ვერიფიცირებული' : 'Verified'}</span>
+              </div>
+            )}
           </div>
 
           {/* Title */}
@@ -80,12 +88,16 @@ export default function TourCard({ tour, onNavigate, language }: TourCardProps) 
             </div>
             <div className="flex items-center gap-1.5 whitespace-nowrap">
               <span className="material-symbols-outlined text-[18px]">hiking</span>
-              {isKa ? 'საშუალო' : 'Moderate'}
+              {tour.difficulty ? (
+                tour.difficulty === 'easy' ? (isKa ? 'მსუბუქი' : 'Easy') : 
+                tour.difficulty === 'hard' ? (isKa ? 'რთული' : 'Hard') : 
+                (isKa ? 'საშუალო' : 'Moderate')
+              ) : (isKa ? 'საშუალო' : 'Moderate')}
             </div>
-            {(tour.languages || []).length > 0 && (
-              <div className="flex items-center gap-1.5 ml-auto truncate" title={tour.languages?.join(', ')}>
+            {(tour.languages && tour.languages.length > 0) && (
+              <div className="flex items-center gap-1.5 ml-auto truncate" title={tour.languages.join(', ')}>
                 <span className="material-symbols-outlined text-[18px]">language</span>
-                <span className="truncate max-w-[60px]">{tour.languages?.join(', ')}</span>
+                <span className="truncate max-w-[60px]">{tour.languages.join(', ')}</span>
               </div>
             )}
           </div>
@@ -98,6 +110,27 @@ export default function TourCard({ tour, onNavigate, language }: TourCardProps) 
               <span className="text-[10px] font-bold text-text-muted">({tour.reviews})</span>
             </div>
             
+            <div className="flex items-center gap-2">
+               <a 
+                 href={`tel:${tour.phone || ''}`}
+                 onClick={(e) => e.stopPropagation()}
+                 className="w-9 h-9 rounded-xl bg-gray-50 border border-border-light text-text-muted hover:text-primary hover:border-primary/30 transition-all flex items-center justify-center"
+                 title={isKa ? 'დარეკვა' : 'Call'}
+               >
+                 <span className="material-symbols-outlined text-[18px]">call</span>
+               </a>
+               <a 
+                 href={`https://wa.me/${(tour.phone || '').replace(/\+/g, '')}?text=${encodeURIComponent(isKa ? `გამარჯობა, მაინტერესებს ტური: ${tour.title}` : `Hi, I'm interested in the tour: ${tour.title}`)}`}
+                 target="_blank"
+                 rel="noopener noreferrer"
+                 onClick={(e) => e.stopPropagation()}
+                 className="w-9 h-9 rounded-xl bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366] hover:text-white transition-all flex items-center justify-center"
+                 title="WhatsApp"
+               >
+                 <span className="material-symbols-outlined text-[18px]">chat</span>
+               </a>
+            </div>
+
             <div className="flex flex-col items-end">
               <div className="flex flex-col items-end">
                 <span className="text-[10px] font-black text-text-muted uppercase mb-1">{t.from_price}</span>

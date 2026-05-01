@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Language, translations } from '../translations';
 import { User, createTour, updateTour } from '../api';
@@ -34,16 +34,20 @@ export default function AddTourWizard({ onNavigate, language, user, tourToEdit }
   
   // Form State
   const [formData, setFormData] = useState({
-    title: tourToEdit?.title || '',
-    location: tourToEdit?.location || '',
+    title: tourToEdit?.title || tourToEdit?.tour_title || '',
+    location: tourToEdit?.location || tourToEdit?.tour_location || '',
     category: tourToEdit?.category || 'Hiking & Adventure',
-    description: tourToEdit?.description || '',
-    price: tourToEdit?.price || 250,
-    maxGroupSize: tourToEdit?.maxGroupSize || 12,
+    description: tourToEdit?.description || tourToEdit?.tour_description || '',
+    price: tourToEdit?.price !== undefined ? tourToEdit.price : 250,
+    full_price: tourToEdit?.full_price !== undefined ? tourToEdit.full_price : 0,
+    difficulty: tourToEdit?.difficulty || 'moderate',
+    languages: Array.isArray(tourToEdit?.languages) ? tourToEdit.languages.join(', ') : (tourToEdit?.languages || 'English'),
+    maxGroupSize: tourToEdit?.maxGroupSize || tourToEdit?.max_group_size || 12,
     duration: tourToEdit?.duration || 5,
-    itinerary: tourToEdit?.itinerary?.length ? tourToEdit.itinerary : [],
+    itinerary: Array.isArray(tourToEdit?.itinerary) ? tourToEdit.itinerary : [],
     image: tourToEdit?.image || '',
-    gallery: tourToEdit?.gallery || [] as string[]
+    gallery: Array.isArray(tourToEdit?.gallery) ? tourToEdit.gallery : [] as string[],
+    phone: tourToEdit?.phone || ''
   });
 
   const handleItineraryChange = (index: number, field: string, value: any) => {
@@ -55,7 +59,7 @@ export default function AddTourWizard({ onNavigate, language, user, tourToEdit }
   const addDay = () => {
     setFormData({
       ...formData,
-      itinerary: [...formData.itinerary, { day: formData.itinerary.length + 1, title: '', activities: [''], description: '' }]
+      itinerary: [...formData.itinerary, { day: formData.itinerary.length + 1, title: '', activities: [''], description: '', location: '' }]
     });
   };
 
@@ -95,6 +99,38 @@ export default function AddTourWizard({ onNavigate, language, user, tourToEdit }
     }
   };
 
+  // Sync form data if tourToEdit changes (e.g. on navigation)
+  useEffect(() => {
+    if (tourToEdit) {
+      // Use a more robust check for property names
+      const t = tourToEdit;
+      setFormData({
+        title: t.title || t.tour_title || '',
+        location: t.location || t.tour_location || '',
+        category: t.category || 'Hiking & Adventure',
+        description: t.description || t.tour_description || '',
+        price: t.price !== undefined ? t.price : 250,
+        full_price: t.full_price !== undefined ? t.full_price : 0,
+        difficulty: t.difficulty || 'moderate',
+        languages: Array.isArray(t.languages) ? t.languages.join(', ') : (t.languages || 'English'),
+        maxGroupSize: t.maxGroupSize || t.max_group_size || 12,
+        duration: t.duration || 5,
+        itinerary: Array.isArray(t.itinerary) ? t.itinerary : [],
+        image: t.image || '',
+        gallery: Array.isArray(t.gallery) ? t.gallery : [],
+        phone: t.phone || ''
+      });
+      setImagePreview(t.image || null);
+      setGalleryPreviews(Array.isArray(t.gallery) ? t.gallery : []);
+      setItineraryPreviews(
+        (Array.isArray(t.itinerary) ? t.itinerary : []).reduce((acc: any, day: any, i: number) => {
+          if (day.image) acc[i] = day.image;
+          return acc;
+        }, {}) || {}
+      );
+    }
+  }, [tourToEdit]);
+
   const removeDay = (index: number) => {
     const newItinerary = formData.itinerary
       .filter((_, i) => i !== index)
@@ -112,15 +148,25 @@ export default function AddTourWizard({ onNavigate, language, user, tourToEdit }
       body.append('location', formData.location);
       body.append('category', formData.category);
       body.append('description', formData.description);
+      body.append('phone', formData.phone);
       
       let finalPriceUsd = formData.price;
       if (inputCurrency === 'EUR') finalPriceUsd = formData.price / 0.92;
       else if (inputCurrency === 'GEL') finalPriceUsd = formData.price / 2.65;
       body.append('price', Math.round(finalPriceUsd).toString());
+
+      let finalFullPriceUsd = formData.full_price;
+      if (inputCurrency === 'EUR') finalFullPriceUsd = formData.full_price / 0.92;
+      else if (inputCurrency === 'GEL') finalFullPriceUsd = formData.full_price / 2.65;
+      body.append('full_price', Math.round(finalFullPriceUsd).toString());
+
+      body.append('difficulty', formData.difficulty);
+      body.append('languages', JSON.stringify(formData.languages.split(',').map(l => l.trim()).filter(Boolean)));
       
       body.append('maxGroupSize', formData.maxGroupSize.toString());
       body.append('duration', formData.duration.toString());
       body.append('itinerary', JSON.stringify(formData.itinerary));
+      body.append('phone', formData.phone);
       
       if (imageFile) {
         body.append('image', imageFile);
@@ -171,6 +217,8 @@ export default function AddTourWizard({ onNavigate, language, user, tourToEdit }
   return (
     <>
     <div className="min-h-screen bg-background-light pt-24 pb-20">
+      {/* DEBUG: Remove this later */}
+      {false && <pre className="hidden">{JSON.stringify(tourToEdit, null, 2)}</pre>}
       <div className="container mx-auto px-4 max-w-5xl">
         {/* Header & Progress */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
@@ -182,7 +230,6 @@ export default function AddTourWizard({ onNavigate, language, user, tourToEdit }
 
         {/* Form Sections */}
         <div className="space-y-12">
-          {/* Section 1: Essentials */}
           <section className="space-y-8">
             <div className="flex items-center gap-3">
                <span className="material-symbols-outlined text-primary font-bold">info</span>
@@ -200,6 +247,7 @@ export default function AddTourWizard({ onNavigate, language, user, tourToEdit }
                   onChange={(e) => setFormData({...formData, title: e.target.value})}
                 />
               </div>
+
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em]">{t.wizard_location}</label>
                 <div className="relative">
@@ -213,6 +261,7 @@ export default function AddTourWizard({ onNavigate, language, user, tourToEdit }
                   />
                 </div>
               </div>
+
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em]">{t.wizard_category}</label>
                 <select 
@@ -224,6 +273,23 @@ export default function AddTourWizard({ onNavigate, language, user, tourToEdit }
                    <option>{isKa ? 'ღვინო & გასტრონომია' : 'Wine & Gastronomy'}</option>
                    <option>{isKa ? 'ისტორიული & კულტურული' : 'Historical & Cultural'}</option>
                 </select>
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[16px] text-primary">call</span>
+                  {isKa ? 'საკონტაქტო ნომერი (ტელეფონი / WhatsApp)' : 'Contact Phone (Phone / WhatsApp)'}
+                </label>
+                <input 
+                  type="text" 
+                  placeholder="+995 5xx xxx xxx"
+                  className="w-full p-5 rounded-2xl bg-white border border-border-light font-bold text-text-main outline-none focus:ring-4 focus:ring-primary/5 transition-all"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                />
+                <p className="text-[10px] font-bold text-text-muted italic px-2">
+                  {isKa ? 'დატოვეთ ცარიელი, თუ გსურთ გამოიყენოთ თქვენი პროფილის ნომერი' : 'Leave empty to use your profile contact number'}
+                </p>
               </div>
             </div>
           </section>
@@ -294,10 +360,10 @@ export default function AddTourWizard({ onNavigate, language, user, tourToEdit }
           <section className="space-y-8">
              <div className="flex items-center gap-3">
                <span className="material-symbols-outlined text-primary font-bold">payments</span>
-               <h2 className="text-xl font-black text-text-main uppercase tracking-widest">{isKa ? 'ფასი & რაოდენობა' : 'Pricing & Capacity'}</h2>
+               <h2 className="text-xl font-black text-text-main uppercase tracking-widest">{isKa ? 'ფასი & დეტალები' : 'Pricing & Details'}</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Price Card */}
+                {/* Price Per Person Card */}
                 <div className="relative p-8 bg-white rounded-3xl border border-border-light flex flex-col justify-between min-h-[160px] shadow-sm">
                    <div className="flex items-start justify-between">
                       <label className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em]">{isKa ? 'ფასი ერთ კაცზე' : 'Price Per Person'}</label>
@@ -319,11 +385,27 @@ export default function AddTourWizard({ onNavigate, language, user, tourToEdit }
                       <input 
                        type="number" 
                        value={formData.price} 
-                       onChange={(e) => setFormData({...formData, price: parseInt(e.target.value)})}
+                       onChange={(e) => setFormData({...formData, price: parseInt(e.target.value) || 0})}
                        className="w-full bg-transparent outline-none placeholder:text-gray-200" 
                        placeholder="0"
                      />
                    </div>
+                </div>
+
+                {/* Full Tour Price Card */}
+                <div className="relative p-8 bg-white rounded-3xl border border-border-light flex flex-col justify-between min-h-[160px] shadow-sm">
+                   <label className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em]">{isKa ? 'ტურის სრული ფასი' : 'Full Tour Price'}</label>
+                   <div className="flex items-center gap-2 text-4xl font-black text-text-main mt-auto">
+                      <span className="text-primary text-3xl">{inputCurrency === 'USD' ? '$' : inputCurrency === 'EUR' ? '€' : '₾'}</span>
+                      <input 
+                       type="number" 
+                       value={formData.full_price} 
+                       onChange={(e) => setFormData({...formData, full_price: parseInt(e.target.value) || 0})}
+                       className="w-full bg-transparent outline-none placeholder:text-gray-200" 
+                       placeholder="0"
+                     />
+                   </div>
+                   <p className="text-[9px] font-bold text-text-muted mt-2">{isKa ? 'არასავალდებულო - მთლიანი ტურის ფასი' : 'Optional — total price for the tour'}</p>
                 </div>
 
                 {/* Group Size Card */}
@@ -373,6 +455,67 @@ export default function AddTourWizard({ onNavigate, language, user, tourToEdit }
                       >
                         <span className="material-symbols-outlined font-black">add</span>
                       </button>
+                   </div>
+                </div>
+
+                {/* Difficulty Card */}
+                <div className="p-8 bg-white rounded-3xl border border-border-light flex flex-col justify-between min-h-[160px] shadow-sm">
+                   <label className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em]">{isKa ? 'სირთულე' : 'Difficulty'}</label>
+                   <div className="flex gap-2 mt-auto flex-wrap">
+                      {[
+                        { value: 'easy', label: isKa ? 'მსუბუქი' : 'Easy', icon: 'sentiment_satisfied' },
+                        { value: 'moderate', label: isKa ? 'საშუალო' : 'Moderate', icon: 'trending_up' },
+                        { value: 'hard', label: isKa ? 'რთული' : 'Hard', icon: 'landscape' },
+                      ].map(d => (
+                        <button
+                          key={d.value}
+                          type="button"
+                          onClick={() => setFormData(p => ({ ...p, difficulty: d.value }))}
+                          className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-black transition-all ${
+                            formData.difficulty === d.value
+                              ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                              : 'bg-background-light text-text-muted hover:bg-primary/10 hover:text-primary'
+                          }`}
+                        >
+                          <span className="material-symbols-outlined text-sm">{d.icon}</span>
+                          {d.label}
+                        </button>
+                      ))}
+                   </div>
+                </div>
+
+                {/* Language Card */}
+                <div className="p-8 bg-white rounded-3xl border border-border-light flex flex-col justify-between min-h-[160px] shadow-sm">
+                   <label className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em]">{isKa ? 'ენები' : 'Languages'}</label>
+                   <div className="flex gap-2 mt-auto flex-wrap">
+                      {[
+                        { value: 'English', label: 'English' },
+                        { value: 'Georgian', label: 'ქართული' },
+                        { value: 'Russian', label: 'Русский' },
+                        { value: 'German', label: 'Deutsch' },
+                      ].map(l => {
+                        const isSelected = formData.languages.split(',').map(s => s.trim()).includes(l.value);
+                        return (
+                          <button
+                            key={l.value}
+                            type="button"
+                            onClick={() => {
+                              const currentLangs = formData.languages.split(',').map(s => s.trim()).filter(Boolean);
+                              const newLangs = isSelected 
+                                ? currentLangs.filter(s => s !== l.value)
+                                : [...currentLangs, l.value];
+                              setFormData({...formData, languages: newLangs.join(', ')});
+                            }}
+                            className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all ${
+                              isSelected
+                                ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                                : 'bg-background-light text-text-muted hover:bg-primary/10 hover:text-primary'
+                            }`}
+                          >
+                            {l.label}
+                          </button>
+                        );
+                      })}
                    </div>
                 </div>
              </div>
@@ -427,6 +570,17 @@ export default function AddTourWizard({ onNavigate, language, user, tourToEdit }
                               placeholder={isKa ? 'რას გააკეთებენ მოგზაურები ამ დღეს?' : "What will travelers do on this day?"} 
                               className="w-full p-4 rounded-xl bg-background-light border-none font-medium h-32 outline-none resize-none" 
                            />
+
+                            <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-background-light">
+                               <span className="material-symbols-outlined text-primary text-[20px]">location_on</span>
+                               <input 
+                                  type="text" 
+                                  value={day.location || ''}
+                                  onChange={(e) => handleItineraryChange(index, 'location', e.target.value)}
+                                  placeholder={isKa ? 'ლოკაცია (რუკისთვის)' : "Location (for map)"} 
+                                  className="flex-1 bg-transparent border-none font-bold outline-none text-sm" 
+                               />
+                            </div>
                         </div>
                         <label className="rounded-3xl border-2 border-dashed border-border-light bg-background-light flex flex-col items-center justify-center gap-4 text-text-muted cursor-pointer hover:border-primary hover:text-primary transition-all relative overflow-hidden group">
                             {itineraryPreviews[index] ? (

@@ -14,6 +14,8 @@ export interface Tour {
     duration: string;
     location: string;
     price: number;
+    full_price?: number;
+    difficulty?: string;
     rating: number;
     reviews: number;
     category: string;
@@ -24,13 +26,15 @@ export interface Tour {
     operator_id?: string;
     operator_name?: string;
     company_name?: string;
+    is_verified?: boolean;
     badges?: string[];
     highlights?: string[];
     included?: string[];
     cancellationPolicy?: string;
     maxGroupSize?: number;
     languages?: string[];
-    itinerary?: { day: number; title: string; description: string; activities: string[] }[];
+    itinerary?: { day: number; title: string; description: string; activities: string[]; location?: string }[];
+    phone?: string;
     status?: string;
     created_at: string;
 }
@@ -62,6 +66,8 @@ export interface User {
     phone?: string;
     avatar_url?: string;
     role?: string;
+    is_verified?: boolean;
+    verification_status?: 'none' | 'pending' | 'verified' | 'rejected';
 }
 
 export const setToken = (token: string, remember: boolean = true) => {
@@ -610,12 +616,23 @@ export const createReservation = async (data: Omit<Reservation, 'id' | 'status' 
         body: JSON.stringify(data)
     });
     
-    if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to create reservation');
+    const text = await response.text();
+    let responseData = null;
+    try {
+        responseData = text ? JSON.parse(text) : null;
+    } catch (e) {
+        console.error('Failed to parse response JSON:', text);
     }
     
-    return response.json();
+    if (!response.ok) {
+        throw new Error(responseData?.error || 'Failed to create reservation (Server error)');
+    }
+    
+    if (!responseData) {
+        throw new Error('Server returned an empty or invalid response');
+    }
+    
+    return responseData;
 };
 
 export const fetchOperatorReservations = async (operatorId: string): Promise<Reservation[]> => {
@@ -698,16 +715,18 @@ export const fetchReviews = async (tourId: number): Promise<Review[]> => {
     return response.json();
 };
 
-export const createReview = async (data: { tour_id: number; rating: number; comment: string }): Promise<Review> => {
+export const createReview = async (data: { tour_id: number; rating: number; comment: string; guest_name?: string }): Promise<Review> => {
     const token = getToken();
-    if (!token) throw new Error('Not authenticated');
+    const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+    };
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
 
     const response = await fetch(`${API_BASE_URL}/reviews`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        },
+        headers,
         body: JSON.stringify(data)
     });
 
@@ -716,5 +735,44 @@ export const createReview = async (data: { tour_id: number; rating: number; comm
         throw new Error(error.error || 'Failed to post review');
     }
 
+    return response.json();
+};
+
+export const deleteReview = async (reviewId: string): Promise<void> => {
+    const token = getToken();
+    if (!token) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_BASE_URL}/reviews/${reviewId}`, {
+        method: 'DELETE',
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete review');
+    }
+};
+export const fetchPendingVerifications = async () => {
+    const token = getToken();
+    const response = await fetch(`${API_BASE_URL}/admin/verifications`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error('Failed to fetch pending verifications');
+    return response.json();
+};
+
+export const updateVerificationStatus = async (id: string, status: 'verified' | 'rejected') => {
+    const token = getToken();
+    const response = await fetch(`${API_BASE_URL}/admin/verify/${id}`, {
+        method: 'POST',
+        headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status })
+    });
+    if (!response.ok) throw new Error('Failed to update verification status');
     return response.json();
 };

@@ -55,13 +55,7 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Global error handler for Express
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  logError(`Express Error: ${err.message}\n${err.stack}`);
-  if (!res.headersSent) {
-    res.status(500).json({ error: 'Internal Server Error', details: err.message });
-  }
-});
+// Global error handler will be moved to the end
 
 app.get('/', (req, res) => res.send('TouristGeo API Server is running. Visit <a href="http://localhost:5173">port 5173</a> for the website.'));
 
@@ -439,7 +433,7 @@ app.get('/api/auth/me', async (req, res) => {
 
   const { data: user, error } = await supabase
     .from('profiles')
-    .select('id, name, email, company_name, phone, avatar_url, role')
+    .select('id, name, email, company_name, phone, avatar_url, role, is_verified, verification_status')
     .eq('id', payload.id)
     .single();
 
@@ -751,7 +745,7 @@ app.get('/api/tours', async (req, res) => {
     
     let query = supabase
       .from('tours')
-      .select('*, profiles(name, company_name)')
+      .select('*, profiles(name, company_name, is_verified, phone)')
       .eq('status', 'published')
       .gte('created_at', thirtyDaysAgo);
 
@@ -771,6 +765,8 @@ app.get('/api/tours', async (req, res) => {
       ...t,
       operator_name: t.profiles?.name,
       company_name: t.profiles?.company_name,
+      is_verified: t.profiles?.is_verified,
+      phone: t.phone || t.profiles?.phone,
       languages: t.languages || [],
       highlights: t.highlights || [],
       included: t.included || [],
@@ -794,7 +790,7 @@ app.post('/api/tours', async (req, res) => {
 
   const {
     title, category, location, duration, description,
-    price, maxGroupSize, itinerary, imageUrl, existingGallery, newGalleryUrls
+    price, full_price, difficulty, languages, maxGroupSize, itinerary, imageUrl, existingGallery, newGalleryUrls, phone
   } = req.body;
 
   try {
@@ -804,6 +800,7 @@ app.post('/api/tours', async (req, res) => {
     const finalGallery = [...parsedExisting, ...parsedNew];
 
     let itineraryData = itinerary ? JSON.parse(itinerary) : [];
+    let parsedLanguages = languages ? JSON.parse(languages) : ['English'];
 
     const { data, error } = await supabase
       .from('tours')
@@ -812,10 +809,14 @@ app.post('/api/tours', async (req, res) => {
           operator_id: payload.id,
           title, category, location, duration, description,
           price: price ? parseFloat(price) : null,
+          full_price: full_price ? parseFloat(full_price) : null,
+          difficulty: difficulty || null,
+          languages: parsedLanguages,
           max_group_size: maxGroupSize ? parseInt(maxGroupSize) : null,
           image: finalImageUrl,
           gallery: finalGallery,
           itinerary: itineraryData,
+          phone: phone,
           status: 'published'
         }
       ])
@@ -888,15 +889,20 @@ app.put('/api/tours/:id', async (req, res) => {
 
   const {
     title, category, location, duration, description,
-    price, maxGroupSize, itinerary, imageUrl, existingGallery, newGalleryUrls
+    price, full_price, difficulty, languages, maxGroupSize, itinerary, imageUrl, existingGallery, newGalleryUrls, phone
   } = req.body;
 
   try {
+    let parsedLanguages = languages ? JSON.parse(languages) : undefined;
     let updateData: any = {
       title, category, location, duration, description,
       price: price ? parseFloat(price) : null,
+      full_price: full_price ? parseFloat(full_price) : null,
+      difficulty: difficulty || null,
       max_group_size: maxGroupSize ? parseInt(maxGroupSize) : null,
+      phone: phone,
     };
+    if (parsedLanguages) updateData.languages = parsedLanguages;
 
     if (imageUrl) {
       updateData.image = imageUrl;
@@ -1005,7 +1011,7 @@ app.get('/api/tours/:id', async (req, res) => {
   try {
     const { data: tour, error } = await supabase
       .from('tours')
-      .select('*, profiles(name, company_name)')
+      .select('*, profiles(name, company_name, is_verified, phone)')
       .eq('id', req.params.id)
       .single();
 
@@ -1014,13 +1020,295 @@ app.get('/api/tours/:id', async (req, res) => {
     res.json({
       ...tour,
       operator_name: tour.profiles?.name,
-      company_name: tour.profiles?.company_name
+      company_name: tour.profiles?.company_name,
+      is_verified: tour.profiles?.is_verified,
+      phone: tour.phone || tour.profiles?.phone
     });
   } catch (error) {
     console.error('Error fetching tour detail:', error);
     res.status(500).json({ error: 'Failed to fetch tour' });
   }
 });
+
+app.post('/api/bookings', async (req, res) => {
+  const { tour_id, user_name, user_email, booking_date, guests, total_price } = req.body;
+  if (!tour_id || !user_name || !user_email || !booking_date) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('bookings')
+      .insert([
+        { tour_id, user_name, user_email, booking_date, guests: guests || 1, total_price: total_price || 0 }
+      ])
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.json({ id: data.id });
+  } catch (error) {
+    console.error('Error creating booking:', error);
+    res.status(500).json({ error: 'Booking failed' });
+  }
+});
+
+app.get('/api/bookings/me', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+  const payload = verifyToken(authHeader.split(' ')[1]);
+  if (!payload) return res.status(401).json({ error: 'Invalid token' });
+
+  try {
+    const { data: bookings, error } = await supabase
+      .from('bookings')
+      .select('*, tours(title, image)')
+      .eq('user_email', payload.email)
+      .order('id', { ascending: false });
+
+    if (error) throw error;
+
+    const formattedBookings = bookings.map((b: any) => ({
+      ...b,
+      tour_title: b.tours?.title,
+      tour_image: b.tours?.image
+    }));
+
+    res.json(formattedBookings);
+  } catch (error) {
+    console.error('Error fetching my bookings:', error);
+    res.status(500).json({ error: 'Failed to fetch bookings' });
+  }
+});
+
+
+app.post('/api/auth/verify', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+  const payload = verifyToken(authHeader.split(' ')[1]);
+  if (!payload) return res.status(401).json({ error: 'Invalid token' });
+
+  const { document_url } = req.body;
+  if (!document_url) return res.status(400).json({ error: 'Document URL is required' });
+
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ 
+        verification_status: 'pending',
+        verification_document: document_url 
+      })
+      .eq('id', payload.id);
+
+    if (error) throw error;
+    res.json({ success: true, message: 'Verification request submitted' });
+  } catch (error) {
+    console.error('Error submitting verification:', error);
+    res.status(500).json({ error: 'Failed to submit verification' });
+  }
+});
+
+const ADMIN_EMAIL = 'datonaxucrishvili64@gmail.com';
+
+app.get('/api/admin/verifications', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+  const payload = verifyToken(authHeader.split(' ')[1]);
+  if (!payload || payload.email !== ADMIN_EMAIL) return res.status(403).json({ error: 'Forbidden' });
+
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('verification_status', 'pending');
+
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    console.error('Error fetching verifications:', error);
+    res.status(500).json({ error: 'Failed to fetch verifications' });
+  }
+});
+
+app.post('/api/admin/verify/:id', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+  const payload = verifyToken(authHeader.split(' ')[1]);
+  if (!payload || payload.email !== ADMIN_EMAIL) return res.status(403).json({ error: 'Forbidden' });
+
+  const { status, message } = req.body; // status: 'verified' or 'rejected'
+
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ 
+        verification_status: status,
+        is_verified: status === 'verified'
+      })
+      .eq('id', req.params.id);
+
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error updating verification:', error);
+    res.status(500).json({ error: 'Failed to update verification' });
+  }
+});
+
+// --- RESERVATIONS ROUTES ---
+
+app.post('/api/reservations', async (req, res) => {
+  const { tour_id, tour_title, tour_image, tour_location, operator_id, tourist_name, tourist_surname, tourist_phone, tourist_email, guests, start_date, duration_days, description } = req.body;
+  
+  const missing = [];
+  if (!tour_id) missing.push('tour_id');
+  if (!operator_id) missing.push('operator_id');
+  if (!tourist_name) missing.push('tourist_name');
+  if (!start_date) missing.push('start_date');
+
+  if (missing.length > 0) {
+    console.error('Missing reservation fields:', missing, 'Body:', req.body);
+    fs.appendFileSync('error.log', `[${new Date().toISOString()}] Missing reservation fields: ${missing.join(', ')} - Body: ${JSON.stringify(req.body)}\n`);
+    return res.status(400).json({ error: `Missing required fields: ${missing.join(', ')}` });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('reservations')
+      .insert([
+        { tour_id, tour_title, tour_image, tour_location, operator_id, tourist_name, tourist_surname, tourist_phone, tourist_email, guests, start_date, duration_days, description, status: 'new' }
+      ])
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    console.error('Error creating reservation:', error);
+    fs.appendFileSync('reservation_error.log', `[${new Date().toISOString()}] Error creating reservation: ${JSON.stringify(error, Object.getOwnPropertyNames(error))}\n`);
+    res.status(500).json({ error: 'Reservation failed' });
+  }
+});
+
+app.get('/api/reservations/me', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+  const payload = verifyToken(authHeader.split(' ')[1]);
+  if (!payload) return res.status(401).json({ error: 'Invalid token' });
+
+  try {
+    const { data: reservations, error } = await supabase
+      .from('reservations')
+      .select('*')
+      .eq('operator_id', payload.id)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    res.json(reservations);
+  } catch (error) {
+    console.error('Error fetching reservations:', error);
+    res.status(500).json({ error: 'Failed to fetch reservations' });
+  }
+});
+
+app.get('/api/reservations/unread-count', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+  const payload = verifyToken(authHeader.split(' ')[1]);
+  if (!payload) return res.status(401).json({ error: 'Invalid token' });
+
+  try {
+    const { count, error } = await supabase
+      .from('reservations')
+      .select('*', { count: 'exact', head: true })
+      .eq('operator_id', payload.id)
+      .eq('status', 'new');
+
+    if (error) throw error;
+    res.json({ count: count || 0 });
+  } catch (error) {
+    console.error('Error counting reservations:', error);
+    res.status(500).json({ error: 'Failed to count reservations' });
+  }
+});
+
+app.patch('/api/reservations/:id/read', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+  const payload = verifyToken(authHeader.split(' ')[1]);
+  if (!payload) return res.status(401).json({ error: 'Invalid token' });
+
+  try {
+    const { error } = await supabase
+      .from('reservations')
+      .update({ status: 'read' })
+      .eq('id', req.params.id)
+      .eq('operator_id', payload.id);
+
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error updating reservation:', error);
+    res.status(500).json({ error: 'Failed to update reservation' });
+  }
+});
+
+app.patch('/api/reservations/read-all', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+  const payload = verifyToken(authHeader.split(' ')[1]);
+  if (!payload) return res.status(401).json({ error: 'Invalid token' });
+
+  try {
+    const { error } = await supabase
+      .from('reservations')
+      .update({ status: 'read' })
+      .eq('operator_id', payload.id)
+      .eq('status', 'new');
+
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error updating reservations:', error);
+    res.status(500).json({ error: 'Failed to update reservations' });
+  }
+});
+
+app.get('/api/categories', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('tours')
+      .select('category')
+      .not('category', 'is', null);
+
+    if (error) throw error;
+    
+    const categories = Array.from(new Set(data.map((c: any) => c.category)));
+    res.json(categories);
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    res.status(500).json({ error: 'Failed to fetch categories' });
+  }
+});
+
+app.get('/api/categories', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('tours')
+      .select('category')
+      .not('category', 'is', null);
+
+    if (error) throw error;
+    
+    const categories = Array.from(new Set(data.map((c: any) => c.category)));
+    res.json(categories);
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    res.status(500).json({ error: 'Failed to fetch categories' });
+  }
+});
+
+    
 
 app.post('/api/bookings', async (req, res) => {
   const { tour_id, user_name, user_email, booking_date, guests, total_price } = req.body;
@@ -1103,6 +1391,7 @@ app.post('/api/reservations', async (req, res) => {
     res.json(data);
   } catch (error) {
     console.error('Error creating reservation:', error);
+    fs.appendFileSync('reservation_error.log', `[${new Date().toISOString()}] Error creating reservation: ${JSON.stringify(error, Object.getOwnPropertyNames(error))}\n`);
     res.status(500).json({ error: 'Reservation failed' });
   }
 });
@@ -1216,20 +1505,46 @@ app.get('/api/tours/:id/reviews', async (req, res) => {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    res.json(data);
+    
+    // Parse guest names if any
+    const parsedData = data.map(review => {
+      if (review.comment && review.comment.startsWith('[GUEST:')) {
+         const match = review.comment.match(/^\[GUEST:([^\]]+)\]\s*(.*)$/s);
+         if (match) {
+           return {
+             ...review,
+             comment: match[2].trim(),
+             profiles: { ...review.profiles, name: match[1] }
+           };
+         }
+      }
+      return review;
+    });
+
+    res.json(parsedData);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch reviews' });
   }
 });
 
 app.post('/api/reviews', async (req, res) => {
+  let userId = null;
   const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
-  const payload = verifyToken(authHeader.split(' ')[1]);
-  if (!payload) return res.status(401).json({ error: 'Invalid token' });
+  if (authHeader?.startsWith('Bearer ')) {
+    const payload = verifyToken(authHeader.split(' ')[1]);
+    if (payload) userId = payload.id;
+  }
 
-  const { tour_id, rating, comment } = req.body;
+  const { tour_id, rating, comment, guest_name } = req.body;
   if (!tour_id || !rating) return res.status(400).json({ error: 'Tour ID and rating are required' });
+  
+  if (!userId && !guest_name) {
+    return res.status(400).json({ error: 'Guest name is required if not logged in' });
+  }
+
+  const GUEST_ID = '9c190cba-b49d-484f-a708-75ad623083e8';
+  const finalUserId = userId || GUEST_ID;
+  const finalComment = (!userId && guest_name) ? `[GUEST:${guest_name}] ${comment}` : comment;
 
   try {
     // 1. Insert the review
@@ -1237,9 +1552,9 @@ app.post('/api/reviews', async (req, res) => {
       .from('reviews')
       .insert([{
         tour_id,
-        user_id: payload.id,
+        user_id: finalUserId,
         rating: Number(rating),
-        comment,
+        comment: finalComment,
         created_at: new Date().toISOString()
       }])
       .select()
@@ -1262,12 +1577,76 @@ app.post('/api/reviews', async (req, res) => {
           reviews: allReviews.length 
         })
         .eq('id', tour_id);
+
+      // 3. Automated Verification Logic: Check if operator meets 50+ reviews & 4.5+ average
+      const { data: tourData } = await supabase.from('tours').select('operator_id').eq('id', tour_id).single();
+      if (tourData?.operator_id) {
+        const { data: operatorTours } = await supabase.from('tours').select('id').eq('operator_id', tourData.operator_id);
+        if (operatorTours && operatorTours.length > 0) {
+          const tourIds = operatorTours.map(t => t.id);
+          const { data: opReviews } = await supabase.from('reviews').select('rating').in('tour_id', tourIds);
+          
+          if (opReviews && opReviews.length >= 50) {
+            const totalAvg = opReviews.reduce((acc, curr) => acc + curr.rating, 0) / opReviews.length;
+            if (totalAvg >= 4.5) {
+              await supabase
+                .from('profiles')
+                .update({ is_verified: true, verification_status: 'verified' })
+                .eq('id', tourData.operator_id);
+            }
+          }
+        }
+      }
     }
 
     res.json(review);
   } catch (error: any) {
     logError(`Review Error: ${error.message}`);
     res.status(500).json({ error: 'Failed to post review', details: error.message });
+  }
+});
+
+app.delete('/api/reviews/:id', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+  const payload = verifyToken(authHeader.split(' ')[1]);
+  if (!payload || payload.role !== 'operator') return res.status(403).json({ error: 'Forbidden' });
+
+  try {
+    // Check if the operator owns the tour associated with this review
+    const { data: review } = await supabase.from('reviews').select('tour_id').eq('id', req.params.id).single();
+    if (!review) return res.status(404).json({ error: 'Review not found' });
+
+    const { data: tour } = await supabase.from('tours').select('operator_id').eq('id', review.tour_id).single();
+    if (!tour || tour.operator_id !== payload.id) {
+      return res.status(403).json({ error: 'Forbidden: You do not own this tour' });
+    }
+
+    const { error } = await supabase.from('reviews').delete().eq('id', req.params.id);
+    if (error) throw error;
+
+    // Recalculate average rating
+    const { data: allReviews } = await supabase.from('reviews').select('rating').eq('tour_id', review.tour_id);
+    const avgRating = allReviews && allReviews.length > 0 
+      ? allReviews.reduce((acc: any, curr: any) => acc + curr.rating, 0) / allReviews.length 
+      : 0;
+    
+    await supabase.from('tours').update({ 
+      rating: Number(avgRating.toFixed(1)), 
+      reviews: allReviews ? allReviews.length : 0 
+    }).eq('id', review.tour_id);
+
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to delete review', details: error.message });
+  }
+});
+
+// Global error handler for Express
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  logError(`Express Error: ${err.message}\n${err.stack}`);
+  if (!res.headersSent) {
+    res.status(500).json({ error: 'Internal Server Error', details: err.message });
   }
 });
 

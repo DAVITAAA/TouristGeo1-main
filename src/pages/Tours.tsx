@@ -45,15 +45,19 @@ export default function Tours({ onNavigate, language }: ToursProps) {
   }, []);
 
   const filteredTours = tours.filter(tour => {
-    const matchesSearch = tour.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         tour.location.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesDest = selectedDestinations.length === 0 || selectedDestinations.some(d => tour.location.includes(d));
+    const title = tour.title || '';
+    const location = tour.location || '';
+    const durationStr = tour.duration || '0';
+
+    const matchesSearch = title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         location.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesDest = selectedDestinations.length === 0 || selectedDestinations.some(d => location.includes(d));
     // Simple duration mapping for demo
     const matchesDuration = !selectedDuration || (
-      selectedDuration === '1-3 Days' ? parseInt(tour.duration) <= 3 :
-      selectedDuration === '4-7 Days' ? (parseInt(tour.duration) > 3 && parseInt(tour.duration) <= 7) :
-      selectedDuration === '8-14 Days' ? (parseInt(tour.duration) > 7 && parseInt(tour.duration) <= 14) :
-      parseInt(tour.duration) > 14
+      selectedDuration === '1-3 Days' ? parseInt(durationStr) <= 3 :
+      selectedDuration === '4-7 Days' ? (parseInt(durationStr) > 3 && parseInt(durationStr) <= 7) :
+      selectedDuration === '8-14 Days' ? (parseInt(durationStr) > 7 && parseInt(durationStr) <= 14) :
+      parseInt(durationStr) > 14
     );
     // Be robust with price filtering, allow any string/number conversion
     const tourPrice = typeof tour.price === 'string' ? parseInt(tour.price) : tour.price;
@@ -286,7 +290,7 @@ export default function Tours({ onNavigate, language }: ToursProps) {
               </div>
               
               <div className="flex items-center gap-4">
-                <p className="text-xs font-black text-text-muted uppercase tracking-widest">{t.sort_by}:</p>
+                <p className="text-xs font-black text-text-muted uppercase tracking-widest">{t.sort_by}</p>
                 <div className="relative group">
                   <button className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl border border-border-light text-sm font-bold text-text-main shadow-sm">
                     {t.recommended}
