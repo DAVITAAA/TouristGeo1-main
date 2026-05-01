@@ -384,8 +384,11 @@ export default function AddTourWizard({ onNavigate, language, user, tourToEdit }
                       <span className="text-primary text-3xl">{inputCurrency === 'USD' ? '$' : inputCurrency === 'EUR' ? '€' : '₾'}</span>
                       <input 
                        type="number" 
-                       value={formData.price} 
-                       onChange={(e) => setFormData({...formData, price: parseInt(e.target.value) || 0})}
+                       value={formData.price === 0 ? '' : formData.price} 
+                       onChange={(e) => {
+                         const val = e.target.value;
+                         setFormData({...formData, price: val === '' ? 0 : parseInt(val)});
+                       }}
                        className="w-full bg-transparent outline-none placeholder:text-gray-200" 
                        placeholder="0"
                      />
@@ -399,8 +402,11 @@ export default function AddTourWizard({ onNavigate, language, user, tourToEdit }
                       <span className="text-primary text-3xl">{inputCurrency === 'USD' ? '$' : inputCurrency === 'EUR' ? '€' : '₾'}</span>
                       <input 
                        type="number" 
-                       value={formData.full_price} 
-                       onChange={(e) => setFormData({...formData, full_price: parseInt(e.target.value) || 0})}
+                       value={formData.full_price === 0 ? '' : formData.full_price} 
+                       onChange={(e) => {
+                         const val = e.target.value;
+                         setFormData({...formData, full_price: val === '' ? 0 : parseInt(val)});
+                       }}
                        className="w-full bg-transparent outline-none placeholder:text-gray-200" 
                        placeholder="0"
                      />

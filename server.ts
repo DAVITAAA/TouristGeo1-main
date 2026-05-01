@@ -849,11 +849,18 @@ app.post('/api/tours', async (req, res) => {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('--- TOUR INSERT ERROR ---', error);
+      throw error;
+    }
     res.json({ id: data.id, success: true });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error inserting tour:', error);
-    res.status(500).json({ error: 'Failed to create tour' });
+    res.status(500).json({ 
+      error: 'Failed to create tour', 
+      details: error.message || 'Unknown error',
+      code: error.code
+    });
   }
 });
 
