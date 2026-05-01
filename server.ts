@@ -345,11 +345,14 @@ app.post('/api/auth/oauth-g', async (req, res) => {
             console.error('List users error:', listError);
             return res.status(500).json({ error: 'Failed to find existing account' });
          }
-         const existingAuth = listData.users.find((u: any) => u.email === email);
+         const users = listData?.users || (Array.isArray(listData) ? listData : []);
+         const existingAuth = Array.isArray(users) ? users.find((u: any) => u.email === email) : null;
+          
          if (existingAuth) {
            authUserId = existingAuth.id;
          } else {
-           return res.status(500).json({ error: 'Account exists but profile creation failed' });
+           console.error('User not found in list. Email:', email);
+           return res.status(500).json({ error: 'Account exists in Auth but could not be retrieved', details: 'Check Supabase Admin logs' });
          }
       } else {
         return res.status(500).json({ error: 'Failed to create account', details: authError.message });
