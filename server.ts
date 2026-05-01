@@ -282,21 +282,22 @@ app.post('/api/auth/login', async (req, res) => {
 // Google Auth
 app.post('/api/auth/oauth-g', async (req, res) => {
   const { credential, role } = req.body;
-  if (!credential) return res.status(400).json({ error: 'Google credential is required' });
+  console.log('[GOOGLE_AUTH] Request received. Role:', role);
 
   try {
-    console.log('[DEBUG] Google Auth Attempt - Credential present:', !!credential);
-    console.log('[DEBUG] Using Audience:', process.env.GOOGLE_CLIENT_ID);
+    if (!credential) throw new Error('Missing Google credential');
+
     const ticket = await googleClient.verifyIdToken({
       idToken: credential,
       audience: process.env.GOOGLE_CLIENT_ID,
     });
     const payload = ticket.getPayload();
-    if (!payload || !payload.email) return res.status(400).json({ error: 'Invalid Google token' });
+    if (!payload || !payload.email) throw new Error('Invalid Google payload');
 
     const { email, name, picture } = payload;
-    console.log('[DEBUG] Google Payload - Email:', email, 'Name:', name);
+    console.log('[GOOGLE_AUTH] Verified email:', email);
 
+    // Check if profile exists
     const { data: existingUser } = await supabase.from('profiles').select('*').eq('email', email).single();
 
     if (existingUser) {
