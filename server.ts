@@ -309,8 +309,17 @@ app.post('/api/auth/oauth-g', async (req, res) => {
   console.log('[GOOGLE_AUTH] Request received. Role:', role);
 
   try {
-    if (!credential) throw new Error('Missing Google credential');
+    if (!credential) {
+      console.error('[GOOGLE_AUTH] Error: Missing credential in request body');
+      throw new Error('Missing Google credential');
+    }
 
+    if (!process.env.GOOGLE_CLIENT_ID) {
+      console.error('[GOOGLE_AUTH] Error: GOOGLE_CLIENT_ID is not defined in environment variables');
+      throw new Error('Server configuration error: GOOGLE_CLIENT_ID is missing');
+    }
+
+    console.log('[GOOGLE_AUTH] Verifying token with audience:', process.env.GOOGLE_CLIENT_ID);
     const ticket = await googleClient.verifyIdToken({
       idToken: credential,
       audience: process.env.GOOGLE_CLIENT_ID,
@@ -388,7 +397,7 @@ app.post('/api/auth/oauth-g', async (req, res) => {
     const errorCode = error.code || 'AUTH_FAILURE';
     const errorDetails = error.details || (error.response ? safeStringify(error.response.data) : 'No extra details');
     
-    logError(`Google Auth Fatal: ${errorMsg}\nCode: ${errorCode}\nDetails: ${errorDetails}\nFull Error: ${safeStringify(error)}`);
+    logError(`Google Auth Fatal: ${errorMsg}\nCode: ${errorCode}\nDetails: ${errorDetails}\nStack: ${error.stack}\nFull Error: ${safeStringify(error)}`);
     console.error('[DEBUG] FULL GOOGLE AUTH ERROR:', error);
 
     if (!res.headersSent) {
@@ -397,7 +406,8 @@ app.post('/api/auth/oauth-g', async (req, res) => {
         details: errorMsg,
         extra: errorDetails,
         code: errorCode,
-        hint: !process.env.GOOGLE_CLIENT_ID ? 'GOOGLE_CLIENT_ID environment variable is missing on server.' : undefined
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+        hint: !process.env.GOOGLE_CLIENT_ID ? 'GOOGLE_CLIENT_ID environment variable is missing on server.' : 'Check if your Google Client ID is correct and authorized for this domain.'
       });
     }
   }

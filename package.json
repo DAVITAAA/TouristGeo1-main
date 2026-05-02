@@ -9,8 +9,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist",
+    "cleanup": "powershell -ExecutionPolicy Bypass -File ./cleanup-port.ps1",
     "lint": "tsc --noEmit",
-    "dev:all": "concurrently \"npm run dev\" \"npm run server\""
+    "dev:all": "npm run cleanup && concurrently \"npm run dev\" \"npm run server\""
   },
   "dependencies": {
     "@google/genai": "^1.29.0",

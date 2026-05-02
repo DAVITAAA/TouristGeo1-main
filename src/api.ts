@@ -187,10 +187,14 @@ export const googleLogin = async (credential: string, role?: string) => {
             let errorMsg = `Google login failed (${response.status})`;
             try {
                 const errorData = JSON.parse(text);
-                errorMsg = errorData.error || errorData.details || errorData.message || errorMsg;
+                errorMsg = errorData.details || errorData.error || errorData.message || errorMsg;
+                if (errorData.hint) errorMsg += ` (Hint: ${errorData.hint})`;
+                if (errorData.stack && import.meta.env.DEV) {
+                    console.error('Google Login Stack Trace:', errorData.stack);
+                }
             } catch (e) {
                 if (text.includes('<!DOCTYPE html>')) {
-                    errorMsg = "Server crashed or returned HTML. Please check if 'npm run server' is running.";
+                    errorMsg = "Server is returning HTML instead of JSON. This usually means the backend is crashed or port 5000 is occupied by a different process. Please restart with 'npm run dev:all'.";
                 } else if (text) {
                     errorMsg = text;
                 }
