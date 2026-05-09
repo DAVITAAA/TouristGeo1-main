@@ -726,6 +726,11 @@ export const fetchReviews = async (tourId: number): Promise<Review[]> => {
     if (!response.ok) throw new Error('Failed to fetch reviews');
     return response.json();
 };
+export const fetchOperatorReviews = async (operatorId: string): Promise<(Review & { tours: { title: string } })[]> => {
+    const response = await fetch(`${API_BASE_URL}/operators/${operatorId}/reviews`);
+    if (!response.ok) throw new Error('Failed to fetch reviews');
+    return response.json();
+};
 
 export const createReview = async (data: { tour_id: number; rating: number; comment: string; guest_name?: string }): Promise<Review> => {
     const token = getToken();
@@ -766,25 +771,47 @@ export const deleteReview = async (reviewId: string): Promise<void> => {
         throw new Error(error.error || 'Failed to delete review');
     }
 };
-export const fetchPendingVerifications = async () => {
+
+// ═══════════════════════════════════════
+// REVIEW NOTIFICATION SYSTEM
+// ═══════════════════════════════════════
+
+export interface ReviewNotification {
+    id: string;
+    tour_id: number;
+    tour_title: string;
+    tour_image: string;
+    reviewer_name: string;
+    reviewer_avatar: string | null;
+    rating: number;
+    comment: string;
+    created_at: string;
+}
+
+export const fetchReviewNotifications = async (): Promise<{ notifications: ReviewNotification[]; unread_count: number }> => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/admin/verifications`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (!response.ok) throw new Error('Failed to fetch pending verifications');
-    return response.json();
+    if (!token) return { notifications: [], unread_count: 0 };
+
+    const since = localStorage.getItem('reviewNotifLastSeen') || '';
+    const params = since ? `?since=${encodeURIComponent(since)}` : '';
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/reviews/operator-notifications${params}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!response.ok) return { notifications: [], unread_count: 0 };
+        return response.json();
+    } catch {
+        return { notifications: [], unread_count: 0 };
+    }
 };
 
-export const updateVerificationStatus = async (id: string, status: 'verified' | 'rejected') => {
-    const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/admin/verify/${id}`, {
-        method: 'POST',
-        headers: { 
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ status })
-    });
-    if (!response.ok) throw new Error('Failed to update verification status');
-    return response.json();
+export const getUnreadReviewCount = async (): Promise<number> => {
+    const result = await fetchReviewNotifications();
+    return result.unread_count;
 };
+
+export const markReviewNotificationsRead = () => {
+    localStorage.setItem('reviewNotifLastSeen', new Date().toISOString());
+};
+

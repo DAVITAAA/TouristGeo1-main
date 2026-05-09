@@ -64,6 +64,10 @@ process.on('uncaughtException', (err) => {
 });
 
 app.use(cors());
+app.use((req, res, next) => {
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+  next();
+});
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 const upload = multer({ storage: multer.memoryStorage() });
@@ -145,6 +149,8 @@ app.post('/api/auth/register/initiate', async (req, res) => {
 
     if (!RESEND_ENABLED) {
       console.log(`[DEV] Resend disabled. Bypassing OTP verification for ${email} and registering directly.`);
+      
+      let authUserId = '';
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email,
         password,
@@ -152,27 +158,41 @@ app.post('/api/auth/register/initiate', async (req, res) => {
         user_metadata: { name }
       });
 
-      if (authError) return res.status(400).json({ error: authError.message });
+      if (authError) {
+        if (authError.message.includes('already registered') || authError.message.includes('already exists')) {
+          // User exists in Auth - let's check if they have a profile
+          const { data: listData } = await supabase.auth.admin.listUsers();
+          const users = listData?.users || [];
+          const existingAuth = users.find((u: any) => u.email === email);
+          if (existingAuth) {
+            authUserId = existingAuth.id;
+          } else {
+             return res.status(400).json({ error: 'Email already registered in Auth but could not be retrieved.' });
+          }
+        } else {
+          return res.status(400).json({ error: authError.message });
+        }
+      } else {
+        authUserId = authData.user.id;
+      }
 
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .upsert([{ 
-          id: authData.user.id, 
+          id: authUserId, 
           name, 
           email, 
-          phone, 
-          company_name, 
+          phone: phone || null, 
+          company_name: company_name || null, 
           role: role || 'tourist' 
         }], { onConflict: 'id' })
         .select()
         .single();
 
       if (profileError) {
-        await supabase.auth.admin.deleteUser(authData.user.id);
-        return res.status(500).json({ error: 'Failed to create profile' });
+        console.error('Profile creation error during direct registration:', profileError);
+        return res.status(500).json({ error: 'Failed to create profile', details: profileError.message });
       }
-
-      await supabase.from('temp_registrations').delete().eq('email', email);
 
       const user = { id: profileData.id, name: profileData.name, email: profileData.email, role: profileData.role };
       return res.json({ user, token: createToken(user) });
@@ -232,6 +252,7 @@ app.post('/api/auth/register/complete', async (req, res) => {
 
     if (findError || !temp) return res.status(400).json({ error: 'Invalid or expired verification code' });
 
+    let authUserId = '';
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email: temp.email,
       password: temp.password,
@@ -239,12 +260,27 @@ app.post('/api/auth/register/complete', async (req, res) => {
       user_metadata: { name: temp.name }
     });
 
-    if (authError) return res.status(400).json({ error: authError.message });
+    if (authError) {
+       if (authError.message.includes('already registered') || authError.message.includes('already exists')) {
+          const { data: listData } = await supabase.auth.admin.listUsers();
+          const users = listData?.users || [];
+          const existingAuth = users.find((u: any) => u.email === email);
+          if (existingAuth) {
+            authUserId = existingAuth.id;
+          } else {
+             return res.status(400).json({ error: 'Email already registered in Auth but could not be retrieved.' });
+          }
+       } else {
+          return res.status(400).json({ error: authError.message });
+       }
+    } else {
+       authUserId = authData.user.id;
+    }
 
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .upsert([{ 
-        id: authData.user.id, 
+        id: authUserId, 
         name: temp.name, 
         email: temp.email, 
         phone: temp.phone, 
@@ -255,8 +291,8 @@ app.post('/api/auth/register/complete', async (req, res) => {
       .single();
 
     if (profileError) {
-      await supabase.auth.admin.deleteUser(authData.user.id);
-      return res.status(500).json({ error: 'Failed to create profile' });
+      console.error('Profile creation error during OTP registration:', profileError);
+      return res.status(500).json({ error: 'Failed to create profile', details: profileError.message });
     }
 
     await supabase.from('temp_registrations').delete().eq('email', email);
@@ -401,13 +437,18 @@ app.post('/api/auth/oauth-g', async (req, res) => {
     console.error('[DEBUG] FULL GOOGLE AUTH ERROR:', error);
 
     if (!res.headersSent) {
+      const isMissingConfig = !process.env.GOOGLE_CLIENT_ID;
       res.status(500).json({ 
         error: 'Google login failed', 
         details: errorMsg,
         extra: errorDetails,
         code: errorCode,
         stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
-        hint: !process.env.GOOGLE_CLIENT_ID ? 'GOOGLE_CLIENT_ID environment variable is missing on server.' : 'Check if your Google Client ID is correct and authorized for this domain.'
+        hint: isMissingConfig 
+          ? 'GOOGLE_CLIENT_ID environment variable is missing on server.' 
+          : errorMsg.includes('ENOTFOUND') || errorMsg.includes('fetch failed')
+            ? 'The server cannot reach Supabase. Check if SUPABASE_URL is correct and the project is active.'
+            : 'Check if your Google Client ID is correct and authorized for this domain. Current ID ends with: ...' + (process.env.GOOGLE_CLIENT_ID?.slice(-8) || 'NONE')
       });
     }
   }
@@ -1154,53 +1195,6 @@ app.post('/api/auth/verify', async (req, res) => {
   }
 });
 
-const ADMIN_EMAIL = 'datonaxucrishvili64@gmail.com';
-
-app.get('/api/admin/verifications', async (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
-  const payload = verifyToken(authHeader.split(' ')[1]);
-  if (!payload || payload.email !== ADMIN_EMAIL) return res.status(403).json({ error: 'Forbidden' });
-
-  try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('verification_status', 'pending');
-
-    if (error) throw error;
-    res.json(data);
-  } catch (error) {
-    console.error('Error fetching verifications:', error);
-    res.status(500).json({ error: 'Failed to fetch verifications' });
-  }
-});
-
-app.post('/api/admin/verify/:id', async (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
-  const payload = verifyToken(authHeader.split(' ')[1]);
-  if (!payload || payload.email !== ADMIN_EMAIL) return res.status(403).json({ error: 'Forbidden' });
-
-  const { status, message } = req.body; // status: 'verified' or 'rejected'
-
-  try {
-    const { error } = await supabase
-      .from('profiles')
-      .update({ 
-        verification_status: status,
-        is_verified: status === 'verified'
-      })
-      .eq('id', req.params.id);
-
-    if (error) throw error;
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Error updating verification:', error);
-    res.status(500).json({ error: 'Failed to update verification' });
-  }
-});
-
 // --- RESERVATIONS ROUTES ---
 
 app.post('/api/reservations', async (req, res) => {
@@ -1542,18 +1536,59 @@ app.get('/api/categories', async (req, res) => {
   }
 });
 
+app.get('/api/operators/:id/reviews', async (req, res) => {
+  try {
+    const { data: tours, error: toursError } = await supabase
+      .from('tours')
+      .select('id')
+      .eq('operator_id', req.params.id);
+
+    if (toursError) throw toursError;
+    const tourIds = tours.map((t: any) => t.id);
+
+    if (tourIds.length === 0) return res.json([]);
+
+    const { data: reviews, error: reviewsError } = await supabase
+      .from('reviews')
+      .select('*, tours!left(title), profiles!left(name, avatar_url)')
+      .in('tour_id', tourIds)
+      .order('created_at', { ascending: false });
+
+    if (reviewsError) throw reviewsError;
+    
+    const parsedData = reviews.map(review => {
+      if (review.comment && review.comment.startsWith('[GUEST:')) {
+         const match = review.comment.match(/^\[GUEST:([^\]]+)\]\s*(.*)$/s);
+         if (match) {
+           return {
+             ...review,
+             comment: match[2].trim(),
+             profiles: { ...review.profiles, name: match[1] }
+           };
+         }
+      }
+      return review;
+    });
+
+    res.json(parsedData);
+  } catch (error) {
+    console.error('Error fetching operator reviews:', error);
+    res.status(500).json({ error: 'Failed to fetch reviews' });
+  }
+});
+
 app.get('/api/tours/:id/reviews', async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('reviews')
-      .select('*, profiles(name, avatar_url)')
+      .select('*, profiles!left(name, avatar_url)')
       .eq('tour_id', req.params.id)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
     
     // Parse guest names if any
-    const parsedData = data.map(review => {
+    const parsedData = (data || []).map(review => {
       if (review.comment && review.comment.startsWith('[GUEST:')) {
          const match = review.comment.match(/^\[GUEST:([^\]]+)\]\s*(.*)$/s);
          if (match) {
@@ -1570,6 +1605,81 @@ app.get('/api/tours/:id/reviews', async (req, res) => {
     res.json(parsedData);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch reviews' });
+  }
+});
+
+// --- REVIEW NOTIFICATIONS FOR OPERATORS ---
+app.get('/api/reviews/operator-notifications', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+  const payload = verifyToken(authHeader.split(' ')[1]);
+  if (!payload) return res.status(401).json({ error: 'Invalid token' });
+
+  try {
+    // Get all tours owned by this operator
+    const { data: tours, error: toursError } = await supabase
+      .from('tours')
+      .select('id, title, image')
+      .eq('operator_id', payload.id);
+
+    if (toursError) throw toursError;
+    if (!tours || tours.length === 0) return res.json({ notifications: [], unread_count: 0 });
+
+    const tourIds = tours.map((t: any) => t.id);
+    const tourMap: Record<number, any> = {};
+    tours.forEach((t: any) => { tourMap[t.id] = t; });
+
+    // Get the since parameter (ISO timestamp) for filtering new reviews
+    const since = req.query.since as string || null;
+
+    let query = supabase
+      .from('reviews')
+      .select('id, tour_id, rating, comment, created_at, user_id, profiles!left(name, avatar_url)')
+      .in('tour_id', tourIds)
+      .neq('user_id', payload.id) // Don't notify for own reviews
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    const { data: reviews, error: reviewsError } = await query;
+    if (reviewsError) throw reviewsError;
+
+    // Parse guest names and attach tour info
+    const notifications = (reviews || []).map(review => {
+      let reviewerName = review.profiles?.name || 'Guest';
+      let cleanComment = review.comment;
+
+      if (review.comment && review.comment.startsWith('[GUEST:')) {
+        const match = review.comment.match(/^\[GUEST:([^\]]+)\]\s*(.*)$/s);
+        if (match) {
+          reviewerName = match[1];
+          cleanComment = match[2].trim();
+        }
+      }
+
+      const tour = tourMap[review.tour_id];
+      return {
+        id: review.id,
+        tour_id: review.tour_id,
+        tour_title: tour?.title || 'Unknown Tour',
+        tour_image: tour?.image || '',
+        reviewer_name: reviewerName,
+        reviewer_avatar: review.profiles?.avatar_url || null,
+        rating: review.rating,
+        comment: cleanComment,
+        created_at: review.created_at
+      };
+    });
+
+    // Count unread (reviews since the 'since' timestamp)
+    let unread_count = notifications.length;
+    if (since) {
+      unread_count = notifications.filter(n => new Date(n.created_at) > new Date(since)).length;
+    }
+
+    res.json({ notifications, unread_count });
+  } catch (error) {
+    console.error('Error fetching review notifications:', error);
+    res.status(500).json({ error: 'Failed to fetch review notifications' });
   }
 });
 
@@ -1698,8 +1808,14 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 
 const PORT = process.env.PORT || 5000;
 if (process.env.NODE_ENV !== 'production' || !process.env.NETLIFY && !process.env.VERCEL) {
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     console.log(`--- Server listening on port ${PORT} ---`);
+  }).on('error', (err: any) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`[FATAL] Port ${PORT} is already in use. Please run 'npm run cleanup' or 'npm run dev:all'.`);
+    } else {
+      console.error(`[FATAL] Server failed to start: ${err.message}`);
+    }
   });
 }
 

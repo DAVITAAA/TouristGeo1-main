@@ -6,7 +6,7 @@ import { useCurrency } from '../hooks/useCurrency';
 import { Heart } from 'lucide-react';
 
 interface NavbarProps {
-  onNavigate: (page: string) => void;
+  onNavigate: (page: string, data?: any) => void;
   currentPage: string;
   language: Language;
   setLanguage: (lang: Language) => void;
@@ -264,7 +264,7 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
             </button>
             {user?.role === 'operator' && (
               <button
-                onClick={() => onNavigate('profile')}
+                onClick={() => onNavigate('profile', { tab: 'reservations' })}
                 className="relative p-2 rounded-full hover:bg-background-light transition-colors flex items-center justify-center border border-border-light sm:border-transparent text-text-main"
                 title={isKa ? "რეზერვაციები" : "Reservations"}
               >

@@ -27,6 +27,7 @@ export default function App() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null);
   const [selectedOperator, setSelectedOperator] = useState<{ id: string; name: string } | null>(null);
+  const [selectedProfileTab, setSelectedProfileTab] = useState<any>(null);
 
   useEffect(() => {
     // Attempt to restore session on load
@@ -51,6 +52,8 @@ export default function App() {
           setSelectedTour(state.tour);
         } else if (state.page === 'operator' && state.operator) {
           setSelectedOperator(state.operator);
+        } else if (state.page === 'profile' && state.tab) {
+          setSelectedProfileTab(state.tab);
         }
         setCurrentPage(state.page);
       } else {
@@ -84,13 +87,17 @@ export default function App() {
     } else if (page === 'operator' && data) {
       setSelectedOperator({ id: data.operator_id, name: data.operator_name });
       operatorData = { id: data.operator_id, name: data.operator_name };
+    } else if (page === 'profile' && data?.tab) {
+      setSelectedProfileTab(data.tab);
+    } else if (page === 'profile' && !data?.tab) {
+      setSelectedProfileTab(null);
     }
 
     // Only push to history if it's a new state transition
     if (page !== currentPage || ((page === 'tour-detail' || page === 'edit-tour') && tourData && selectedTour?.id !== tourData.id) || (page === 'operator' && operatorData && selectedOperator?.id !== operatorData.id)) {
       const pathSuffix = page === 'home' ? '' : `#${page}`;
       window.history.pushState(
-        { page, tour: tourData, operator: operatorData },
+        { page, tour: tourData, operator: operatorData, tab: page === 'profile' ? data?.tab : null },
         '',
         window.location.pathname + pathSuffix
       );
@@ -109,7 +116,7 @@ export default function App() {
       case 'sights': return <Sights language={language} />;
       case 'add-tour': return user?.role === 'operator' ? <AddTourWizard onNavigate={handleNavigate} language={language} user={user} /> : <Home onNavigate={handleNavigate} language={language} />;
       case 'edit-tour': return selectedTour ? <AddTourWizard onNavigate={handleNavigate} language={language} user={user} tourToEdit={selectedTour} /> : <Home onNavigate={handleNavigate} language={language} />;
-      case 'profile': return user ? <Profile onNavigate={handleNavigate} language={language} user={user} onUpdateUser={(u) => setUser({ ...user, ...u })} onLogout={handleLogout} /> : null;
+      case 'profile': return user ? <Profile onNavigate={handleNavigate} language={language} user={user} onUpdateUser={(u) => setUser({ ...user, ...u })} onLogout={handleLogout} initialTab={selectedProfileTab} /> : null;
       case 'tour-detail': return selectedTour ? <TourDetail tour={selectedTour} onNavigate={handleNavigate} language={language} user={user} /> : <Home onNavigate={handleNavigate} language={language} />;
       case 'operator': return <Operator onNavigate={handleNavigate} language={language} operator={selectedOperator} />;
       case 'favorites': return <Favorites onNavigate={handleNavigate} language={language} />;

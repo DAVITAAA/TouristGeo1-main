@@ -51,6 +51,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // 3. New user → create in Supabase Auth (no password) + profile
+    let authUserId = '';
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email,
       email_confirm: true,
@@ -58,8 +59,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     if (authError) {
-      console.error('Google auth - Supabase createUser error:', authError.message);
-      return res.status(500).json({ error: 'Failed to create account' });
+       if (authError.message.includes('already registered') || authError.message.includes('already exists')) {
+          const { data: listData } = await supabase.auth.admin.listUsers();
+          const users = listData?.users || [];
+          const existingAuth = users.find((u: any) => u.email === email);
+          if (existingAuth) {
+            authUserId = existingAuth.id;
+          } else {
+             return res.status(400).json({ error: 'Email already registered in Auth but could not be retrieved.' });
+          }
+       } else {
+          console.error('Google auth - Supabase createUser error:', authError.message);
+          return res.status(500).json({ error: 'Failed to create account', details: authError.message });
+       }
+    } else {
+       authUserId = authData.user.id;
     }
 
     // 4. Create profile row
@@ -67,7 +81,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .from('profiles')
       .upsert(
         [{
-          id: authData.user.id,
+          id: authUserId,
           name: name || email.split('@')[0],
           email,
           role: 'tourist',
@@ -80,8 +94,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (profileError) {
       console.error('Google auth - profile creation error:', profileError);
-      await supabase.auth.admin.deleteUser(authData.user.id);
-      return res.status(500).json({ error: 'Failed to create profile' });
+      return res.status(500).json({ error: 'Failed to create profile', details: profileError.message });
     }
 
     const userData = {

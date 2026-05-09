@@ -105,7 +105,7 @@ export default function TourCard({ tour, onNavigate, language }: TourCardProps) 
           {/* Bottom Row: Rating & Price */}
           <div className="mt-auto pt-6 border-t border-border-light flex items-center justify-between">
             <div className="flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-primary text-[20px] filled">star</span>
+              <span className="material-icons text-amber-400 text-[20px]">star</span>
               <span className="text-sm font-black text-text-main">{tour.rating}</span>
               <span className="text-[10px] font-bold text-text-muted">({tour.reviews})</span>
             </div>

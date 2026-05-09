@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Language } from '../translations';
-import { User, fetchMyBookings, updateMe, uploadAvatar, fetchMyTours, deleteTour, initiatePasswordChange, completePasswordChange, deleteAccount, Reservation, fetchOperatorReservations, markReservationRead, markAllReservationsRead, renewTour, getMyExpiredTours, getToken, fetchPendingVerifications, updateVerificationStatus } from '../api';
+import { User, fetchMyBookings, updateMe, uploadAvatar, fetchMyTours, deleteTour, initiatePasswordChange, completePasswordChange, deleteAccount, Reservation, fetchOperatorReservations, markReservationRead, markAllReservationsRead, renewTour, getMyExpiredTours, getToken, fetchOperatorReviews } from '../api';
 import { useCurrency } from '../hooks/useCurrency';
 import { useWishlist } from '../hooks/useWishlist';
 import Toast from '../components/Toast';
@@ -12,17 +12,14 @@ interface ProfileProps {
   user: User;
   onUpdateUser: (user: Partial<User>) => void;
   onLogout: () => void;
+  initialTab?: 'settings' | 'favorites' | 'my-tours' | 'reservations' | 'expired-tours' | 'verification' | 'operator-reviews';
 }
 
-export default function Profile({ onNavigate, language, user, onUpdateUser, onLogout }: ProfileProps) {
-  const [activeTab, setActiveTab] = useState<'settings' | 'favorites' | 'my-tours' | 'reservations' | 'expired-tours' | 'verification' | 'admin-dashboard'>(
-    user.role === 'operator' ? 'my-tours' : 'favorites'
+export default function Profile({ onNavigate, language, user, onUpdateUser, onLogout, initialTab }: ProfileProps) {
+  const [activeTab, setActiveTab] = useState<'settings' | 'favorites' | 'my-tours' | 'reservations' | 'expired-tours' | 'verification' | 'operator-reviews'>(
+    initialTab || (user.role === 'operator' ? 'my-tours' : 'favorites')
   );
-  const ADMIN_EMAIL = 'datonaxucrishvili64@gmail.com';
-  const isAdmin = user.email === ADMIN_EMAIL;
   
-  const [pendingVerifications, setPendingVerifications] = useState<any[]>([]);
-  const [isApproving, setIsApproving] = useState<string | null>(null);
   const { wishlist: favorites } = useWishlist(!!user);
   const [myTours, setMyTours] = useState<any[]>([]);
   const [expiredTours, setExpiredTours] = useState<any[]>([]);
@@ -62,6 +59,8 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [isLoadingReservations, setIsLoadingReservations] = useState(false);
   const [expandedReservation, setExpandedReservation] = useState<string | null>(null);
+  const [operatorReviews, setOperatorReviews] = useState<any[]>([]);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
 
   const handleDeleteAccount = async () => {
     setIsDeletingAccount(true);
@@ -174,33 +173,16 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
         .finally(() => setIsLoadingReservations(false));
     }
   }, [activeTab, user.id, user.role]);
-
-  // Load pending verifications for admin
+  // Load reviews when the tab is active
   useEffect(() => {
-    if (activeTab === 'admin-dashboard' && isAdmin) {
-      setIsLoading(true);
-      fetchPendingVerifications()
-        .then(setPendingVerifications)
+    if (activeTab === 'operator-reviews' && user.role === 'operator') {
+      setIsLoadingReviews(true);
+      fetchOperatorReviews(user.id)
+        .then(setOperatorReviews)
         .catch(console.error)
-        .finally(() => setIsLoading(false));
+        .finally(() => setIsLoadingReviews(false));
     }
-  }, [activeTab, isAdmin]);
-
-  const handleVerifyOperator = async (profileId: string, status: 'verified' | 'rejected') => {
-    setIsApproving(profileId);
-    try {
-      await updateVerificationStatus(profileId, status);
-      setPendingVerifications(prev => prev.filter(p => p.id !== profileId));
-      setToast({ 
-        message: status === 'verified' ? (isKa ? 'ოპერატორი ვერიფიცირებულია!' : 'Operator verified!') : (isKa ? 'მოთხოვნა უარყოფილია' : 'Request rejected'), 
-        type: 'success' 
-      });
-    } catch (err) {
-      setToast({ message: isKa ? 'შეცდომა განახლებისას' : 'Failed to update status', type: 'error' });
-    } finally {
-      setIsApproving(null);
-    }
-  };
+  }, [activeTab, user.id, user.role]);
 
   const handleMarkRead = async (id: string) => {
     try {
@@ -427,6 +409,14 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
                   </button>
 
                   <button
+                    onClick={() => setActiveTab('operator-reviews')}
+                    className={`flex-1 lg:flex-none py-4 px-5 rounded-2xl font-black text-[11px] uppercase tracking-wider transition-all flex items-center gap-3 whitespace-nowrap ${activeTab === 'operator-reviews' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-text-muted hover:bg-gray-50 hover:text-text-main'}`}
+                  >
+                    <span className="material-symbols-outlined text-[20px]">reviews</span>
+                    {isKa ? 'შეფასებები' : 'Tour Reviews'}
+                  </button>
+
+                  <button
                     onClick={() => setActiveTab('verification')}
                     className={`flex-1 lg:flex-none py-4 px-5 rounded-2xl font-black text-[11px] uppercase tracking-wider transition-all flex items-center gap-3 relative whitespace-nowrap ${activeTab === 'verification' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-text-muted hover:bg-gray-50 hover:text-text-main'}`}
                   >
@@ -438,21 +428,6 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
                       </span>
                     )}
                   </button>
-
-                  {isAdmin && (
-                    <button
-                      onClick={() => setActiveTab('admin-dashboard')}
-                      className={`flex-1 lg:flex-none py-4 px-5 rounded-2xl font-black text-[11px] uppercase tracking-wider transition-all flex items-center gap-3 relative whitespace-nowrap ${activeTab === 'admin-dashboard' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-text-muted hover:bg-gray-50 hover:text-text-main'}`}
-                    >
-                      <span className="material-symbols-outlined text-[20px]">admin_panel_settings</span>
-                      {isKa ? 'ადმინ პანელი' : 'Admin Panel'}
-                      {pendingVerifications.length > 0 && (
-                        <span className="absolute top-3 right-3 w-5 h-5 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center shadow-md border-2 border-white">
-                          {pendingVerifications.length}
-                        </span>
-                      )}
-                    </button>
-                  )}
                 </>
               )}
 
@@ -1364,78 +1339,74 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
                 </div>
               )}
             </motion.div>
-          ) : activeTab === 'admin-dashboard' && isAdmin ? (
+          ) : activeTab === 'operator-reviews' && user.role === 'operator' ? (
             <motion.div
-              key="admin-dashboard"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="space-y-8"
+              key="operator-reviews"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              className="space-y-6"
             >
-              <div className="bg-indigo-600 rounded-[32px] p-8 text-white shadow-xl shadow-indigo-600/20">
-                <h3 className="text-2xl font-black mb-2">{isKa ? 'ადმინ პანელი' : 'Admin Dashboard'}</h3>
-                <p className="text-indigo-100 font-bold">{isKa ? 'ოპერატორების ვერიფიკაციის მართვა' : 'Manage operator verification requests'}</p>
-              </div>
+              <h2 className="text-2xl font-black text-text-main mb-6 flex items-center gap-3">
+                <span className="w-8 h-1 bg-primary rounded-full"></span>
+                {isKa ? 'ტურების შეფასებები' : 'Tour Reviews'}
+                <span className="bg-gray-100 text-gray-500 text-sm px-3 py-1 rounded-lg">
+                  {operatorReviews.length} {isKa ? 'ჯამში' : 'total'}
+                </span>
+              </h2>
 
-              <div className="grid gap-6">
-                {pendingVerifications.length === 0 ? (
-                  <div className="bg-white rounded-[32px] p-20 border border-border-light text-center space-y-4">
-                    <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto">
-                      <span className="material-symbols-outlined text-4xl text-gray-300">done_all</span>
-                    </div>
-                    <p className="text-lg font-black text-text-muted">{isKa ? 'მოდერაციისთვის არაფერია' : 'No pending requests'}</p>
+              {isLoadingReviews ? (
+                <div className="flex justify-center py-20">
+                  <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              ) : operatorReviews.length === 0 ? (
+                <div className="bg-white rounded-3xl p-12 text-center border-2 border-dashed border-gray-200">
+                  <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-300">
+                    <span className="material-symbols-outlined text-5xl">rate_review</span>
                   </div>
-                ) : (
-                  pendingVerifications.map((profile) => (
-                    <div key={profile.id} className="bg-white rounded-3xl p-6 border border-border-light shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
-                      <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-2xl bg-indigo-50 flex items-center justify-center overflow-hidden">
-                          {profile.avatar_url ? (
-                            <img src={profile.avatar_url} className="w-full h-full object-cover" />
-                          ) : (
-                            <span className="material-symbols-outlined text-indigo-300">person</span>
-                          )}
+                  <h3 className="text-xl font-black text-text-main mb-2">
+                    {isKa ? 'შეფასებები ჯერ არ არის' : 'No reviews yet'}
+                  </h3>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4">
+                  {operatorReviews.map((review) => (
+                    <div key={review.id} className="bg-white p-6 rounded-3xl border border-border-light shadow-sm hover:shadow-md transition-all">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-200">
+                            {review.profiles?.avatar_url ? (
+                              <img src={review.profiles.avatar_url} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="material-symbols-outlined text-gray-400">person</span>
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-black text-text-main text-sm">{review.profiles?.name || 'Anonymous'}</p>
+                            <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">
+                              {new Date(review.created_at).toLocaleDateString(isKa ? 'ka-GE' : 'en-US')}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <h4 className="font-black text-text-main">{profile.name}</h4>
-                          <p className="text-xs font-bold text-text-muted">{profile.email}</p>
-                          <p className="text-[10px] font-black text-indigo-600 uppercase mt-1">Operator</p>
+                        <div className="flex gap-0.5 text-amber-400">
+                          {[...Array(5)].map((_, i) => (
+                            <span key={i} className={`material-symbols-outlined text-sm ${i < review.rating ? 'filled' : ''}`}>star</span>
+                          ))}
                         </div>
                       </div>
-
-                      <div className="flex flex-wrap items-center gap-3">
-                        <a 
-                          href={profile.verification_document} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="px-5 py-3 bg-gray-100 text-text-main rounded-xl font-black text-[11px] uppercase tracking-wider flex items-center gap-2 hover:bg-gray-200 transition-all"
-                        >
-                          <span className="material-symbols-outlined text-[18px]">visibility</span>
-                          {isKa ? 'საბუთის ნახვა' : 'View Document'}
-                        </a>
-                        
-                        <button
-                          onClick={() => handleVerifyOperator(profile.id, 'verified')}
-                          disabled={isApproving === profile.id}
-                          className="px-5 py-3 bg-green-500 text-white rounded-xl font-black text-[11px] uppercase tracking-wider flex items-center gap-2 hover:bg-green-600 shadow-lg shadow-green-500/20 transition-all disabled:opacity-50"
-                        >
-                          <span className="material-symbols-outlined text-[18px]">check_circle</span>
-                          {isApproving === profile.id ? '...' : (isKa ? 'დადასტურება' : 'Approve')}
-                        </button>
-
-                        <button
-                          onClick={() => handleVerifyOperator(profile.id, 'rejected')}
-                          disabled={isApproving === profile.id}
-                          className="px-5 py-3 bg-red-50 text-red-500 rounded-xl font-black text-[11px] uppercase tracking-wider flex items-center gap-2 hover:bg-red-100 transition-all disabled:opacity-50"
-                        >
-                          <span className="material-symbols-outlined text-[18px]">cancel</span>
-                          {isKa ? 'უარყოფა' : 'Reject'}
-                        </button>
+                      
+                      <div className="mb-3">
+                        <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">{isKa ? 'ტური' : 'Tour'}</p>
+                        <p className="font-bold text-text-main text-sm">{review.tours?.title || 'Unknown Tour'}</p>
                       </div>
+
+                      <p className="text-sm text-text-main font-medium leading-relaxed bg-gray-50 p-4 rounded-2xl italic">
+                        "{review.comment}"
+                      </p>
                     </div>
-                  ))
-                )}
-              </div>
+                  ))}
+                </div>
+              )}
             </motion.div>
           ) : null}
         </AnimatePresence>

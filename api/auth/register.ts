@@ -17,6 +17,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     // 1. Create user in Supabase Auth
+    let authUserId = '';
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email,
       password,
@@ -25,17 +26,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     if (authError) {
-      console.error('--- REGISTRATION AUTH ERROR ---');
-      console.error('Email:', email);
-      console.error('Error Message:', authError.message);
-      return res.status(400).json({ error: authError.message });
+       if (authError.message.includes('already registered') || authError.message.includes('already exists')) {
+          // User exists in Auth - let's check if they have a profile
+          const { data: listData } = await supabase.auth.admin.listUsers();
+          const users = listData?.users || [];
+          const existingAuth = users.find((u: any) => u.email === email);
+          if (existingAuth) {
+            authUserId = existingAuth.id;
+          } else {
+             return res.status(400).json({ error: 'Email already registered in Auth but could not be retrieved.' });
+          }
+       } else {
+          console.error('--- REGISTRATION AUTH ERROR ---', authError.message);
+          return res.status(400).json({ error: authError.message });
+       }
+    } else {
+       authUserId = authData.user.id;
     }
 
     // 2. Create profile in public.profiles
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .upsert(
-        [{ id: authData.user.id, name, email, phone, company_name, role: role || 'tourist' }],
+        [{ id: authUserId, name, email, phone, company_name, role: role || 'tourist' }],
         { onConflict: 'id' }
       )
       .select()
@@ -43,7 +56,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (profileError) {
       console.error('Profile creation error:', profileError);
-      await supabase.auth.admin.deleteUser(authData.user.id);
       return res.status(500).json({ error: profileError.message });
     }
 

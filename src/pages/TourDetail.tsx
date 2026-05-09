@@ -1,4 +1,3 @@
-import ItineraryMap from '../components/ItineraryMap';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Language, translations } from '../translations';
@@ -20,8 +19,7 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
   const isKa = language === 'ka';
   const { convertPrice, getCurrencySymbol } = useCurrency();
   const [targetCurrency, setTargetCurrency] = useState<'USD' | 'EUR' | 'GEL'>(isKa ? 'GEL' : 'USD');
-  const [showPhone, setShowPhone] = useState(false);
-  const [hoveredDay, setHoveredDay] = useState<number | undefined>(undefined);
+  
   useEffect(() => { setTargetCurrency(isKa ? 'GEL' : 'USD'); }, [isKa]);
   const [similarTours, setSimilarTours] = useState<Tour[]>([]);
   const [guests, setGuests] = useState(1);
@@ -121,8 +119,6 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
     window.scrollTo(0, 0);
   }, [tour]);
 
-
-
   const mainImage = tour.image;
   const sideImages = tour.gallery && tour.gallery.length > 0 
     ? tour.gallery.slice(0, 4) 
@@ -172,13 +168,11 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
           </div>
         </div>
 
-        {/* Gallery - using aspect ratios, no fixed heights */}
+        {/* Gallery */}
         <div className="mb-12">
-          {/* Main image */}
           <div className="rounded-2xl overflow-hidden shadow-lg mb-4">
             <img src={mainImage} className="w-full aspect-[16/7] object-cover" alt={tour.title} />
           </div>
-          {/* Side images row */}
           {sideImages.length > 0 && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {sideImages.map((img, i) => (
@@ -189,8 +183,6 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
             </div>
           )}
         </div>
-
-
 
         {/* Two-column layout: Main + Sidebar */}
         <div className="flex flex-col lg:flex-row gap-10">
@@ -233,41 +225,27 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
                 </div>
               )}
             </section>
-
-
-
             
-            {/* Itinerary & Map Section */}
+            {/* Itinerary */}
             {(tour.itinerary && tour.itinerary.length > 0) && (
               <section className="space-y-8 pt-8 border-t border-border-light">
                 <div className="space-y-2">
                   <h2 className="text-2xl font-black text-text-main">{isKa ? 'მარშრუტი და განრიგი' : 'Route & Itinerary'}</h2>
-                  <p className="text-sm text-text-muted font-medium">{isKa ? 'გააჩერეთ კურსორი დღეზე, რომ ნახოთ რუკაზე' : 'Hover over a day to see it on the map'}</p>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-8 min-h-[500px]">
-                  {/* Itinerary List */}
-                  <div className="md:col-span-5 space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                <div className="grid grid-cols-1 gap-8">
+                  <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
                     {tour.itinerary.map((item, idx) => (
                       <div 
                         key={idx}
-                        onMouseEnter={() => setHoveredDay(item.day)}
-                        onMouseLeave={() => setHoveredDay(undefined)}
-                        className={`p-6 rounded-3xl border transition-all duration-300 cursor-pointer ${
-                          hoveredDay === item.day 
-                            ? 'bg-primary/5 border-primary shadow-md translate-x-2' 
-                            : 'bg-white border-border-light hover:border-primary/30'
-                        }`}
+                        className="p-6 rounded-3xl border border-border-light bg-white hover:border-primary/30 transition-all duration-300"
                       >
                         <div className="flex items-start gap-4">
-                          <div className={`w-10 h-10 rounded-2xl shrink-0 flex items-center justify-center font-black text-sm transition-colors ${
-                            hoveredDay === item.day ? 'bg-primary text-white' : 'bg-background-light text-text-muted'
-                          }`}>
+                          <div className="w-10 h-10 rounded-2xl shrink-0 flex items-center justify-center font-black text-sm bg-background-light text-text-muted">
                             {item.day}
                           </div>
                           <div className="space-y-2 min-w-0">
                             <h4 className="font-black text-text-main leading-tight">{item.title}</h4>
-                            <p className="text-xs text-text-muted font-medium leading-relaxed line-clamp-3 group-hover:line-clamp-none transition-all">
+                            <p className="text-xs text-text-muted font-medium leading-relaxed">
                               {item.description}
                             </p>
                             {item.location && (
@@ -281,11 +259,6 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
                       </div>
                     ))}
                   </div>
-
-                  {/* Map */}
-                  <div className="md:col-span-7 h-[400px] md:h-auto sticky top-24">
-                    <ItineraryMap itinerary={tour.itinerary} activeDay={hoveredDay} />
-                  </div>
                 </div>
               </section>
             )}
@@ -295,7 +268,7 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
                 <div className="flex items-center justify-between">
                     <h2 className="text-2xl font-black text-text-main">{t.reviews_title}</h2>
                     <div className="flex items-center gap-2 px-3 py-1 bg-yellow-50 rounded-lg border border-yellow-100">
-                        <span className="material-symbols-outlined text-yellow-400 text-lg fill-1">star</span>
+                        <span className="material-icons text-amber-400 text-lg">star</span>
                         <span className="font-black text-yellow-700">{tour.rating || '5.0'}</span>
                     </div>
                 </div>
@@ -337,9 +310,11 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
                                     onMouseLeave={() => setHoveredStar(null)}
                                     className="transition-transform active:scale-90"
                                 >
-                                    <span className={`material-symbols-outlined text-3xl transition-colors ${
-                                        star <= (hoveredStar ?? newReview.rating) ? 'text-yellow-400 fill-1' : 'text-gray-200'
-                                    }`}>star</span>
+                                    <span className={`material-icons text-3xl transition-colors ${
+                                        star <= (hoveredStar ?? newReview.rating) ? 'text-amber-400' : 'text-gray-300'
+                                    }`}>
+                                        {star <= (hoveredStar ?? newReview.rating) ? 'star' : 'star_border'}
+                                    </span>
                                 </button>
                             ))}
                         </div>
@@ -376,7 +351,9 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
                                             <p className="font-black text-text-main text-sm">{review.profiles?.name}</p>
                                             <div className="flex">
                                                 {[...Array(5)].map((_, i) => (
-                                                    <span key={i} className={`material-symbols-outlined text-xs ${i < review.rating ? 'text-yellow-400 fill-1' : 'text-gray-200'}`}>star</span>
+                                                    <span key={i} className={`material-icons text-xs ${i < review.rating ? 'text-amber-400' : 'text-gray-200'}`}>
+                                                        {i < review.rating ? 'star' : 'star_border'}
+                                                    </span>
                                                 ))}
                                             </div>
                                         </div>
@@ -441,13 +418,13 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
                 </button>
                 
                   <div className="flex gap-3">
-                    <button 
-                      onClick={() => setShowPhone(!showPhone)}
+                    <a 
+                      href={`tel:${tour.phone}`}
                       className="flex-1 py-3.5 bg-white border border-border-light text-text-main rounded-2xl font-black text-xs hover:border-primary/50 transition-all flex items-center justify-center gap-2"
                     >
                       <span className="material-symbols-outlined text-[18px] text-primary">call</span>
-                      {showPhone ? (tour.phone || 'N/A') : (isKa ? 'ნომრის ნახვა' : 'Show Number')}
-                    </button>
+                      {tour.phone || (isKa ? 'ნომერი არ არის' : 'No Number')}
+                    </a>
                     
                     <a 
                       href={`https://wa.me/${(tour.phone || '').replace(/\+/g, '')}?text=${encodeURIComponent(isKa ? `გამარჯობა, მაინტერესებს ტური: ${tour.title}` : `Hi, I'm interested in the tour: ${tour.title}`)}`}
@@ -504,7 +481,7 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
                         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
                         <div className="absolute bottom-4 left-4 right-4">
                            <div className="flex items-center gap-1.5 mb-1">
-                              <span className="material-symbols-outlined text-primary text-xs filled">star</span>
+                              <span className="material-icons text-amber-400 text-xs">star</span>
                               <span className="text-xs font-black text-white">{st.rating}</span>
                            </div>
                            <h4 className="text-base font-black text-white line-clamp-1">{st.title}</h4>
@@ -519,16 +496,24 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
 
       </div>
 
-        {/* Mobile Sticky Booking Bar */}
-        <div className="mobile-booking-bar lg:hidden">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-black text-text-muted uppercase tracking-wider">{isKa ? 'ფასი' : 'From'}</p>
-              <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-black text-text-main">{getCurrencySymbol(targetCurrency)}{convertPrice(tour.price, targetCurrency)}</span>
-                <span className="text-xs text-text-muted font-bold">/ {isKa ? 'კაცზე' : 'person'}</span>
-              </div>
+      {/* Mobile Sticky Booking Bar */}
+      <div className="mobile-booking-bar lg:hidden">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-black text-text-muted uppercase tracking-wider">{isKa ? 'ფასი' : 'From'}</p>
+            <div className="flex items-baseline gap-1">
+              <span className="text-2xl font-black text-text-main">{getCurrencySymbol(targetCurrency)}{convertPrice(tour.price, targetCurrency)}</span>
+              <span className="text-xs text-text-muted font-bold">/ {isKa ? 'კაცზე' : 'person'}</span>
             </div>
+          </div>
+          <div className="flex gap-2">
+            <a
+              href={`tel:${tour.phone}`}
+              className="w-12 h-12 bg-white border border-border-light text-primary rounded-xl flex items-center justify-center shadow-sm active:scale-95 transition-all"
+              title={isKa ? 'დარეკვა' : 'Call'}
+            >
+              <span className="material-symbols-outlined text-2xl">call</span>
+            </a>
             <button
               onClick={() => setShowReservation(true)}
               className="px-6 py-3 bg-primary text-white rounded-xl font-black text-sm shadow-lg shadow-primary/20 active:scale-95 transition-all flex items-center gap-2"
@@ -537,6 +522,7 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
             </button>
           </div>
         </div>
+      </div>
 
       {toast && (
         <Toast 

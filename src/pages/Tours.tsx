@@ -90,6 +90,35 @@ export default function Tours({ onNavigate, language }: ToursProps) {
     return dur.replace('Days', 'დღე').replace('Day', 'დღე');
   };
 
+  const [sortBy, setSortBy] = useState<'recommended' | 'price-asc' | 'price-desc' | 'rating' | 'duration-asc' | 'duration-desc'>('recommended');
+  const [isSortOpen, setIsSortOpen] = useState(false);
+
+  const sortedTours = [...filteredTours].sort((a, b) => {
+    const getPrice = (t: Tour) => typeof t.price === 'string' ? parseInt(t.price) : (t.price || 0);
+    const getDuration = (t: Tour) => parseInt(t.duration || '0');
+    const getRating = (t: Tour) => t.rating || 0;
+
+    switch (sortBy) {
+      case 'price-asc': return getPrice(a) - getPrice(b);
+      case 'price-desc': return getPrice(b) - getPrice(a);
+      case 'rating': return getRating(b) - getRating(a);
+      case 'duration-asc': return getDuration(a) - getDuration(b);
+      case 'duration-desc': return getDuration(b) - getDuration(a);
+      default: return 0;
+    }
+  });
+
+  const getSortLabel = () => {
+    switch (sortBy) {
+      case 'price-asc': return isKa ? 'ფასი: ზრდადი' : 'Price: Low to High';
+      case 'price-desc': return isKa ? 'ფასი: კლებადი' : 'Price: High to Low';
+      case 'rating': return isKa ? 'რეიტინგი' : 'Rating: High to Low';
+      case 'duration-asc': return isKa ? 'ხანგრძლივობა: მზარდი' : 'Duration: Short to Long';
+      case 'duration-desc': return isKa ? 'ხანგრძლივობა: კლებადი' : 'Duration: Long to Short';
+      default: return t.recommended;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background-light pt-24 pb-20">
       <div className="container mx-auto px-4">
@@ -291,11 +320,43 @@ export default function Tours({ onNavigate, language }: ToursProps) {
               
               <div className="flex items-center gap-4">
                 <p className="text-xs font-black text-text-muted uppercase tracking-widest">{t.sort_by}</p>
-                <div className="relative group">
-                  <button className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl border border-border-light text-sm font-bold text-text-main shadow-sm">
-                    {t.recommended}
-                    <span className="material-symbols-outlined text-lg">expand_more</span>
+                <div className="relative">
+                  <button 
+                    onClick={() => setIsSortOpen(!isSortOpen)}
+                    className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl border border-border-light text-sm font-bold text-text-main shadow-sm hover:border-primary/50 transition-all min-w-[200px] justify-between"
+                  >
+                    {getSortLabel()}
+                    <span className={`material-symbols-outlined text-lg transition-transform ${isSortOpen ? 'rotate-180' : ''}`}>expand_more</span>
                   </button>
+
+                  {isSortOpen && (
+                    <>
+                      <div className="fixed inset-0 z-10" onClick={() => setIsSortOpen(false)} />
+                      <div className="absolute right-0 mt-2 w-full bg-white rounded-2xl shadow-xl border border-border-light py-2 z-20 animate-fade-in origin-top">
+                        {[
+                          { id: 'recommended', label: t.recommended },
+                          { id: 'price-asc', label: isKa ? 'ფასი: ზრდადი' : 'Price: Low to High' },
+                          { id: 'price-desc', label: isKa ? 'ფასი: კლებადი' : 'Price: High to Low' },
+                          { id: 'rating', label: isKa ? 'რეიტინგი' : 'Rating: High to Low' },
+                          { id: 'duration-asc', label: isKa ? 'ხანგრძლივობა: მზარდი' : 'Duration: Short to Long' },
+                          { id: 'duration-desc', label: isKa ? 'ხანგრძლივობა: კლებადი' : 'Duration: Long to Short' },
+                        ].map((opt) => (
+                          <button
+                            key={opt.id}
+                            onClick={() => {
+                              setSortBy(opt.id as any);
+                              setIsSortOpen(false);
+                            }}
+                            className={`w-full text-left px-4 py-2.5 text-sm font-bold transition-colors hover:bg-background-light ${
+                              sortBy === opt.id ? 'text-primary bg-primary/5' : 'text-text-muted hover:text-text-main'
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -328,10 +389,10 @@ export default function Tours({ onNavigate, language }: ToursProps) {
                 <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
                 <p className="text-text-muted font-black">{isKa ? 'იტვირთება...' : 'Searching Tours...'}</p>
               </div>
-            ) : filteredTours.length > 0 ? (
+            ) : sortedTours.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative">
                 <AnimatePresence mode="popLayout">
-                  {filteredTours.map((tour, idx) => (
+                  {sortedTours.map((tour, idx) => (
                     <motion.div
                       key={tour.id}
                       layout

@@ -10,8 +10,8 @@ export default defineConfig(({mode}) => {
     define: {
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
       // Expose Netlify-provided Supabase variables to the Vite frontend code
-      'process.env.NETLIFY_SUPABASE_URL': JSON.stringify(process.env.SUPABASE_DATABASE_URL || process.env.SUPABASE_URL || ''),
-      'process.env.NETLIFY_SUPABASE_ANON_KEY': JSON.stringify(process.env.SUPABASE_ANON_KEY || ''),
+      'process.env.NETLIFY_SUPABASE_URL': JSON.stringify(env.SUPABASE_DATABASE_URL || env.SUPABASE_URL || ''),
+      'process.env.NETLIFY_SUPABASE_ANON_KEY': JSON.stringify(env.SUPABASE_ANON_KEY || ''),
     },
     resolve: {
       alias: {
