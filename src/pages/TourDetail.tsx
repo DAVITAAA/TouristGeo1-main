@@ -375,7 +375,7 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
                                         <span className="text-[10px] font-bold text-text-muted">
                                             {new Date(review.created_at).toLocaleDateString(isKa ? 'ka-GE' : 'en-US')}
                                         </span>
-                                        {user && (user.id === tour.operator_id || user.id === tour.operator) && (
+                                        {user && (user.role === 'admin' || (user.id === tour.operator_id || user.id === tour.operator)) && (
                                             <button 
                                                 onClick={() => handleDeleteReview(review.id)}
                                                 className="text-red-400 hover:text-red-600 transition-colors"

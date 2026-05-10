@@ -1818,16 +1818,21 @@ app.delete('/api/reviews/:id', async (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
   const payload = verifyToken(authHeader.split(' ')[1]);
-  if (!payload || payload.role !== 'operator') return res.status(403).json({ error: 'Forbidden' });
+  if (!payload || (payload.role !== 'operator' && payload.role !== 'admin')) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
 
   try {
     // Check if the operator owns the tour associated with this review
     const { data: review } = await supabase.from('reviews').select('tour_id').eq('id', req.params.id).single();
     if (!review) return res.status(404).json({ error: 'Review not found' });
 
-    const { data: tour } = await supabase.from('tours').select('operator_id').eq('id', review.tour_id).single();
-    if (!tour || tour.operator_id !== payload.id) {
-      return res.status(403).json({ error: 'Forbidden: You do not own this tour' });
+    // Admins can delete anything; operators only their own tours
+    if (payload.role !== 'admin') {
+      const { data: tour } = await supabase.from('tours').select('operator_id').eq('id', review.tour_id).single();
+      if (!tour || tour.operator_id !== payload.id) {
+        return res.status(403).json({ error: 'Forbidden: You do not own this tour' });
+      }
     }
 
     const { error } = await supabase.from('reviews').delete().eq('id', req.params.id);
