@@ -1102,6 +1102,36 @@ app.delete('/api/tours/:id', async (req, res) => {
   }
 });
 
+app.post('/api/tours/:id/view', async (req, res) => {
+  try {
+    const id = req.params.id;
+    const { data: tour, error: fetchError } = await supabase
+      .from('tours')
+      .select('views')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !tour) {
+      return res.json({ success: false, message: 'Could not fetch views' });
+    }
+
+    const currentViews = tour.views || 0;
+    
+    const { error: updateError } = await supabase
+      .from('tours')
+      .update({ views: currentViews + 1 })
+      .eq('id', id);
+      
+    if (updateError) {
+       return res.json({ success: false, message: 'Could not update views' });
+    }
+    
+    res.json({ success: true, views: currentViews + 1 });
+  } catch (error) {
+    res.json({ success: false });
+  }
+});
+
 app.get('/api/tours/:id', async (req, res) => {
   try {
     const { data: tour, error } = await supabase

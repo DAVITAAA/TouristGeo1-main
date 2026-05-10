@@ -94,6 +94,12 @@ export default function TourCard({ tour, onNavigate, language }: TourCardProps) 
                 (isKa ? 'საშუალო' : 'Moderate')
               ) : (isKa ? 'საშუალო' : 'Moderate')}
             </div>
+            {(tour.views !== undefined && tour.views > 0) && (
+              <div className="flex items-center gap-1.5 whitespace-nowrap" title={isKa ? 'ნახვა' : 'Views'}>
+                <span className="material-symbols-outlined text-[18px]">visibility</span>
+                {tour.views}
+              </div>
+            )}
             {(tour.languages && tour.languages.length > 0) && (
               <div className="flex items-center gap-1.5 ml-auto truncate" title={tour.languages.join(', ')}>
                 <span className="material-symbols-outlined text-[18px]">language</span>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Language, translations } from '../translations';
-import { Tour, fetchTours, createBooking, User, Review, fetchReviews, createReview } from '../api';
+import { Tour, fetchTours, createBooking, User, Review, fetchReviews, createReview, incrementTourViews } from '../api';
 import { useCurrency } from '../hooks/useCurrency';
 import { useWishlist } from '../hooks/useWishlist';
 import ReservationModal from '../components/ReservationModal';
@@ -23,6 +23,7 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
   useEffect(() => { setTargetCurrency(isKa ? 'GEL' : 'USD'); }, [isKa]);
   const [similarTours, setSimilarTours] = useState<Tour[]>([]);
   const [guests, setGuests] = useState(1);
+  const [viewCount, setViewCount] = useState<number>(tour.views || 0);
   const [showReservation, setShowReservation] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; duration?: number } | null>(null);
   const { toggleWishlist, isInWishlist } = useWishlist(!!user);
@@ -117,6 +118,17 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
       setSimilarTours(tours.filter(t => t.id !== tour.id).slice(0, 4));
     }).catch(console.error);
     window.scrollTo(0, 0);
+    
+    setViewCount(tour.views || 0);
+    const viewKey = `viewed_${tour.id}`;
+    if (!sessionStorage.getItem(viewKey)) {
+        sessionStorage.setItem(viewKey, '1');
+        incrementTourViews(tour.id).then(res => {
+            if (res.success) {
+                setViewCount(res.views);
+            }
+        });
+    }
   }, [tour]);
 
   const mainImage = tour.image;
@@ -141,9 +153,10 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 mb-6 sm:mb-8">
           <div className="space-y-2">
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-text-main leading-tight">{tour.title}</h1>
-            <div className="flex items-center gap-4 text-sm font-bold text-text-muted">
+            <div className="flex flex-wrap items-center gap-4 text-sm font-bold text-text-muted">
               <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-lg text-primary">location_on</span>{tour.location}</span>
               <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-lg text-primary">schedule</span>{tour.duration} {isKa ? 'დღე' : 'Days'}</span>
+              <span className="flex items-center gap-1.5" title={isKa ? 'ნახვა' : 'Views'}><span className="material-symbols-outlined text-lg text-primary">visibility</span>{viewCount}</span>
             </div>
           </div>
           <div className="flex gap-3">

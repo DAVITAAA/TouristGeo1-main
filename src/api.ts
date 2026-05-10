@@ -18,6 +18,7 @@ export interface Tour {
     difficulty?: string;
     rating: number;
     reviews: number;
+    views?: number;
     category: string;
     image: string;
     gallery?: string[];
@@ -53,6 +54,17 @@ export const fetchCategories = async (): Promise<string[]> => {
     const response = await fetch(`${API_BASE_URL}/categories`);
     if (!response.ok) throw new Error('Failed to fetch categories');
     return response.json();
+};
+
+export const incrementTourViews = async (id: number) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/tours/${id}/view`, { method: 'POST' });
+        if (!response.ok) throw new Error('Failed to increment views');
+        return await response.json();
+    } catch (e) {
+        console.error('Increment views error:', e);
+        return { success: false };
+    }
 };
 
 
