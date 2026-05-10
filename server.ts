@@ -829,13 +829,9 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
 app.get('/api/tours', async (req, res) => {
   try {
     const { category, search } = req.query;
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-    
     let query = supabase
       .from('tours')
-      .select('*, profiles(name, company_name, is_verified, phone, avatar_url)')
-      .eq('status', 'published')
-      .gte('created_at', thirtyDaysAgo);
+      .select('*, profiles(name, company_name, is_verified, phone, avatar_url)');
 
     if (category) {
       query = query.eq('category', category);
