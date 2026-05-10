@@ -47,7 +47,7 @@ export const fetchTours = async (category?: string, search?: string): Promise<To
     if (category) params.append('category', category);
     if (search) params.append('search', search);
 
-    const response = await fetch(`${API_BASE_URL}/tours?${params.toString()}`);
+    const response = await fetch(`${API_BASE_URL}/tours?${params.toString()}&_cb=${Date.now()}`);
     if (!response.ok) throw new Error('Failed to fetch tours');
     return response.json();
 };

@@ -60,8 +60,8 @@ export default function Tours({ onNavigate, language }: ToursProps) {
       parseInt(durationStr) > 14
     );
     // Be robust with price filtering, allow any string/number conversion
-    const tourPrice = typeof tour.price === 'string' ? parseInt(tour.price) : tour.price;
-    const convertedPrice = convertPrice(tourPrice, targetCurrency);
+    const tourPrice = typeof tour.price === 'string' ? parseInt(tour.price) : (tour.price || 0);
+    const convertedPrice = convertPrice(tourPrice, targetCurrency) || 0;
     const matchesPrice = isNaN(convertedPrice) ? true : (convertedPrice >= priceRange[0] && convertedPrice <= priceRange[1]);
 
     return matchesSearch && matchesDest && matchesDuration && matchesPrice;
