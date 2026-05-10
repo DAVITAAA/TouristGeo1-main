@@ -282,7 +282,7 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
                     <h2 className="text-2xl font-black text-text-main">{t.reviews_title}</h2>
                     <div className="flex items-center gap-2 px-3 py-1 bg-yellow-50 rounded-lg border border-yellow-100">
                         <span className="material-icons text-amber-400 text-lg">star</span>
-                        <span className="font-black text-yellow-700">{tour.rating || '5.0'}</span>
+                        <span className="font-black text-yellow-700">{tour.reviews_count && tour.reviews_count > 0 ? (tour.rating || 0).toFixed(1) : '0.0'}</span>
                     </div>
                 </div>
 
@@ -460,8 +460,12 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
                 onClick={() => onNavigate('operator', { operator_id: tour.operator_id || tour.operator, operator_name: tour.company_name || tour.operator_name })}
                 className="bg-white p-5 rounded-2xl border border-border-light flex items-center gap-4 cursor-pointer hover:border-primary/30 transition-colors group"
               >
-                 <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center text-white flex-shrink-0 group-hover:bg-primary transition-colors">
-                    <span className="material-symbols-outlined text-2xl">account_circle</span>
+                 <div className="w-12 h-12 rounded-xl bg-gray-100 overflow-hidden flex items-center justify-center flex-shrink-0 group-hover:border-primary transition-all border border-transparent">
+                    {tour.operator_avatar ? (
+                      <img src={tour.operator_avatar} className="w-full h-full object-cover" alt="" />
+                    ) : (
+                      <span className="material-symbols-outlined text-2xl text-gray-300">account_circle</span>
+                    )}
                  </div>
                  <div className="flex-1 min-w-0">
                     <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">{t.tour_provided_by}</p>

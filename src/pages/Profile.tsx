@@ -416,18 +416,7 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
                     {isKa ? 'შეფასებები' : 'Tour Reviews'}
                   </button>
 
-                  <button
-                    onClick={() => setActiveTab('verification')}
-                    className={`flex-1 lg:flex-none py-4 px-5 rounded-2xl font-black text-[11px] uppercase tracking-wider transition-all flex items-center gap-3 relative whitespace-nowrap ${activeTab === 'verification' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-text-muted hover:bg-gray-50 hover:text-text-main'}`}
-                  >
-                    <span className="material-symbols-outlined text-[20px]">verified_user</span>
-                    {isKa ? 'ვერიფიკაცია' : 'Trust & Safety'}
-                    {user.is_verified && (
-                      <span className="absolute top-3 right-3 w-5 h-5 bg-blue-500 text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white">
-                        <span className="material-symbols-outlined text-[10px] filled">verified</span>
-                      </span>
-                    )}
-                  </button>
+                  {/* Verification tab hidden */}
                 </>
               )}
 
@@ -1227,7 +1216,7 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
                 </div>
               )}
             </motion.div>
-          ) : activeTab === 'verification' && user.role === 'operator' ? (
+          ) : /* activeTab === 'verification' && user.role === 'operator' ? (
             <motion.div
               key="verification"
               initial={{ opacity: 0, x: -20 }}
@@ -1242,7 +1231,6 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
                  </h2>
               </div>
 
-              {/* Status Banner */}
               <div className={`p-8 rounded-[32px] border-2 flex flex-col md:flex-row items-center gap-8 transition-all ${
                 user.is_verified 
                   ? 'bg-blue-50 border-blue-100 text-blue-900' 
@@ -1339,7 +1327,8 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
                 </div>
               )}
             </motion.div>
-          ) : activeTab === 'operator-reviews' && user.role === 'operator' ? (
+          ) : */ null }
+          {activeTab === 'operator-reviews' && user.role === 'operator' ? (
             <motion.div
               key="operator-reviews"
               initial={{ opacity: 0, x: -20 }}

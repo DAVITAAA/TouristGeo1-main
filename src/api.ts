@@ -35,6 +35,8 @@ export interface Tour {
     maxGroupSize?: number;
     languages?: string[];
     itinerary?: { day: number; title: string; description: string; activities: string[]; location?: string }[];
+    operator_avatar?: string;
+    reviews_count?: number;
     phone?: string;
     status?: string;
     created_at: string;
@@ -451,7 +453,9 @@ export const createTour = async (formData: FormData) => {
         body: JSON.stringify(payload)
     });
     const result = await response.json();
-    if (!response.ok) throw new Error(result.error || 'Failed to create tour');
+    if (!response.ok) {
+        throw new Error(result.error || result.details || 'Failed to create tour');
+    }
     return result;
 };
 

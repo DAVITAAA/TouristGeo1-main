@@ -833,7 +833,7 @@ app.get('/api/tours', async (req, res) => {
     
     let query = supabase
       .from('tours')
-      .select('*, profiles(name, company_name, is_verified, phone)')
+      .select('*, profiles(name, company_name, is_verified, phone, avatar_url)')
       .eq('status', 'published')
       .gte('created_at', thirtyDaysAgo);
 
@@ -855,6 +855,7 @@ app.get('/api/tours', async (req, res) => {
       company_name: t.profiles?.company_name,
       is_verified: t.profiles?.is_verified,
       phone: t.phone || t.profiles?.phone,
+      operator_avatar: t.profiles?.avatar_url,
       languages: t.languages || [],
       highlights: t.highlights || [],
       included: t.included || [],
@@ -919,8 +920,8 @@ app.post('/api/tours', async (req, res) => {
   } catch (error: any) {
     console.error('Error inserting tour:', error);
     res.status(500).json({ 
-      error: 'Failed to create tour', 
-      details: error.message || 'Unknown error',
+      error: error.message || 'Failed to create tour', 
+      details: error.details || error.message || 'Unknown error',
       code: error.code
     });
   }
@@ -1136,7 +1137,7 @@ app.get('/api/tours/:id', async (req, res) => {
   try {
     const { data: tour, error } = await supabase
       .from('tours')
-      .select('*, profiles(name, company_name, is_verified, phone)')
+      .select('*, profiles(name, company_name, is_verified, phone, avatar_url)')
       .eq('id', req.params.id)
       .single();
 
@@ -1147,7 +1148,8 @@ app.get('/api/tours/:id', async (req, res) => {
       operator_name: tour.profiles?.name,
       company_name: tour.profiles?.company_name,
       is_verified: tour.profiles?.is_verified,
-      phone: tour.phone || tour.profiles?.phone
+      phone: tour.phone || tour.profiles?.phone,
+      operator_avatar: tour.profiles?.avatar_url
     });
   } catch (error) {
     console.error('Error fetching tour detail:', error);
