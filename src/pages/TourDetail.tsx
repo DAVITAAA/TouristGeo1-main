@@ -32,7 +32,7 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
   // Reviews state
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
-  const [newReview, setNewReview] = useState({ rating: 5, comment: '', guest_name: '', guest_lastname: '' });
+  const [newReview, setNewReview] = useState({ rating: 0, comment: '', guest_name: '', guest_lastname: '' });
   const [reviewSuccess, setReviewSuccess] = useState(false);
   const [hoveredStar, setHoveredStar] = useState<number | null>(null);
 
