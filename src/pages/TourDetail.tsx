@@ -358,10 +358,10 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
                                         <div className="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary font-black">
                                             {review.profiles?.avatar_url ? (
                                                 <img src={review.profiles.avatar_url} alt="" className="w-full h-full object-cover rounded-xl" />
-                                            ) : review.profiles?.name.charAt(0)}
+                                            ) : (review.profiles?.name || 'Guest').charAt(0)}
                                         </div>
                                         <div>
-                                            <p className="font-black text-text-main text-sm">{review.profiles?.name}</p>
+                                            <p className="font-black text-text-main text-sm">{review.profiles?.name || 'Guest'}</p>
                                             <div className="flex">
                                                 {[...Array(5)].map((_, i) => (
                                                     <span key={i} className={`material-icons text-xs ${i < review.rating ? 'text-amber-400' : 'text-gray-200'}`}>

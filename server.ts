@@ -1595,17 +1595,18 @@ app.get('/api/operators/:id/reviews', async (req, res) => {
     if (reviewsError) throw reviewsError;
     
     const parsedData = reviews.map(review => {
+      const profile = Array.isArray(review.profiles) ? review.profiles[0] : review.profiles;
       if (review.comment && review.comment.startsWith('[GUEST:')) {
          const match = review.comment.match(/^\[GUEST:([^\]]+)\]\s*(.*)$/s);
          if (match) {
            return {
              ...review,
              comment: match[2].trim(),
-             profiles: { ...review.profiles, name: match[1] }
+             profiles: { ...profile, name: match[1] }
            };
          }
       }
-      return review;
+      return { ...review, profiles: profile };
     });
 
     res.json(parsedData);
@@ -1627,17 +1628,18 @@ app.get('/api/tours/:id/reviews', async (req, res) => {
     
     // Parse guest names if any
     const parsedData = (data || []).map(review => {
+      const profile = Array.isArray(review.profiles) ? review.profiles[0] : review.profiles;
       if (review.comment && review.comment.startsWith('[GUEST:')) {
          const match = review.comment.match(/^\[GUEST:([^\]]+)\]\s*(.*)$/s);
          if (match) {
            return {
              ...review,
              comment: match[2].trim(),
-             profiles: { ...review.profiles, name: match[1] }
+             profiles: { ...profile, name: match[1] }
            };
          }
       }
-      return review;
+      return { ...review, profiles: profile };
     });
 
     res.json(parsedData);
