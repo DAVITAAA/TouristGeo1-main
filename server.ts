@@ -1578,24 +1578,28 @@ app.get('/api/operators/:id/reviews', async (req, res) => {
   try {
     const { data: tours, error: toursError } = await supabase
       .from('tours')
-      .select('id')
+      .select('id, title')
       .eq('operator_id', req.params.id);
 
     if (toursError) throw toursError;
-    const tourIds = tours.map((t: any) => t.id);
-
+    
+    const tourIds = (tours || []).map(t => t.id);
     if (tourIds.length === 0) return res.json([]);
 
     const { data: reviews, error: reviewsError } = await supabase
       .from('reviews')
-      .select('*, tours!left(title), profiles!left(name, avatar_url)')
+      .select('*, tours!left(title)')
       .in('tour_id', tourIds)
       .order('created_at', { ascending: false });
 
     if (reviewsError) throw reviewsError;
     
+    const userIds = [...new Set(reviews.map(r => r.user_id).filter(Boolean))];
+    const { data: profiles } = await supabase.from('profiles').select('id, name, avatar_url').in('id', userIds);
+    const profileMap = (profiles || []).reduce((acc: any, p: any) => ({ ...acc, [p.id]: p }), {});
+
     const parsedData = reviews.map(review => {
-      const profile = Array.isArray(review.profiles) ? review.profiles[0] : review.profiles;
+      const profile = profileMap[review.user_id] || null;
       if (review.comment && review.comment.startsWith('[GUEST:')) {
          const match = review.comment.match(/^\[GUEST:([^\]]+)\]\s*(.*)$/s);
          if (match) {
@@ -1620,15 +1624,18 @@ app.get('/api/tours/:id/reviews', async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('reviews')
-      .select('*, profiles!left(name, avatar_url)')
+      .select('*')
       .eq('tour_id', req.params.id)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
     
-    // Parse guest names if any
+    const userIds = [...new Set((data || []).map(r => r.user_id).filter(Boolean))];
+    const { data: profiles } = await supabase.from('profiles').select('id, name, avatar_url').in('id', userIds);
+    const profileMap = (profiles || []).reduce((acc: any, p: any) => ({ ...acc, [p.id]: p }), {});
+
     const parsedData = (data || []).map(review => {
-      const profile = Array.isArray(review.profiles) ? review.profiles[0] : review.profiles;
+      const profile = profileMap[review.user_id] || null;
       if (review.comment && review.comment.startsWith('[GUEST:')) {
          const match = review.comment.match(/^\[GUEST:([^\]]+)\]\s*(.*)$/s);
          if (match) {
@@ -1674,7 +1681,7 @@ app.get('/api/reviews/operator-notifications', async (req, res) => {
 
     let query = supabase
       .from('reviews')
-      .select('id, tour_id, rating, comment, created_at, user_id, profiles!left(name, avatar_url)')
+      .select('id, tour_id, rating, comment, created_at, user_id')
       .in('tour_id', tourIds)
       .neq('user_id', payload.id) // Don't notify for own reviews
       .order('created_at', { ascending: false })
@@ -1683,9 +1690,13 @@ app.get('/api/reviews/operator-notifications', async (req, res) => {
     const { data: reviews, error: reviewsError } = await query;
     if (reviewsError) throw reviewsError;
 
+    const userIds = [...new Set((reviews || []).map(r => r.user_id).filter(Boolean))];
+    const { data: profiles } = await supabase.from('profiles').select('id, name, avatar_url').in('id', userIds);
+    const profileMap = (profiles || []).reduce((acc: any, p: any) => ({ ...acc, [p.id]: p }), {});
+
     // Parse guest names and attach tour info
     const notifications = (reviews || []).map(review => {
-      const profile = Array.isArray(review.profiles) ? review.profiles[0] : review.profiles;
+      const profile = profileMap[review.user_id] || null;
       let reviewerName = profile?.name || 'Guest';
       let cleanComment = review.comment;
 
