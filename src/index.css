@@ -42,6 +42,14 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+button, 
+[role="button"],
+.cursor-pointer,
+input[type="button"],
+input[type="submit"] {
+  cursor: pointer !important;
+}
+
 /* === Keyframe Animations === */
 @keyframes hero-progress {
   from {
