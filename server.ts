@@ -1594,11 +1594,13 @@ app.get('/api/operators/:id/reviews', async (req, res) => {
 
     if (reviewsError) throw reviewsError;
     
-    const userIds = [...new Set(reviews.map(r => r.user_id).filter(Boolean))];
-    const { data: profiles } = await supabase.from('profiles').select('id, name, avatar_url').in('id', userIds);
+    const userIds = [...new Set((reviews || []).map(r => r.user_id).filter(Boolean))];
+    const { data: profiles, error: profilesError } = await supabase.from('profiles').select('id, name, avatar_url').in('id', userIds);
+    if (profilesError) console.error('Error fetching profiles for operator reviews:', profilesError);
+    
     const profileMap = (profiles || []).reduce((acc: any, p: any) => ({ ...acc, [p.id]: p }), {});
 
-    const parsedData = reviews.map(review => {
+    const parsedData = (reviews || []).map(review => {
       const profile = profileMap[review.user_id] || null;
       if (review.comment && review.comment.startsWith('[GUEST:')) {
          const match = review.comment.match(/^\[GUEST:([^\]]+)\]\s*(.*)$/s);
@@ -1631,7 +1633,9 @@ app.get('/api/tours/:id/reviews', async (req, res) => {
     if (error) throw error;
     
     const userIds = [...new Set((data || []).map(r => r.user_id).filter(Boolean))];
-    const { data: profiles } = await supabase.from('profiles').select('id, name, avatar_url').in('id', userIds);
+    const { data: profiles, error: profilesError } = await supabase.from('profiles').select('id, name, avatar_url').in('id', userIds);
+    if (profilesError) console.error('Error fetching profiles for tour reviews:', profilesError);
+    
     const profileMap = (profiles || []).reduce((acc: any, p: any) => ({ ...acc, [p.id]: p }), {});
 
     const parsedData = (data || []).map(review => {
