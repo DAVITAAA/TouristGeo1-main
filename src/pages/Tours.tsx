@@ -28,7 +28,7 @@ export default function Tours({ onNavigate, language }: ToursProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDestinations, setSelectedDestinations] = useState<string[]>([]);
   const [selectedDuration, setSelectedDuration] = useState<string>('');
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 5000]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 50000]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -183,7 +183,7 @@ export default function Tours({ onNavigate, language }: ToursProps) {
                       {t.filter_price_range}
                     </h3>
                     <div className="px-2">
-                      <input type="range" min="0" max="5000" step="50" value={priceRange[1]} onChange={(e) => setPriceRange([0, parseInt(e.target.value)])} className="w-full accent-primary h-1 bg-border-light rounded-full appearance-none" />
+                      <input type="range" min="0" max="50000" step="100" value={priceRange[1]} onChange={(e) => setPriceRange([0, parseInt(e.target.value)])} className="w-full accent-primary h-1 bg-border-light rounded-full appearance-none" />
                       <div className="flex justify-between mt-4 text-xs font-black text-text-muted">
                         <span>{symbol}{priceRange[0]}</span>
                         <span>{symbol}{priceRange[1]}</span>
@@ -264,8 +264,8 @@ export default function Tours({ onNavigate, language }: ToursProps) {
                   <input 
                     type="range" 
                     min="0" 
-                    max="5000" 
-                    step="50"
+                    max="50000" 
+                    step="100"
                     value={priceRange[1]}
                     onChange={(e) => setPriceRange([0, parseInt(e.target.value)])}
                     className="w-full accent-primary h-1 bg-border-light rounded-full appearance-none"
