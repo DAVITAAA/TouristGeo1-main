@@ -10,8 +10,16 @@ import { OAuth2Client } from 'google-auth-library';
 import multer from 'multer';
 import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+let currentDir = process.cwd();
+try {
+  if (typeof __dirname !== 'undefined') {
+    currentDir = __dirname;
+  } else if (typeof import.meta !== 'undefined' && import.meta.url) {
+    currentDir = path.dirname(fileURLToPath(import.meta.url));
+  }
+} catch (e) {
+  currentDir = process.cwd();
+}
 
 dotenv.config();
 
@@ -33,7 +41,7 @@ if (!process.env.RESEND_API_KEY || process.env.RESEND_API_KEY === 'your-resend-a
 console.log('[DEBUG] GOOGLE_CLIENT_ID:', process.env.GOOGLE_CLIENT_ID ? 'LOADED' : 'MISSING');
 console.log('[DEBUG] GOOGLE_CLIENT_SECRET:', process.env.GOOGLE_CLIENT_SECRET ? 'LOADED' : 'MISSING');
 
-const LOG_FILE = path.join(__dirname, 'error.log');
+const LOG_FILE = path.join(currentDir, 'error.log');
 
 // Safe JSON stringify helper to prevent crashes with circular references
 const safeStringify = (obj: any) => {
@@ -1645,7 +1653,8 @@ app.get('/api/reviews/operator-notifications', async (req, res) => {
 
     // Parse guest names and attach tour info
     const notifications = (reviews || []).map(review => {
-      let reviewerName = review.profiles?.name || 'Guest';
+      const profile = Array.isArray(review.profiles) ? review.profiles[0] : review.profiles;
+      let reviewerName = profile?.name || 'Guest';
       let cleanComment = review.comment;
 
       if (review.comment && review.comment.startsWith('[GUEST:')) {
@@ -1663,7 +1672,7 @@ app.get('/api/reviews/operator-notifications', async (req, res) => {
         tour_title: tour?.title || 'Unknown Tour',
         tour_image: tour?.image || '',
         reviewer_name: reviewerName,
-        reviewer_avatar: review.profiles?.avatar_url || null,
+        reviewer_avatar: profile?.avatar_url || null,
         rating: review.rating,
         comment: cleanComment,
         created_at: review.created_at
