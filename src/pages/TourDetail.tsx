@@ -340,7 +340,7 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
                         />
                         <button
                             type="submit"
-                            disabled={isSubmittingReview || !newReview.comment || (!user && (!newReview.guest_name || !newReview.guest_lastname))}
+                            disabled={isSubmittingReview || newReview.rating === 0 || !newReview.comment || (!user && (!newReview.guest_name || !newReview.guest_lastname))}
                             className="w-full py-3.5 bg-primary text-white rounded-xl font-black shadow-lg shadow-primary/20 hover:scale-[1.01] active:scale-95 transition-all disabled:opacity-50"
                         >
                             {isSubmittingReview ? t.reviews_submitting : t.reviews_submit}

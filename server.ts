@@ -1654,8 +1654,9 @@ app.get('/api/tours/:id/reviews', async (req, res) => {
     });
 
     res.json(parsedData);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch reviews' });
+  } catch (error: any) {
+    console.error('CRITICAL: Failed to fetch tour reviews:', error);
+    res.json([]); // Return empty list as fallback instead of 500 to prevent UI crash
   }
 });
 
