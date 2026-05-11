@@ -172,6 +172,14 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
               </button>
             </div>
 
+            {/* ========== Map Explorer ========== */}
+            <div className="group relative">
+              <button onClick={() => onNavigate('map-explorer')} className={`flex items-center gap-1 text-sm font-bold transition-colors py-4 ${currentPage === 'map-explorer' ? 'text-primary' : 'text-text-main group-hover:text-primary'}`}>
+                {isKa ? 'ექსპლორერი' : 'Explorer'}
+                <span className="ml-1 px-1.5 py-0.5 rounded-md bg-primary text-[8px] text-white font-black uppercase tracking-tighter">New</span>
+              </button>
+            </div>
+
             {/* ========== Why Georgia (HIDDEN) ========== 
             <div className="group relative">
                ...
@@ -379,7 +387,7 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
               <nav className="px-4 space-y-1">
                 {[
                   { page: 'tours', label: t.nav_tours, icon: 'explore' },
-                  // { page: 'why-georgia', label: t.nav_why_georgia, icon: 'auto_awesome' },
+                  { page: 'map-explorer', label: isKa ? 'ექსპლორერი' : 'Explorer', icon: 'map' },
                   { page: 'places', label: t.nav_places, icon: 'place' },
                   { page: 'sights', label: t.nav_sights, icon: 'photo_camera' },
                   { page: 'favorites', label: isKa ? 'რჩეულები' : 'Favorites', icon: 'favorite' },

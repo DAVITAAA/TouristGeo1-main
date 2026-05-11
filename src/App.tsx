@@ -11,6 +11,7 @@ import Profile from './pages/Profile.tsx';
 import TourDetail from './pages/TourDetail.tsx';
 import Operator from './pages/Operator.tsx';
 import Favorites from './pages/Favorites';
+import MapExplorer from './pages/MapExplorer';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import AuthModal from './components/AuthModal';
@@ -120,6 +121,7 @@ export default function App() {
       case 'tour-detail': return selectedTour ? <TourDetail tour={selectedTour} onNavigate={handleNavigate} language={language} user={user} /> : <Home onNavigate={handleNavigate} language={language} />;
       case 'operator': return <Operator onNavigate={handleNavigate} language={language} operator={selectedOperator} />;
       case 'favorites': return <Favorites onNavigate={handleNavigate} language={language} />;
+      case 'map-explorer': return <MapExplorer language={language} />;
       default: return <Home onNavigate={handleNavigate} language={language} />;
     }
   };

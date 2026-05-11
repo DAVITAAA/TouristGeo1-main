@@ -3,6 +3,7 @@ import { translations, Language } from '../translations';
 import SeasonModal from '../components/SeasonModal';
 import TiltCard from '../components/TiltCard';
 import { useScrollReveal } from '../hooks/useScrollReveal';
+import { Compass, Satellite } from 'lucide-react';
 
 /* ═══════════════════════════════════════
    DATA
@@ -203,8 +204,63 @@ export default function Home({ onNavigate, language }: { onNavigate: (page: stri
 
 
       {/* ════════════════════════════════════
-          SECTION 3 — FOUR SEASONS
+          SECTION 4 — MAP EXPLORER PROMO
           ════════════════════════════════════ */}
+      <section className="py-24 bg-[#050b1a] overflow-hidden relative">
+        <div className="absolute top-0 right-0 w-1/2 h-full opacity-30 pointer-events-none">
+           <div className="w-full h-full bg-[radial-gradient(circle_at_center,_var(--color-primary)_0%,_transparent_70%)] blur-[100px]" />
+        </div>
+        
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl relative z-10">
+          <div className="flex flex-col lg:flex-row items-center gap-16">
+            <div className="lg:w-1/2">
+              <ScrollReveal variant="left">
+                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest mb-6 border border-primary/20">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                  </span>
+                  New Technology
+                </span>
+                <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-white leading-tight mb-8">
+                   {isKa 
+                    ? <>აღმოაჩინე საქართველო <span className="text-primary">კოსმოსიდან</span></>
+                    : <>Discover Georgia from <span className="text-primary">Space</span></>}
+                </h2>
+                <p className="text-white/70 text-lg mb-10 leading-relaxed max-w-xl">
+                  {isKa 
+                    ? 'გაეცანი საქართველოს კულტურულ ძეგლებსა და ბუნებრივ საოცრებებს რეალისტური სატელიტური რუკის მეშვეობით. 3D რელიეფი და მაღალი ხარისხის გამოსახულება.'
+                    : 'Explore Georgia\'s cultural landmarks and natural wonders through a realistic satellite map. High-resolution 3D terrain and interactive exploration.'}
+                </p>
+                <button 
+                  onClick={() => onNavigate('map-explorer')}
+                  className="px-10 py-5 bg-primary text-primary-content rounded-2xl font-black text-lg shadow-2xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all flex items-center gap-3"
+                >
+                   {isKa ? 'გახსენი ექსპლორერი' : 'Open Geo-Explorer'}
+                   <Compass size={24} className="animate-spin-slow" />
+                </button>
+              </ScrollReveal>
+            </div>
+            <div className="lg:w-1/2 relative">
+               <ScrollReveal variant="scale" delay={0.2}>
+                  <div className="relative rounded-[40px] overflow-hidden border-8 border-white/5 shadow-[0_0_80px_rgba(34,197,94,0.15)] aspect-square max-w-[500px] mx-auto group">
+                     <img 
+                       src="https://storage.georgia.travel/images/kazbegi-gnta.webp" 
+                       alt="Explorer Preview" 
+                       className="w-full h-full object-cover opacity-80 group-hover:scale-110 transition-transform duration-[5s]" 
+                     />
+                     <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-24 h-24 rounded-full bg-primary/20 backdrop-blur-xl border border-primary/30 flex items-center justify-center animate-pulse">
+                           <Satellite size={48} className="text-primary" />
+                        </div>
+                     </div>
+                     <div className="absolute inset-0 bg-gradient-to-t from-[#050b1a] via-transparent to-transparent" />
+                  </div>
+               </ScrollReveal>
+            </div>
+          </div>
+        </div>
+      </section>
       <section className="py-24 bg-white">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
           <ScrollReveal>
@@ -252,7 +308,6 @@ export default function Home({ onNavigate, language }: { onNavigate: (page: stri
           </ScrollReveal>
         </div>
       </section>
-
       {/* ════════════════════════════════════
           SECTION 5 — POPULAR SIGHTS CAROUSEL
           ════════════════════════════════════ */}
