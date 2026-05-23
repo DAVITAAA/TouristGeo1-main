@@ -77,36 +77,7 @@ const placesItems = [
   },
 ];
 
-const sightsItems = [
-  {
-    img: 'https://storage.georgia.travel/images/445x420/svetitskhoveli-cathedral-gnta.webp',
-    titleKa: 'სვეტიცხოველი',
-    titleEn: 'Svetitskhoveli',
-    descKa: 'მცხეთის UNESCO-ს ძეგლი — საქართველოს სულიერი ცენტრი',
-    descEn: 'UNESCO site in Mtskheta — Georgia\'s spiritual heart',
-  },
-  {
-    img: 'https://storage.georgia.travel/images/445x420/vardzia-gnta.webp',
-    titleKa: 'ვარძია',
-    titleEn: 'Vardzia',
-    descKa: 'XII საუკუნის გამოქვაბული ქალაქ-მონასტერი',
-    descEn: '12th-century cave monastery carved into a cliff',
-  },
-  {
-    img: 'https://storage.georgia.travel/images/300x400/okatse-canyon-gnta.webp',
-    titleKa: 'ოკაცეს კანიონი',
-    titleEn: 'Okatse Canyon',
-    descKa: 'თვალწარმტაცი კანიონი და გამჭვირვალე ხიდი',
-    descEn: 'Stunning canyon with a transparent hanging walkway',
-  },
-  {
-    img: 'https://storage.georgia.travel/images/445x420/abudelauri-lake-georgia.webp',
-    titleKa: 'აბუდელაურის ტბები',
-    titleEn: 'Abudelauri Lakes',
-    descKa: 'სამი ფერადი ალპური ტბა კავკასიონის გულში',
-    descEn: 'Three colorful alpine lakes in the heart of the Caucasus',
-  },
-];
+
 
 
 export default function Navbar({ onNavigate, currentPage, language, setLanguage, user, onLoginClick, onLogout }: NavbarProps) {
@@ -220,39 +191,7 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
               </div>
             </div>
 
-            {/* ========== Sights ========== */}
-            <div className="group relative">
-              <button onClick={() => onNavigate('sights')} className={`flex items-center gap-1 text-sm font-bold transition-colors py-4 ${currentPage === 'sights' ? 'text-primary' : 'text-text-main group-hover:text-primary'}`}>
-                {t.nav_sights}
-                <span className="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:rotate-180">expand_more</span>
-              </button>
 
-              <div className="absolute top-full left-1/2 -translate-x-1/2 w-[700px] opacity-0 invisible translate-y-2 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 z-50 pt-1">
-                <div className="rounded-2xl bg-surface-light shadow-2xl border border-border-light overflow-hidden">
-                  <div className="p-4">
-                    <p className="font-extrabold text-base text-text-main mb-1">{isKa ? 'აუცილებელი სანახაობები' : 'Must-See Sights'}</p>
-                    <p className="text-xs text-text-muted mb-3">{isKa ? 'საქართველოს ყველაზე შთამბეჭდავი ადგილები' : 'Georgia\'s most impressive landmarks'}</p>
-                  </div>
-
-                  <div className="grid grid-cols-4 gap-3 px-4 pb-4">
-                    {sightsItems.map((item, i) => (
-                      <div key={i} className="relative overflow-hidden rounded-xl cursor-pointer group/card h-44">
-                        <img
-                          src={item.img}
-                          alt={isKa ? item.titleKa : item.titleEn}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-110"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
-                        <div className="absolute bottom-2 left-2 right-2 text-white">
-                          <p className="font-bold text-xs leading-tight">{isKa ? item.titleKa : item.titleEn}</p>
-                          <p className="text-[10px] text-white/70 mt-0.5 line-clamp-2">{isKa ? item.descKa : item.descEn}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
 
             {/* <button className="text-sm font-bold text-text-main hover:text-primary transition-colors py-4">{t.contact}</button> */}
           </nav>
@@ -389,7 +328,6 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
                   { page: 'tours', label: t.nav_tours, icon: 'explore' },
                   { page: 'map-explorer', label: isKa ? 'ექსპლორერი' : 'Explorer', icon: 'map' },
                   { page: 'places', label: t.nav_places, icon: 'place' },
-                  { page: 'sights', label: t.nav_sights, icon: 'photo_camera' },
                   { page: 'favorites', label: isKa ? 'რჩეულები' : 'Favorites', icon: 'favorite' },
                 ].map((item) => (
                   <button

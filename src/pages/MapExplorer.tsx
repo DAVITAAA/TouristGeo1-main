@@ -68,11 +68,7 @@ export default function MapExplorer({ language, onNavigate }: MapExplorerProps) 
 
     const filteredSights = filter === 'all' ? georgianSights : georgianSights.filter(s => s.type === filter);
 
-    const handleSeeMore = () => {
-        if (selectedSight && onNavigate) {
-            onNavigate('sights', { sightId: selectedSight.id });
-        }
-    };
+
 
     return (
         <div className="relative w-full h-[calc(100vh-64px)] bg-[#050b1a] overflow-hidden explorer-map-container">
@@ -206,18 +202,11 @@ export default function MapExplorer({ language, onNavigate }: MapExplorerProps) 
                             </p>
                             <div className="flex gap-3">
                                 <button
-                                    onClick={handleSeeMore}
+                                    onClick={() => window.open(`https://www.google.com/maps?q=${selectedSight.coords[0]},${selectedSight.coords[1]}`, '_blank')}
                                     className="flex-1 px-6 py-3.5 bg-primary text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-primary/30 hover:bg-primary/90 transition-all flex items-center justify-center gap-2"
                                 >
-                                    <ExternalLink size={14} />
-                                    {isKa ? 'ვრცლად' : 'See More'}
-                                </button>
-                                <button
-                                    onClick={() => window.open(`https://www.google.com/maps?q=${selectedSight.coords[0]},${selectedSight.coords[1]}`, '_blank')}
-                                    className="px-6 py-3.5 bg-white/5 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest border border-white/10 hover:bg-white/10 transition-all flex items-center gap-2"
-                                >
                                     <Navigation size={14} />
-                                    {isKa ? 'რუკა' : 'Maps'}
+                                    {isKa ? 'გახსენი რუკაზე' : 'Open in Google Maps'}
                                 </button>
                             </div>
                         </div>

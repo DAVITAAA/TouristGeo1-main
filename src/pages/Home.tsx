@@ -34,12 +34,12 @@ const heroSlides = [
 ];
 
 const popularSights = [
-  { img: 'https://storage.georgia.travel/images/okatse-canyon-gnta.webp', titleKa: 'ოკაცეს კანიონი', titleEn: 'Okatse Canyon', catKa: 'ბუნების ძეგლი', catEn: 'Nature' },
-  { img: 'https://storage.georgia.travel/images/abudelauri-lake-georgia.webp', titleKa: 'აბუდელაურის ფერადი ტბები', titleEn: 'Abudelauri Lakes', catKa: 'ბუნების ძეგლი', catEn: 'Nature' },
-  { img: 'https://storage.georgia.travel/images/svetitskhoveli-cathedral-gnta.webp', titleKa: 'სვეტიცხოველი', titleEn: 'Svetitskhoveli', catKa: 'კულტურული ძეგლი', catEn: 'Cultural' },
-  { img: 'https://storage.georgia.travel/images/vardzia-gnta.webp', titleKa: 'ვარძია', titleEn: 'Vardzia', catKa: 'კულტურული ძეგლი', catEn: 'Cultural' },
-  { img: 'https://storage.georgia.travel/images/sataplia-cave-and-nature-reserve-gnta.webp', titleKa: 'სათაფლიის მღვიმე', titleEn: 'Sataplia Cave', catKa: 'ბუნების ძეგლი', catEn: 'Nature' },
-  { img: 'https://storage.georgia.travel/images/gomi-mountain-gnta.webp', titleKa: 'გერგეტის სამება', titleEn: 'Gergeti Trinity', catKa: 'კულტურული ძეგლი', catEn: 'Cultural' },
+  { img: 'https://storage.georgia.travel/images/okatse-canyon-gnta.webp', titleKa: 'ოკაცეს კანიონი', titleEn: 'Okatse Canyon', catKa: 'ბუნების ძეგლი', catEn: 'Nature', placeId: 'imereti' },
+  { img: 'https://storage.georgia.travel/images/abudelauri-lake-georgia.webp', titleKa: 'აბუდელაურის ფერადი ტბები', titleEn: 'Abudelauri Lakes', catKa: 'ბუნების ძეგლი', catEn: 'Nature', placeId: 'mountain' },
+  { img: 'https://storage.georgia.travel/images/svetitskhoveli-cathedral-gnta.webp', titleKa: 'სვეტიცხოველი', titleEn: 'Svetitskhoveli', catKa: 'კულტურული ძეგლი', catEn: 'Cultural', placeId: 'mtskheta' },
+  { img: 'https://storage.georgia.travel/images/vardzia-gnta.webp', titleKa: 'ვარძია', titleEn: 'Vardzia', catKa: 'კულტურული ძეგლი', catEn: 'Cultural', placeId: 'samtskhe' },
+  { img: 'https://storage.georgia.travel/images/sataplia-cave-and-nature-reserve-gnta.webp', titleKa: 'სათაფლიის მღვიმე', titleEn: 'Sataplia Cave', catKa: 'ბუნების ძეგლი', catEn: 'Nature', placeId: 'imereti' },
+  { img: 'https://storage.georgia.travel/images/gomi-mountain-gnta.webp', titleKa: 'გერგეტის სამება', titleEn: 'Gergeti Trinity', catKa: 'კულტურული ძეგლი', catEn: 'Cultural', placeId: 'kazbegi' },
 ];
 
 const seasons = [
@@ -245,7 +245,7 @@ export default function Home({ onNavigate, language }: { onNavigate: (page: stri
                <ScrollReveal variant="scale" delay={0.2}>
                   <div className="relative rounded-[40px] overflow-hidden border-8 border-white/5 shadow-[0_0_80px_rgba(34,197,94,0.15)] aspect-square max-w-[500px] mx-auto group">
                      <img 
-                       src="https://storage.georgia.travel/images/kazbegi-gnta.webp" 
+                       src="/images/georgia_satellite.png" 
                        alt="Explorer Preview" 
                        className="w-full h-full object-cover opacity-80 group-hover:scale-110 transition-transform duration-[5s]" 
                      />
@@ -345,14 +345,14 @@ export default function Home({ onNavigate, language }: { onNavigate: (page: stri
             <div ref={sightsRef} className="carousel-scroll flex gap-5 overflow-x-auto pb-4">
               {popularSights.map((sight, i) => (
                 <TiltCard key={i} className="flex-shrink-0 w-56 sm:w-64 rounded-2xl" maxTilt={6}>
-                  <div className="relative h-72 sm:h-80 rounded-2xl overflow-hidden shadow-lg group cursor-pointer">
+                  <div 
+                    className="relative h-72 sm:h-80 rounded-2xl overflow-hidden shadow-lg group cursor-pointer"
+                    onClick={() => onNavigate('places', { placeId: sight.placeId })}
+                  >
                     <img src={sight.img} alt={isKa ? sight.titleKa : sight.titleEn} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
                     {/* Glassmorphism overlay on hover */}
                     <div className="absolute inset-0 sight-card-glass rounded-2xl" />
-                    <button className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/40 transition-all hover:scale-110">
-                      <span className="material-symbols-outlined text-lg">favorite</span>
-                    </button>
                     <div className="absolute bottom-4 left-4 right-4 text-white">
                       <p className="font-black text-base leading-tight">{isKa ? sight.titleKa : sight.titleEn}</p>
                       <p className="text-xs text-white/70 mt-1 flex items-center gap-1">

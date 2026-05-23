@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Language } from '../translations';
 import { georgianSights } from '../data/georgianSights';
 import { motion, AnimatePresence } from 'motion/react';
@@ -88,9 +88,19 @@ const places = [
     },
 ];
 
-export default function Places({ language }: { language: Language }) {
+export default function Places({ language, initialExpandedPlaceId }: { language: Language; initialExpandedPlaceId?: string | null }) {
     const isKa = language === 'ka';
     const [expandedPlace, setExpandedPlace] = useState<string | null>(null);
+    const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+    useEffect(() => {
+        if (initialExpandedPlaceId) {
+            setExpandedPlace(initialExpandedPlaceId);
+            setTimeout(() => {
+                cardRefs.current[initialExpandedPlaceId]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 300);
+        }
+    }, [initialExpandedPlaceId]);
 
     const getSightsForPlace = (matchLocations: string[]) => {
         return georgianSights.filter(s => matchLocations.includes(s.locationEn));
@@ -131,7 +141,11 @@ export default function Places({ language }: { language: Language }) {
                             const isExpanded = expandedPlace === place.id;
 
                             return (
-                                <div key={place.id} className={`transition-all duration-500 ${isExpanded ? 'md:col-span-2 lg:col-span-3' : ''}`}>
+                                <div 
+                                    key={place.id} 
+                                    ref={(el) => { cardRefs.current[place.id] = el; }}
+                                    className={`transition-all duration-500 ${isExpanded ? 'md:col-span-2 lg:col-span-3' : ''}`}
+                                >
                                     <div
                                         className={`group bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer ${!isExpanded ? 'hover:-translate-y-2' : ''}`}
                                         onClick={() => togglePlace(place.id)}

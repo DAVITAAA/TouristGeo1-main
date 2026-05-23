@@ -4,7 +4,6 @@ import Home from './pages/Home';
 import Search from './pages/Search';
 import WhyGeorgia from './pages/WhyGeorgia';
 import Places from './pages/Places';
-import Sights from './pages/Sights';
 import AddTourWizard from './pages/AddTourWizard.tsx';
 import Tours from './pages/Tours.tsx';
 import Profile from './pages/Profile.tsx';
@@ -29,7 +28,7 @@ export default function App() {
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null);
   const [selectedOperator, setSelectedOperator] = useState<{ id: string; name: string } | null>(null);
   const [selectedProfileTab, setSelectedProfileTab] = useState<any>(null);
-  const [selectedSightId, setSelectedSightId] = useState<string | null>(null);
+  const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
 
   useEffect(() => {
     // Attempt to restore session on load
@@ -89,10 +88,10 @@ export default function App() {
     } else if (page === 'operator' && data) {
       setSelectedOperator({ id: data.operator_id, name: data.operator_name });
       operatorData = { id: data.operator_id, name: data.operator_name };
-    } else if (page === 'sights' && data?.sightId) {
-      setSelectedSightId(data.sightId);
-    } else if (page === 'sights' && !data?.sightId) {
-      setSelectedSightId(null);
+    } else if (page === 'places' && data?.placeId) {
+      setSelectedPlaceId(data.placeId);
+    } else if (page === 'places' && !data?.placeId) {
+      setSelectedPlaceId(null);
     } else if (page === 'profile' && data?.tab) {
       setSelectedProfileTab(data.tab);
     } else if (page === 'profile' && !data?.tab) {
@@ -118,8 +117,7 @@ export default function App() {
       case 'tours': return <Tours onNavigate={handleNavigate} language={language} />;
       case 'search': return <Search onNavigate={handleNavigate} language={language} />;
       case 'why-georgia': return <WhyGeorgia language={language} />;
-      case 'places': return <Places language={language} />;
-      case 'sights': return <Sights language={language} selectedSightId={selectedSightId} />;
+      case 'places': return <Places language={language} initialExpandedPlaceId={selectedPlaceId} />;
       case 'add-tour': return user?.role === 'operator' ? <AddTourWizard onNavigate={handleNavigate} language={language} user={user} /> : <Home onNavigate={handleNavigate} language={language} />;
       case 'edit-tour': return selectedTour ? <AddTourWizard onNavigate={handleNavigate} language={language} user={user} tourToEdit={selectedTour} /> : <Home onNavigate={handleNavigate} language={language} />;
       case 'profile': return user ? <Profile onNavigate={handleNavigate} language={language} user={user} onUpdateUser={(u) => setUser({ ...user, ...u })} onLogout={handleLogout} initialTab={selectedProfileTab} /> : null;
