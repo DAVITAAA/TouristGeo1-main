@@ -557,7 +557,7 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
                       <div className="flex-1 flex flex-col min-w-0">
                         <div className="flex justify-between items-start gap-4">
                            <h4 className="font-black text-xl text-text-main mb-1 truncate">{tour.title}</h4>
-                           <span className="px-3 py-1 text-[10px] shrink-0 font-black uppercase tracking-widest rounded-lg bg-amber-100 text-amber-700">EXPIRED</span>
+                           <span className="px-3 py-1 text-[10px] shrink-0 font-black uppercase tracking-widest rounded-lg bg-amber-100 text-amber-700">{isKa ? 'ვადაგასული' : 'EXPIRED'}</span>
                         </div>
                         <p className="text-xs font-bold text-text-muted flex items-center gap-1 mb-4 uppercase tracking-widest mt-1">
                           <span className="material-symbols-outlined text-[16px]">location_on</span>
@@ -1408,7 +1408,7 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+            className="fixed inset-0 z-[2100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
@@ -1462,7 +1462,7 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => { setShowPaymentModal(false); setIsRenewingTour(null); }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
+            className="fixed inset-0 z-[2100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
           >
             <motion.div
               initial={{ y: 50, scale: 0.9, opacity: 0 }}
@@ -1490,7 +1490,7 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
                   
                   <div className="mt-8 flex items-end gap-2">
                     <span className="text-5xl font-black">29</span>
-                    <span className="text-xl font-black mb-1">GEL</span>
+                    <span className="text-xl font-black mb-1">{isKa ? '₾' : 'GEL'}</span>
                   </div>
                 </div>
               </div>
@@ -1545,7 +1545,7 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
                 </button>
                 
                 <p className="text-center text-[10px] text-text-muted font-bold uppercase tracking-widest">
-                  Secure payment powered by GeoPay
+                  {isKa ? 'უსაფრთხო გადახდა GeoPay-ით' : 'Secure payment powered by GeoPay'}
                 </p>
               </div>
             </motion.div>

@@ -62,7 +62,7 @@ export default function ReservationModal({ tour, language, onClose, onSuccess }:
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[2100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-surface-dark/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden animate-fade-in-up max-h-[95vh] flex flex-col">
         

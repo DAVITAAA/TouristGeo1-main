@@ -153,7 +153,7 @@ export default function App() {
           </motion.div>
         </AnimatePresence>
       </main>
-      <Footer />
+      <Footer language={language} onNavigate={handleNavigate} />
 
       {showAuthModal && (
         <AuthModal

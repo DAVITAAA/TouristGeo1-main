@@ -92,13 +92,22 @@ export default function Home({ onNavigate, language }: { onNavigate: (page: stri
     const timer = setInterval(() => {
       setActiveSlide((prev) => (prev + 1) % heroSlides.length);
       setProgressKey((k) => k + 1);
-    }, 5000);
+    }, 6000);
     return () => clearInterval(timer);
   }, []);
 
-  /* Parallax scroll listener */
+  /* Parallax scroll listener — throttled for performance */
   useEffect(() => {
-    const handleScroll = () => setScrollY(window.scrollY);
+    let ticking = false;
+    const handleScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          setScrollY(window.scrollY);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -134,69 +143,72 @@ export default function Home({ onNavigate, language }: { onNavigate: (page: stri
         {heroSlides.map((slide, idx) => (
           <div
             key={idx}
-            className={`absolute inset-0 transition-opacity duration-1000 ${idx === activeSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'
-              }`}
+            className={`absolute inset-0 transition-opacity duration-[1400ms] ease-in-out ${
+              idx === activeSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'
+            }`}
           >
             <img
               src={slide.img}
               alt="Hero"
-              loading="eager"
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-[10000ms] ease-linear"
+              loading={idx === 0 ? "eager" : "lazy"}
+              className="absolute inset-0 w-full h-full object-cover will-change-transform"
               style={{
-                transform: `translateY(${scrollY * 0.4}px) scale(${idx === activeSlide ? 1.05 : 1})`,
+                transform: `translateY(${scrollY * 0.3}px) scale(${idx === activeSlide ? 1.05 : 1})`,
+                transition: 'transform 0.1s linear',
               }}
             />
-            {/* Dark gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
+            {/* Dark gradient overlay — cinematic */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10" />
 
             {/* Text Content */}
             {idx === activeSlide && (
-              <div className="absolute inset-0 z-20 flex flex-col justify-center px-6 sm:px-12 lg:px-24 max-w-5xl">
-                <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-white leading-tight tracking-tight drop-shadow-2xl animate-fade-in-up">
+              <div className="absolute inset-0 z-20 flex flex-col justify-end pb-32 sm:pb-36 px-6 sm:px-12 lg:px-24 max-w-5xl">
+                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-white leading-[1.1] tracking-tight drop-shadow-2xl animate-fade-in-up font-display">
                   {isKa ? slide.titleKa : slide.titleEn}
                 </h1>
-                <p className="mt-6 text-lg sm:text-xl text-white/90 max-w-2xl font-medium leading-relaxed animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+                <p className="mt-5 text-base sm:text-lg text-white/80 max-w-xl font-medium leading-relaxed animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
                   {isKa ? slide.subtitleKa : slide.subtitleEn}
                 </p>
-                <div className="mt-10 flex flex-wrap gap-4 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
-                  <button onClick={() => onNavigate('tours')} className="pulse-cta px-8 py-4 rounded-xl bg-primary text-primary-content font-black text-base shadow-xl shadow-primary/30 hover:bg-primary/90 transition-all active:scale-95 flex items-center gap-2">
+                <div className="mt-8 flex flex-wrap gap-3 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+                  <button
+                    onClick={() => onNavigate('tours')}
+                    className="px-7 py-3.5 rounded-xl bg-primary text-primary-content font-semibold text-[15px] shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:bg-primary/90 transition-all duration-300 active:scale-95 flex items-center gap-2"
+                  >
                     {isKa ? 'ტურების ნახვა' : 'Browse Tours'}
-                    <span className="material-symbols-outlined text-lg">arrow_forward</span>
+                    <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
                   </button>
-                  {/* <button onClick={() => onNavigate('why-georgia')} className="px-8 py-4 rounded-xl border-2 border-white/40 text-white font-black text-base hover:bg-white/10 backdrop-blur-sm transition-all flex items-center gap-2 hover:border-white/70">
-                    {isKa ? 'გაიგე მეტი' : 'Learn More'}
-                    <span className="material-symbols-outlined text-lg">arrow_forward</span>
-                  </button> */}
                 </div>
               </div>
             )}
           </div>
         ))}
-        {/* Slide Indicators */}
-        <div className="absolute bottom-12 left-6 sm:left-12 lg:left-24 z-30 flex gap-3">
+
+        {/* Slide Indicators — refined */}
+        <div className="absolute bottom-14 left-6 sm:left-12 lg:left-24 z-30 flex gap-2">
           {heroSlides.map((_, idx) => (
             <button
               key={idx}
               onClick={() => goToSlide(idx)}
-              className={`relative h-1.5 rounded-full overflow-hidden transition-all duration-300 ${idx === activeSlide ? 'w-10 bg-white/30' : 'w-6 bg-white/50 hover:bg-white/70'
-                }`}
+              className={`relative h-[3px] rounded-full overflow-hidden transition-all duration-500 ${
+                idx === activeSlide ? 'w-12 bg-white/25' : 'w-5 bg-white/40 hover:bg-white/60'
+              }`}
             >
               {idx === activeSlide && (
                 <div
                   key={progressKey}
-                  className="absolute top-0 left-0 h-full bg-white animate-slide-progress"
-                  style={{ animation: 'slideProgress 5s linear forwards' }}
+                  className="absolute top-0 left-0 h-full bg-white rounded-full"
+                  style={{ animation: 'slideProgress 6s linear forwards' }}
                 />
               )}
             </button>
           ))}
         </div>
 
-        {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 animate-fade-in" style={{ animationDelay: '1.5s' }}>
-          <span className="text-white/50 text-xs font-bold tracking-widest uppercase">{isKa ? 'გადაახვიე' : 'Scroll'}</span>
-          <div className="w-5 h-8 rounded-full border-2 border-white/30 flex items-start justify-center p-1">
-            <div className="w-1 h-2 bg-white/60 rounded-full" style={{ animation: 'fade-in-up 1.5s ease-in-out infinite' }} />
+        {/* Scroll indicator — minimal */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-1.5 animate-fade-in" style={{ animationDelay: '2s' }}>
+          <span className="text-white/40 text-[10px] font-semibold tracking-[0.2em] uppercase">{isKa ? 'გადაახვიე' : 'Scroll'}</span>
+          <div className="w-[18px] h-7 rounded-full border border-white/20 flex items-start justify-center p-1">
+            <div className="w-[3px] h-1.5 bg-white/50 rounded-full" style={{ animation: 'fade-in-up 2s ease-in-out infinite' }} />
           </div>
         </div>
       </section>
@@ -204,73 +216,80 @@ export default function Home({ onNavigate, language }: { onNavigate: (page: stri
 
 
       {/* ════════════════════════════════════
-          SECTION 4 — MAP EXPLORER PROMO
+          SECTION 2 — MAP EXPLORER PROMO
           ════════════════════════════════════ */}
-      <section className="py-24 bg-[#050b1a] overflow-hidden relative">
-        <div className="absolute top-0 right-0 w-1/2 h-full opacity-30 pointer-events-none">
-           <div className="w-full h-full bg-[radial-gradient(circle_at_center,_var(--color-primary)_0%,_transparent_70%)] blur-[100px]" />
+      <section className="relative overflow-hidden" style={{ padding: 'clamp(4rem, 8vw, 7rem) 0' }}>
+        {/* Background */}
+        <div className="absolute inset-0 bg-[#0a0f1e]" />
+        <div className="absolute top-0 right-0 w-1/2 h-full opacity-20 pointer-events-none">
+           <div className="w-full h-full bg-[radial-gradient(circle_at_center,_var(--color-primary)_0%,_transparent_70%)] blur-[120px]" />
         </div>
         
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl relative z-10">
-          <div className="flex flex-col lg:flex-row items-center gap-16">
+          <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
             <div className="lg:w-1/2">
               <ScrollReveal variant="left">
-                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest mb-6 border border-primary/20">
-                  <span className="relative flex h-2 w-2">
+                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-semibold uppercase tracking-widest mb-5 border border-primary/15">
+                  <span className="relative flex h-1.5 w-1.5">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary"></span>
                   </span>
-                  New Technology
+                  {isKa ? 'ახალი ტექნოლოგია' : 'New Technology'}
                 </span>
-                <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-white leading-tight mb-8">
+                <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white leading-tight mb-6 font-display">
                    {isKa 
                     ? <>აღმოაჩინე საქართველო <span className="text-primary">კოსმოსიდან</span></>
                     : <>Discover Georgia from <span className="text-primary">Space</span></>}
                 </h2>
-                <p className="text-white/70 text-lg mb-10 leading-relaxed max-w-xl">
+                <p className="text-white/60 text-base sm:text-lg mb-8 leading-relaxed max-w-xl">
                   {isKa 
                     ? 'გაეცანი საქართველოს კულტურულ ძეგლებსა და ბუნებრივ საოცრებებს რეალისტური სატელიტური რუკის მეშვეობით. 3D რელიეფი და მაღალი ხარისხის გამოსახულება.'
                     : 'Explore Georgia\'s cultural landmarks and natural wonders through a realistic satellite map. High-resolution 3D terrain and interactive exploration.'}
                 </p>
                 <button 
                   onClick={() => onNavigate('map-explorer')}
-                  className="px-10 py-5 bg-primary text-primary-content rounded-2xl font-black text-lg shadow-2xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all flex items-center gap-3"
+                  className="px-8 py-4 bg-primary text-primary-content rounded-xl font-semibold text-base shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.02] active:scale-95 transition-all duration-300 flex items-center gap-2.5"
                 >
                    {isKa ? 'გახსენი ექსპლორერი' : 'Open Geo-Explorer'}
-                   <Compass size={24} className="animate-spin-slow" />
+                   <Compass size={20} />
                 </button>
               </ScrollReveal>
             </div>
             <div className="lg:w-1/2 relative">
                <ScrollReveal variant="scale" delay={0.2}>
-                  <div className="relative rounded-[40px] overflow-hidden border-8 border-white/5 shadow-[0_0_80px_rgba(34,197,94,0.15)] aspect-square max-w-[500px] mx-auto group">
-                     <img 
-                       src="/images/georgia_satellite.png" 
-                       alt="Explorer Preview" 
-                       className="w-full h-full object-cover opacity-80 group-hover:scale-110 transition-transform duration-[5s]" 
-                     />
-                     <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-24 h-24 rounded-full bg-primary/20 backdrop-blur-xl border border-primary/30 flex items-center justify-center animate-pulse">
-                           <Satellite size={48} className="text-primary" />
-                        </div>
-                     </div>
-                     <div className="absolute inset-0 bg-gradient-to-t from-[#050b1a] via-transparent to-transparent" />
-                  </div>
+                 <div className="relative rounded-3xl overflow-hidden border border-white/5 shadow-2xl shadow-black/40 aspect-square max-w-[480px] mx-auto group">
+                    <img 
+                      src="/images/georgia_satellite.png" 
+                      alt="Explorer Preview" 
+                      loading="lazy"
+                      className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-[3000ms] ease-out" 
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                       <div className="w-20 h-20 rounded-full bg-primary/15 backdrop-blur-xl border border-primary/25 flex items-center justify-center">
+                          <Satellite size={40} className="text-primary" />
+                       </div>
+                    </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f1e] via-transparent to-transparent" />
+                 </div>
                </ScrollReveal>
             </div>
           </div>
         </div>
       </section>
-      <section className="py-24 bg-white">
+
+      {/* ════════════════════════════════════
+          SECTION 3 — SEASONS
+          ════════════════════════════════════ */}
+      <section style={{ padding: 'clamp(4rem, 8vw, 7rem) 0' }} className="bg-white">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
           <ScrollReveal>
-            <div className="flex flex-col lg:flex-row items-start lg:items-end justify-between gap-6 mb-12">
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-text-main leading-tight max-w-2xl">
+            <div className="flex flex-col lg:flex-row items-start lg:items-end justify-between gap-4 mb-10">
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-text-main leading-tight max-w-2xl font-display">
                 {isKa
                   ? <>შენი <span className="text-primary">365 დღე</span> საქართველოში</>
                   : <>Your <span className="text-primary">365 Days</span> in Georgia</>}
               </h2>
-              <p className="text-text-muted max-w-md text-base">
+              <p className="text-text-muted max-w-md text-sm leading-relaxed">
                 {isKa
                   ? 'დააჭირე სეზონს და აღმოაჩინე ყველაზე პოპულარული კურორტი — თოვლიანი მთებიდან შავი ზღვის სანაპირომდე.'
                   : 'Click a season and discover the most popular resort — from snowy mountains to the Black Sea coast.'}
@@ -279,25 +298,25 @@ export default function Home({ onNavigate, language }: { onNavigate: (page: stri
           </ScrollReveal>
 
           <ScrollReveal variant="scale">
-            <div className="flex flex-col sm:flex-row gap-3 h-[420px] sm:h-[500px]">
+            <div className="flex flex-col sm:flex-row gap-2.5 h-[400px] sm:h-[480px]">
               {seasons.map((s, i) => (
                 <div
                   key={i}
-                  className="season-panel relative rounded-2xl sm:rounded-3xl overflow-hidden group"
+                  className="season-panel relative rounded-2xl overflow-hidden group"
                   onClick={() => setSelectedSeason(s.nameKa)}
                 >
-                  <img src={s.img} alt={isKa ? s.nameKa : s.nameEn} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                  {/* Glassmorphism season icon */}
-                  <div className="absolute top-4 right-4 w-10 h-10 rounded-xl glass flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
-                    <span className="material-symbols-outlined text-white text-lg">{s.icon}</span>
+                  <img src={s.img} alt={isKa ? s.nameKa : s.nameEn} loading="lazy" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
+                  {/* Season icon */}
+                  <div className="absolute top-4 right-4 w-9 h-9 rounded-lg glass flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-400 translate-y-1 group-hover:translate-y-0">
+                    <span className="material-symbols-outlined text-white text-[16px]">{s.icon}</span>
                   </div>
-                  <div className="absolute bottom-6 left-5 right-5 text-white z-10">
-                    <h3 className="font-black text-xl sm:text-2xl">{isKa ? s.nameKa : s.nameEn}</h3>
-                    <div className="season-overlay mt-2">
-                      <p className="text-sm text-white/85 leading-relaxed">{isKa ? s.descKa : s.descEn}</p>
-                      <span className="inline-flex items-center gap-1 mt-2 text-primary text-xs font-bold">
-                        <span className="material-symbols-outlined text-sm">touch_app</span>
+                  <div className="absolute bottom-5 left-4 right-4 text-white z-10">
+                    <h3 className="font-bold text-lg sm:text-xl font-display">{isKa ? s.nameKa : s.nameEn}</h3>
+                    <div className="season-overlay mt-1.5">
+                      <p className="text-sm text-white/80 leading-relaxed">{isKa ? s.descKa : s.descEn}</p>
+                      <span className="inline-flex items-center gap-1 mt-2 text-primary text-[11px] font-semibold">
+                        <span className="material-symbols-outlined text-[13px]">touch_app</span>
                         {isKa ? 'დააჭირე — ნახე პოპულარული კურორტი' : 'Click — see popular resort'}
                       </span>
                     </div>
@@ -308,55 +327,53 @@ export default function Home({ onNavigate, language }: { onNavigate: (page: stri
           </ScrollReveal>
         </div>
       </section>
+
       {/* ════════════════════════════════════
-          SECTION 5 — POPULAR SIGHTS CAROUSEL
+          SECTION 4 — POPULAR SIGHTS CAROUSEL
           ════════════════════════════════════ */}
-      <section className="py-24 bg-background-light">
+      <section style={{ padding: 'clamp(4rem, 8vw, 7rem) 0' }} className="bg-background-light">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
           <ScrollReveal>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-text-main leading-tight max-w-3xl mb-4">
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-text-main leading-tight max-w-3xl mb-3 font-display">
               {isKa
                 ? <>ეს <span className="text-primary">საქართველოა,</span> ქვეყანა, რომელიც დაუვიწყარ სანახაობებს გთავაზობს!</>
                 : <>This is <span className="text-primary">Georgia,</span> a country offering unforgettable sights!</>}
             </h2>
           </ScrollReveal>
 
-          <ScrollReveal delay={0.15}>
-            <div className="flex items-center justify-between mt-12 mb-6">
-              <div className="flex items-center gap-3">
-                <span className="text-primary text-xl">✦</span>
-                <span className="font-bold text-text-main">{isKa ? 'აღმოაჩინე პოპულარული სანახაობები' : 'Discover popular sights'}</span>
-                {/* <button onClick={() => onNavigate('sights')} className="text-primary font-bold text-sm hover:underline ml-4">
-                  {isKa ? 'ყველას ნახვა' : 'View all'}
-                </button> */}
+          <ScrollReveal delay={0.1}>
+            <div className="flex items-center justify-between mt-10 mb-5">
+              <div className="flex items-center gap-2.5">
+                <span className="text-primary text-base">✦</span>
+                <span className="font-semibold text-text-main text-sm">{isKa ? 'აღმოაჩინე პოპულარული სანახაობები' : 'Discover popular sights'}</span>
               </div>
-              <div className="hidden sm:flex gap-2">
-                <button onClick={() => scroll(sightsRef, -1)} className="w-10 h-10 rounded-full border border-border-light flex items-center justify-center hover:bg-primary hover:text-primary-content hover:border-primary transition-all">
-                  <span className="material-symbols-outlined text-sm">chevron_left</span>
+              <div className="hidden sm:flex gap-1.5">
+                <button onClick={() => scroll(sightsRef, -1)} className="w-9 h-9 rounded-xl border border-border-light flex items-center justify-center hover:bg-primary hover:text-primary-content hover:border-primary transition-all duration-300">
+                  <span className="material-symbols-outlined text-[14px]">chevron_left</span>
                 </button>
-                <button onClick={() => scroll(sightsRef, 1)} className="w-10 h-10 rounded-full border border-border-light flex items-center justify-center hover:bg-primary hover:text-primary-content hover:border-primary transition-all">
-                  <span className="material-symbols-outlined text-sm">chevron_right</span>
+                <button onClick={() => scroll(sightsRef, 1)} className="w-9 h-9 rounded-xl border border-border-light flex items-center justify-center hover:bg-primary hover:text-primary-content hover:border-primary transition-all duration-300">
+                  <span className="material-symbols-outlined text-[14px]">chevron_right</span>
                 </button>
               </div>
             </div>
           </ScrollReveal>
 
           <ScrollReveal variant="scale">
-            <div ref={sightsRef} className="carousel-scroll flex gap-5 overflow-x-auto pb-4">
+            <div ref={sightsRef} className="carousel-scroll flex gap-4 overflow-x-auto pb-4">
               {popularSights.map((sight, i) => (
-                <TiltCard key={i} className="flex-shrink-0 w-56 sm:w-64 rounded-2xl" maxTilt={6}>
+                <TiltCard key={i} className="flex-shrink-0 w-52 sm:w-60 rounded-2xl" maxTilt={4}>
                   <div 
-                    className="relative h-72 sm:h-80 rounded-2xl overflow-hidden shadow-lg group cursor-pointer"
+                    className="relative h-68 sm:h-76 rounded-2xl overflow-hidden shadow-md group cursor-pointer"
                     onClick={() => onNavigate('places', { placeId: sight.placeId })}
                   >
-                    <img src={sight.img} alt={isKa ? sight.titleKa : sight.titleEn} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                    <img src={sight.img} alt={isKa ? sight.titleKa : sight.titleEn} loading="lazy" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent" />
                     {/* Glassmorphism overlay on hover */}
                     <div className="absolute inset-0 sight-card-glass rounded-2xl" />
                     <div className="absolute bottom-4 left-4 right-4 text-white">
-                      <p className="font-black text-base leading-tight">{isKa ? sight.titleKa : sight.titleEn}</p>
-                      <p className="text-xs text-white/70 mt-1 flex items-center gap-1">
-                        <span className="material-symbols-outlined text-xs">{sight.catEn === 'Nature' ? 'eco' : 'church'}</span>
+                      <p className="font-bold text-[15px] leading-tight font-display">{isKa ? sight.titleKa : sight.titleEn}</p>
+                      <p className="text-[11px] text-white/65 mt-1 flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[12px]">{sight.catEn === 'Nature' ? 'eco' : 'church'}</span>
                         {isKa ? sight.catKa : sight.catEn}
                       </p>
                     </div>

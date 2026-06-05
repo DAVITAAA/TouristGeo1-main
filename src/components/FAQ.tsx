@@ -18,12 +18,10 @@ const faqsKa = [
     { q: "რა ენებზე ტარდება ტურები?", a: "ტურები ტარდება ქართულ, ინგლისურ და რუსულ ენებზე. ზოგიერთ ტურზე ხელმისაწვდომია სხვა ენებიც (მაგ. გერმანული, თურქული)." }
 ];
 
-function ScrollReveal({ children, className = '', delay = 0 }: {
-    children: React.ReactNode; className?: string; delay?: number;
-}) {
+function ScrollReveal({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
     const { ref, isVisible } = useScrollReveal();
     return (
-        <div ref={ref} className={`scroll-reveal ${isVisible ? 'visible' : ''} ${className}`} style={{ transitionDelay: `${delay}s` }}>
+        <div ref={ref} className={`scroll-reveal ${isVisible ? 'visible' : ''}`} style={{ transitionDelay: `${delay}s` }}>
             {children}
         </div>
     );
@@ -35,14 +33,14 @@ export default function FAQ({ language }: { language: Language }) {
     const faqs = isKa ? faqsKa : faqsEn;
 
     return (
-        <section className="py-24 bg-surface-light border-y border-border-light">
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
+        <section style={{ padding: 'clamp(4rem, 8vw, 7rem) 0' }} className="bg-background-light">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-3xl">
                 <ScrollReveal>
                     <div className="text-center mb-12">
-                        <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-text-main leading-tight mb-4">
+                        <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-text-main leading-tight mb-4 font-display">
                             {isKa ? 'ხშირად დასმული კითხვები' : 'Frequently Asked Questions'}
                         </h2>
-                        <p className="text-text-muted text-base">
+                        <p className="text-text-muted text-[15px] font-medium max-w-xl mx-auto">
                             {isKa ? 'გაიგეთ მეტი ჩვენი სერვისების, პოლიტიკისა და ტურების შესახებ.' : 'Find out more about our services, policies, and tours.'}
                         </p>
                     </div>
@@ -52,15 +50,15 @@ export default function FAQ({ language }: { language: Language }) {
                     {faqs.map((faq, index) => {
                         const isOpen = openIndex === index;
                         return (
-                            <ScrollReveal key={index} delay={index * 0.1}>
+                            <ScrollReveal key={index} delay={index * 0.05}>
                                 <div
-                                    className={`bg-white border rounded-2xl overflow-hidden transition-all duration-300 ${isOpen ? 'border-primary shadow-lg shadow-primary/5' : 'border-border-light hover:border-gray-300'}`}
+                                    className={`bg-white rounded-2xl overflow-hidden transition-all duration-300 border ${isOpen ? 'border-primary/30 shadow-sm' : 'border-border-light hover:border-gray-300'}`}
                                 >
                                     <button
                                         onClick={() => setOpenIndex(isOpen ? null : index)}
                                         className="w-full text-left px-6 py-5 flex items-center justify-between focus:outline-none"
                                     >
-                                        <span className={`font-bold text-lg ${isOpen ? 'text-primary' : 'text-text-main'}`}>
+                                        <span className={`font-bold text-[15px] ${isOpen ? 'text-primary' : 'text-text-main'}`}>
                                             {faq.q}
                                         </span>
                                         <span
@@ -70,9 +68,9 @@ export default function FAQ({ language }: { language: Language }) {
                                         </span>
                                     </button>
                                     <div
-                                        className={`px-6 overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-40 pb-5 opacity-100' : 'max-h-0 opacity-0'}`}
+                                        className={`px-6 overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-60 pb-6 opacity-100' : 'max-h-0 opacity-0'}`}
                                     >
-                                        <p className="text-gray-600 leading-relaxed text-sm">
+                                        <p className="text-text-muted leading-relaxed text-[14px]">
                                             {faq.a}
                                         </p>
                                     </div>

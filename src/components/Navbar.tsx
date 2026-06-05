@@ -88,6 +88,14 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileMenuClosing, setMobileMenuClosing] = useState(false);
   const [unreadReservations, setUnreadReservations] = useState(0);
+  const [scrolled, setScrolled] = useState(false);
+
+  // Track scroll for navbar background change
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Fetch unread reservations count for operators
   useEffect(() => {
@@ -125,64 +133,85 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
 
   return (
     <>
-    <header className="sticky top-0 z-50 w-full border-b border-border-light bg-surface-light/95 backdrop-blur supports-[backdrop-filter]:bg-surface-light/60">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => onNavigate('home')}>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-content shadow-lg shadow-primary/20 rotate-3 transition-transform hover:rotate-0">
-              <span className="material-symbols-outlined font-bold">terrain</span>
+    <header
+      className={`sticky top-0 z-[1010] w-full transition-all duration-500 ${
+        scrolled
+          ? 'bg-white/90 backdrop-blur-xl border-b border-border-light shadow-[0_1px_3px_rgba(0,0,0,0.04)]'
+          : 'bg-white/70 backdrop-blur-lg border-b border-transparent'
+      }`}
+    >
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
+        <div className="flex h-[68px] items-center justify-between">
+          {/* Logo */}
+          <div className="flex items-center gap-2.5 cursor-pointer select-none" onClick={() => onNavigate('home')}>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-content shadow-md shadow-primary/15 transition-transform duration-300 hover:scale-105">
+              <span className="material-symbols-outlined text-[20px] font-bold">terrain</span>
             </div>
-            <span className="text-xl font-extrabold tracking-tight text-text-main">Travel<span className="text-primary">Georgia</span></span>
+            <span className="text-[19px] font-extrabold tracking-tight text-text-main font-display">
+              {isKa ? 'მოგზაურობა' : 'Travel'}<span className="text-primary">{isKa ? 'საქართველოში' : 'Georgia'}</span>
+            </span>
           </div>
 
-          <nav className="hidden lg:flex items-center gap-5 xl:gap-7">
-            {/* ========== Tours ========== */}
-            <div className="group relative">
-              <button onClick={() => onNavigate('tours')} className={`flex items-center gap-1 text-sm font-bold transition-colors py-4 ${currentPage === 'tours' ? 'text-primary' : 'text-text-main group-hover:text-primary'}`}>
-                {t.nav_tours}
-              </button>
-            </div>
+          {/* Desktop Navigation */}
+          <nav className="hidden lg:flex items-center gap-1">
+            {/* Tours */}
+            <button
+              onClick={() => onNavigate('tours')}
+              className={`px-4 py-2 rounded-xl text-[13px] font-semibold transition-all duration-300 ${
+                currentPage === 'tours'
+                  ? 'text-primary bg-primary/5'
+                  : 'text-text-main hover:text-primary hover:bg-gray-50'
+              }`}
+            >
+              {t.nav_tours}
+            </button>
 
-            {/* ========== Map Explorer ========== */}
-            <div className="group relative">
-              <button onClick={() => onNavigate('map-explorer')} className={`flex items-center gap-1 text-sm font-bold transition-colors py-4 ${currentPage === 'map-explorer' ? 'text-primary' : 'text-text-main group-hover:text-primary'}`}>
-                {isKa ? 'ექსპლორერი' : 'Explorer'}
-                <span className="ml-1 px-1.5 py-0.5 rounded-md bg-primary text-[8px] text-white font-black uppercase tracking-tighter">New</span>
-              </button>
-            </div>
+            {/* Map Explorer */}
+            <button
+              onClick={() => onNavigate('map-explorer')}
+              className={`px-4 py-2 rounded-xl text-[13px] font-semibold transition-all duration-300 flex items-center gap-1.5 ${
+                currentPage === 'map-explorer'
+                  ? 'text-primary bg-primary/5'
+                  : 'text-text-main hover:text-primary hover:bg-gray-50'
+              }`}
+            >
+              {isKa ? 'ექსპლორერი' : 'Explorer'}
+              <span className="px-1.5 py-0.5 rounded-md bg-primary/10 text-[9px] text-primary font-bold uppercase tracking-tight">{isKa ? 'ახალი' : 'New'}</span>
+            </button>
 
-            {/* ========== Why Georgia (HIDDEN) ========== 
+            {/* Places with Dropdown */}
             <div className="group relative">
-               ...
-            </div>
-            */}
-
-            {/* ========== Places ========== */}
-            <div className="group relative">
-              <button onClick={() => onNavigate('places')} className={`flex items-center gap-1 text-sm font-bold transition-colors py-4 ${currentPage === 'places' ? 'text-primary' : 'text-text-main group-hover:text-primary'}`}>
+              <button
+                onClick={() => onNavigate('places')}
+                className={`px-4 py-2 rounded-xl text-[13px] font-semibold transition-all duration-300 flex items-center gap-1 ${
+                  currentPage === 'places'
+                    ? 'text-primary bg-primary/5'
+                    : 'text-text-main hover:text-primary hover:bg-gray-50'
+                }`}
+              >
                 {t.nav_places}
-                <span className="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:rotate-180">expand_more</span>
+                <span className="material-symbols-outlined text-[16px] transition-transform duration-300 group-hover:rotate-180">expand_more</span>
               </button>
 
-              <div className="absolute top-full left-1/2 -translate-x-1/2 w-[700px] opacity-0 invisible translate-y-2 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 z-50 pt-1">
-                <div className="rounded-2xl bg-surface-light shadow-2xl border border-border-light overflow-hidden">
-                  <div className="p-4">
-                    <p className="font-extrabold text-base text-text-main mb-1">{isKa ? 'პოპულარული მიმართულებები' : 'Popular Destinations'}</p>
-                    <p className="text-xs text-text-muted mb-3">{isKa ? 'საქართველოს საუკეთესო ადგილები ტურისტებისთვის' : 'The best places in Georgia for travelers'}</p>
+              <div className="absolute top-full left-1/2 -translate-x-1/2 w-[680px] opacity-0 invisible translate-y-3 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 z-50 pt-3">
+                <div className="rounded-2xl bg-white shadow-xl shadow-black/5 border border-border-light overflow-hidden">
+                  <div className="p-5 pb-3">
+                    <p className="font-bold text-sm text-text-main mb-1">{isKa ? 'პოპულარული მიმართულებები' : 'Popular Destinations'}</p>
+                    <p className="text-xs text-text-muted">{isKa ? 'საქართველოს საუკეთესო ადგილები ტურისტებისთვის' : 'The best places in Georgia for travelers'}</p>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 px-4 pb-4">
+                  <div className="grid grid-cols-2 gap-2.5 px-4 pb-4">
                     {placesItems.map((item, i) => (
-                      <div key={i} className="relative overflow-hidden rounded-xl cursor-pointer group/card h-36">
+                      <div key={i} className="relative overflow-hidden rounded-xl cursor-pointer group/card h-32 transition-transform duration-300 hover:scale-[1.02]">
                         <img
                           src={item.img}
                           alt={isKa ? item.titleKa : item.titleEn}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-110"
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
                         <div className="absolute bottom-3 left-3 text-white">
-                          <p className="font-bold text-sm">{isKa ? item.titleKa : item.titleEn}</p>
-                          <p className="text-[11px] text-white/75 mt-0.5 line-clamp-1">{isKa ? item.descKa : item.descEn}</p>
+                          <p className="font-bold text-[13px]">{isKa ? item.titleKa : item.titleEn}</p>
+                          <p className="text-[11px] text-white/70 mt-0.5 line-clamp-1">{isKa ? item.descKa : item.descEn}</p>
                         </div>
                       </div>
                     ))}
@@ -190,34 +219,38 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
                 </div>
               </div>
             </div>
-
-
-
-            {/* <button className="text-sm font-bold text-text-main hover:text-primary transition-colors py-4">{t.contact}</button> */}
           </nav>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          {/* Right Actions */}
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Favorites */}
             <button
               onClick={() => onNavigate('favorites')}
-              className={`relative p-2 rounded-full hover:bg-background-light transition-colors flex items-center justify-center border border-border-light sm:border-transparent ${currentPage === 'favorites' ? 'text-primary' : 'text-text-main'}`}
+              className={`relative w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${
+                currentPage === 'favorites'
+                  ? 'text-primary bg-primary/5'
+                  : 'text-text-muted hover:text-text-main hover:bg-gray-50'
+              }`}
               title={isKa ? "რჩეულები" : "Favorites"}
             >
-              <Heart size={20} className={currentPage === 'favorites' ? "fill-primary text-primary" : ""} />
+              <Heart size={18} className={currentPage === 'favorites' ? "fill-primary text-primary" : ""} />
               {wishlist.length > 0 && (
-                <span className="absolute top-0 right-0 transform translate-x-1/4 -translate-y-1/4 bg-primary text-primary-content text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-content text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center ring-2 ring-white">
                   {wishlist.length}
                 </span>
               )}
             </button>
+
+            {/* Notifications for operators */}
             {user?.role === 'operator' && (
               <button
                 onClick={() => onNavigate('profile', { tab: 'reservations' })}
-                className="relative p-2 rounded-full hover:bg-background-light transition-colors flex items-center justify-center border border-border-light sm:border-transparent text-text-main"
+                className="relative w-10 h-10 rounded-xl flex items-center justify-center text-text-muted hover:text-text-main hover:bg-gray-50 transition-all duration-300"
                 title={isKa ? "რეზერვაციები" : "Reservations"}
               >
                 <span className="material-symbols-outlined text-[20px]">notifications</span>
                 {unreadReservations > 0 && (
-                  <span className="absolute top-0 right-0 transform translate-x-1/4 -translate-y-1/4 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm">
+                  <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center ring-2 ring-white shadow-sm">
                     {unreadReservations}
                   </span>
                 )}
@@ -227,37 +260,37 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
             {/* Language Toggle */}
             <button
               onClick={() => setLanguage(language === 'ka' ? 'en' : 'ka')}
-              className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border-light hover:bg-background-light transition-colors text-sm font-bold text-text-main"
+              className="hidden sm:flex items-center gap-1.5 h-9 px-3 rounded-xl text-[13px] font-semibold text-text-muted hover:text-text-main hover:bg-gray-50 transition-all duration-300"
             >
-              <span className="material-symbols-outlined text-lg">language</span>
+              <span className="material-symbols-outlined text-[18px]">language</span>
               {language === 'ka' ? 'EN' : 'GE'}
             </button>
 
             {user ? (
-              <div className="hidden sm:flex items-center gap-4">
+              <div className="hidden sm:flex items-center gap-2">
                 {user.role === 'operator' && (
                   <button
                     onClick={() => onNavigate('add-tour')}
-                    className="h-10 px-5 bg-primary text-primary-content font-bold rounded-xl shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all flex items-center gap-1.5 active:scale-95"
+                    className="h-9 px-4 bg-primary text-primary-content font-semibold text-[13px] rounded-xl shadow-sm shadow-primary/15 hover:shadow-md hover:shadow-primary/20 transition-all duration-300 flex items-center gap-1.5 active:scale-95"
                   >
-                    <span className="material-symbols-outlined text-[18px] font-bold">add_circle</span>
+                    <span className="material-symbols-outlined text-[16px]">add_circle</span>
                     {t.post_tour}
                   </button>
                 )}
                 <div className="group relative">
-                  <div className="flex items-center gap-2 cursor-pointer p-1.5 hover:bg-background-light rounded-xl transition-colors border border-transparent hover:border-border-light">
-                    <div className="w-8 h-8 rounded-full bg-surface-dark text-white flex items-center justify-center font-black text-sm uppercase">
+                  <div className="flex items-center gap-2 cursor-pointer py-1.5 px-2 hover:bg-gray-50 rounded-xl transition-all duration-300">
+                    <div className="w-8 h-8 rounded-full bg-secondary text-white flex items-center justify-center font-bold text-[13px] uppercase">
                       {user.name[0]}
                     </div>
-                    <span className="font-bold text-sm text-text-main max-w-[100px] truncate">{user.name}</span>
+                    <span className="font-semibold text-[13px] text-text-main max-w-[100px] truncate">{user.name}</span>
                   </div>
-                  <div className="absolute top-full right-0 pt-2 w-48 opacity-0 invisible translate-y-2 transition-all group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 z-50">
-                    <div className="bg-white rounded-xl shadow-xl border border-border-light overflow-hidden flex flex-col">
-                      <button onClick={() => onNavigate('profile')} className="w-full px-4 py-3 text-left text-sm font-bold text-text-main hover:bg-background-light flex items-center gap-2 transition-colors border-b border-border-light">
+                  <div className="absolute top-full right-0 pt-2 w-48 opacity-0 invisible translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 z-50">
+                    <div className="bg-white rounded-xl shadow-xl shadow-black/5 border border-border-light overflow-hidden flex flex-col">
+                      <button onClick={() => onNavigate('profile')} className="w-full px-4 py-3 text-left text-[13px] font-semibold text-text-main hover:bg-gray-50 flex items-center gap-2.5 transition-colors border-b border-border-light">
                         <span className="material-symbols-outlined text-[18px]">person</span>
                         {isKa ? 'ჩემი პროფილი' : 'My Profile'}
                       </button>
-                      <button onClick={onLogout} className="w-full px-4 py-3 text-left text-sm font-bold text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors">
+                      <button onClick={onLogout} className="w-full px-4 py-3 text-left text-[13px] font-semibold text-red-500 hover:bg-red-50 flex items-center gap-2.5 transition-colors">
                         <span className="material-symbols-outlined text-[18px]">logout</span>
                         {t.logout}
                       </button>
@@ -268,7 +301,7 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
             ) : (
               <button
                 onClick={onLoginClick}
-                className="hidden sm:inline-flex h-10 items-center justify-center rounded-xl bg-text-main px-6 text-sm font-bold text-white shadow-lg shadow-black/10 transition-all hover:bg-text-main/90 active:scale-95"
+                className="hidden sm:inline-flex h-9 items-center justify-center rounded-xl bg-secondary px-5 text-[13px] font-semibold text-white transition-all duration-300 hover:bg-secondary/90 active:scale-95"
               >
                 {t.login}
               </button>
@@ -276,11 +309,11 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
 
             {/* Hamburger — mobile only */}
             <button
-              className="lg:hidden text-text-main p-1"
+              className="lg:hidden w-10 h-10 rounded-xl flex items-center justify-center text-text-main hover:bg-gray-50 transition-colors"
               onClick={() => setMobileMenuOpen(true)}
               aria-label="Open menu"
             >
-              <span className="material-symbols-outlined text-[28px]">menu</span>
+              <span className="material-symbols-outlined text-[24px]">menu</span>
             </button>
           </div>
         </div>
@@ -291,16 +324,16 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
           MOBILE DRAWER — rendered outside header to avoid stacking context issues
           ═══════════════════════════════════════ */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-[200] lg:hidden">
+        <div className="fixed inset-0 z-[2000] lg:hidden">
           {/* Backdrop */}
           <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fade-in"
             onClick={closeMobileMenu}
           />
 
           {/* Drawer Panel */}
           <div
-            className={`absolute top-0 right-0 bottom-0 w-[85%] max-w-sm bg-surface-light shadow-2xl flex flex-col ${
+            className={`absolute top-0 right-0 bottom-0 w-[85%] max-w-sm bg-white shadow-2xl flex flex-col ${
               mobileMenuClosing ? 'mobile-drawer-exit' : 'mobile-drawer-enter'
             }`}
           >
@@ -310,13 +343,13 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-content">
                   <span className="material-symbols-outlined text-[18px] font-bold">terrain</span>
                 </div>
-                <span className="text-lg font-extrabold text-text-main">Travel<span className="text-primary">Georgia</span></span>
+                <span className="text-lg font-extrabold text-text-main font-display">{isKa ? 'მოგზაურობა' : 'Travel'}<span className="text-primary">{isKa ? 'საქართველოში' : 'Georgia'}</span></span>
               </div>
               <button
                 onClick={closeMobileMenu}
-                className="w-9 h-9 rounded-full bg-background-light flex items-center justify-center text-text-muted hover:text-text-main transition-colors"
+                className="w-9 h-9 rounded-xl bg-gray-50 flex items-center justify-center text-text-muted hover:text-text-main transition-colors"
               >
-                <span className="material-symbols-outlined">close</span>
+                <span className="material-symbols-outlined text-[20px]">close</span>
               </button>
             </div>
 
@@ -333,10 +366,10 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
                   <button
                     key={item.page}
                     onClick={() => handleMobileNav(item.page)}
-                    className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-left font-bold text-sm transition-all ${
+                    className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-left font-semibold text-sm transition-all duration-300 ${
                       currentPage === item.page
-                        ? 'bg-primary/10 text-primary'
-                        : 'text-text-main hover:bg-background-light'
+                        ? 'bg-primary/5 text-primary'
+                        : 'text-text-main hover:bg-gray-50'
                     }`}
                   >
                     <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
@@ -355,23 +388,19 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
 
               {/* Settings Row */}
               <div className="px-4 space-y-3">
-                <p className="text-[10px] font-black text-text-muted uppercase tracking-widest px-4">{isKa ? 'პარამეტრები' : 'Settings'}</p>
+                <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest px-4">{isKa ? 'პარამეტრები' : 'Settings'}</p>
 
                 {/* Language Toggle */}
                 <button
                   onClick={() => setLanguage(language === 'ka' ? 'en' : 'ka')}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-bold text-sm text-text-main hover:bg-background-light transition-colors"
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-semibold text-sm text-text-main hover:bg-gray-50 transition-colors"
                 >
                   <span className="material-symbols-outlined text-[20px]">language</span>
                   {isKa ? 'English' : 'ქართული'}
-                  <span className="ml-auto text-xs font-black text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                  <span className="ml-auto text-xs font-bold text-primary bg-primary/5 px-2 py-0.5 rounded-md">
                     {language === 'ka' ? 'EN' : 'GE'}
                   </span>
                 </button>
-
-
-
-
               </div>
             </div>
 
@@ -381,21 +410,21 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
                 <>
                   <button
                     onClick={() => handleMobileNav('profile')}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-background-light text-left"
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-50 text-left"
                   >
-                    <div className="w-10 h-10 rounded-full bg-surface-dark text-white flex items-center justify-center font-black text-sm uppercase flex-shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-secondary text-white flex items-center justify-center font-bold text-sm uppercase flex-shrink-0">
                       {user.name[0]}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold text-sm text-text-main truncate">{user.name}</p>
-                      <p className="text-[10px] font-bold text-text-muted truncate">{user.email}</p>
+                      <p className="font-semibold text-sm text-text-main truncate">{user.name}</p>
+                      <p className="text-[10px] font-medium text-text-muted truncate">{user.email}</p>
                     </div>
                     <span className="material-symbols-outlined text-text-muted text-[18px]">chevron_right</span>
                   </button>
                   {user.role === 'operator' && (
                     <button
                       onClick={() => handleMobileNav('add-tour')}
-                      className="w-full py-3 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 flex items-center justify-center gap-2 active:scale-95 transition-all"
+                      className="w-full py-3 bg-primary text-white font-semibold rounded-xl shadow-sm shadow-primary/15 flex items-center justify-center gap-2 active:scale-95 transition-all"
                     >
                       <span className="material-symbols-outlined text-[18px]">add_circle</span>
                       {t.post_tour}
@@ -403,7 +432,7 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
                   )}
                   <button
                     onClick={() => { closeMobileMenu(); onLogout?.(); }}
-                    className="w-full py-2.5 text-red-500 font-bold text-sm rounded-xl hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
+                    className="w-full py-2.5 text-red-500 font-semibold text-sm rounded-xl hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
                   >
                     <span className="material-symbols-outlined text-[18px]">logout</span>
                     {t.logout}
@@ -412,7 +441,7 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
               ) : (
                 <button
                   onClick={() => { closeMobileMenu(); onLoginClick?.(); }}
-                  className="w-full py-3.5 bg-text-main text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all"
+                  className="w-full py-3.5 bg-secondary text-white font-semibold rounded-xl shadow-sm flex items-center justify-center gap-2 active:scale-95 transition-all"
                 >
                   <span className="material-symbols-outlined text-[18px]">login</span>
                   {t.login}

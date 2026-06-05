@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { Language } from '../translations';
 
 interface LocationData {
   name: string;
@@ -29,9 +30,11 @@ const GEORGIA_LOCATIONS: Record<string, { lat: number; lng: number }> = {
 interface ItineraryMapProps {
   itinerary: { day: number; title: string; location?: string }[];
   activeDay?: number;
+  language?: Language;
 }
 
-export default function ItineraryMap({ itinerary, activeDay }: ItineraryMapProps) {
+export default function ItineraryMap({ itinerary, activeDay, language = 'ka' }: ItineraryMapProps) {
+  const isKa = language === 'ka';
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<any>(null);
   const markersRef = useRef<Record<number, any>>({});
@@ -119,7 +122,7 @@ export default function ItineraryMap({ itinerary, activeDay }: ItineraryMapProps
       <div ref={mapRef} className="w-full h-full z-0" />
       <div className="absolute top-4 left-4 z-10 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-border-light flex items-center gap-2">
         <span className="material-symbols-outlined text-primary text-sm">map</span>
-        <span className="text-[10px] font-black text-text-main uppercase tracking-widest">Interactive Route Map</span>
+        <span className="text-[10px] font-black text-text-main uppercase tracking-widest">{isKa ? 'ინტერაქტიული მარშრუტის რუკა' : 'Interactive Route Map'}</span>
       </div>
     </div>
   );

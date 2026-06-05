@@ -20,74 +20,77 @@ export default function TourCard({ tour, onNavigate, language }: TourCardProps) 
   const t = translations[language];
 
   return (
-    <TiltCard className="rounded-[32px]" maxTilt={4} glareOpacity={0.05}>
+    <TiltCard className="rounded-2xl" maxTilt={3} glareOpacity={0.03}>
       <div 
-        className="group bg-white rounded-[32px] overflow-hidden border border-border-light hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 cursor-pointer flex flex-col h-full"
+        className="group bg-white rounded-2xl overflow-hidden border border-border-light hover:border-gray-200 hover:shadow-xl hover:shadow-black/[0.04] transition-all duration-500 cursor-pointer flex flex-col h-full"
         onClick={() => onNavigate('tour-detail', tour)}
       >
         {/* Image Section */}
         <div className="relative aspect-[4/3] overflow-hidden">
           <img
             alt={tour.title}
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
             src={tour.image}
+            loading="lazy"
           />
           
           {/* Wishlist Button */}
           <button
             onClick={(e) => { e.stopPropagation(); toggleWishlist(tour); }}
-            className={`absolute top-4 right-4 z-20 w-10 h-10 rounded-full backdrop-blur-md flex items-center justify-center transition-all duration-300 shadow-lg ${isFavorite ? 'bg-primary text-white scale-110' : 'bg-white/80 text-gray-500 hover:text-primary hover:scale-110'}`}
+            className={`absolute top-3.5 right-3.5 z-20 w-9 h-9 rounded-full backdrop-blur-md flex items-center justify-center transition-all duration-300 ${
+              isFavorite
+                ? 'bg-primary text-white shadow-lg shadow-primary/25'
+                : 'bg-white/85 text-gray-400 hover:text-primary hover:bg-white shadow-sm'
+            }`}
           >
-            <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: isFavorite ? "'FILL' 1" : "'FILL' 0" }}>favorite</span>
+            <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: isFavorite ? "'FILL' 1" : "'FILL' 0" }}>favorite</span>
           </button>
           
-          {/* Top Badges */}
-          <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
-            <span className="bg-secondary text-white px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-xl">
-              {tour.category === 'Historical' ? (isKa ? 'ისტორიული' : 'HISTORICAL') : tour.category.toUpperCase()}
-            </span>
-            <span className="bg-primary text-white px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-xl">
-              {isKa ? 'ბესტსელერი' : 'BEST SELLER'}
+          {/* Top Badge — single, minimal */}
+          <div className="absolute top-3.5 left-3.5 z-10">
+            <span className="bg-white/90 backdrop-blur-md text-text-main px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider shadow-sm">
+              {tour.category === 'Historical' ? (isKa ? 'ისტორიული' : 'Historical') : tour.category}
             </span>
           </div>
 
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-6">
-             <button className="bg-white/90 backdrop-blur-md px-6 py-2 rounded-full text-xs font-black text-text-main flex items-center gap-2">
-                <span className="material-symbols-outlined text-sm">visibility</span>
+          {/* Hover overlay — subtle */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end justify-center pb-5">
+             <span className="bg-white/90 backdrop-blur-md px-5 py-2 rounded-full text-[11px] font-semibold text-text-main flex items-center gap-1.5 translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+                <span className="material-symbols-outlined text-[14px]">visibility</span>
                 {isKa ? 'სწრაფი ნახვა' : 'Quick View'}
-             </button>
+             </span>
           </div>
         </div>
 
         {/* Content Section */}
-        <div className="flex-1 p-6 flex flex-col">
-          {/* Location & Tags */}
-           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary text-[16px]">location_on</span>
-              <span className="text-[10px] font-black text-primary uppercase tracking-widest">{(tour.location || '').toUpperCase()}</span>
+        <div className="flex-1 p-5 flex flex-col">
+          {/* Location */}
+          <div className="flex items-center justify-between mb-2.5">
+            <div className="flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-primary text-[14px]">location_on</span>
+              <span className="text-[11px] font-semibold text-primary uppercase tracking-wider">{(tour.location || '').toUpperCase()}</span>
             </div>
             {tour.is_verified && (
-              <div className="flex items-center gap-1 bg-blue-50 text-blue-600 px-2 py-1 rounded-lg">
+              <div className="flex items-center gap-1 text-blue-600">
                 <span className="material-symbols-outlined text-[14px] filled">verified</span>
-                <span className="text-[9px] font-black uppercase tracking-tighter">{isKa ? 'ვერიფიცირებული' : 'Verified'}</span>
+                <span className="text-[9px] font-bold uppercase tracking-tight">{isKa ? 'ვერიფიცირებული' : 'Verified'}</span>
               </div>
             )}
           </div>
 
           {/* Title */}
-          <h3 className="font-black text-xl text-text-main leading-tight mb-4 line-clamp-2">
+          <h3 className="font-bold text-lg text-text-main leading-snug mb-3.5 line-clamp-2 font-display">
             {tour.title}
           </h3>
 
           {/* Core Info */}
-          <div className="flex items-center gap-4 text-text-muted text-xs font-bold mb-6">
-            <div className="flex items-center gap-1.5 whitespace-nowrap">
-              <span className="material-symbols-outlined text-[18px]">schedule</span>
+          <div className="flex items-center gap-3.5 text-text-muted text-xs font-medium mb-5">
+            <div className="flex items-center gap-1 whitespace-nowrap">
+              <span className="material-symbols-outlined text-[16px]">schedule</span>
               {tour.duration}
             </div>
-            <div className="flex items-center gap-1.5 whitespace-nowrap">
-              <span className="material-symbols-outlined text-[18px]">hiking</span>
+            <div className="flex items-center gap-1 whitespace-nowrap">
+              <span className="material-symbols-outlined text-[16px]">hiking</span>
               {tour.difficulty ? (
                 tour.difficulty === 'easy' ? (isKa ? 'მსუბუქი' : 'Easy') : 
                 tour.difficulty === 'hard' ? (isKa ? 'რთული' : 'Hard') : 
@@ -95,58 +98,56 @@ export default function TourCard({ tour, onNavigate, language }: TourCardProps) 
               ) : (isKa ? 'საშუალო' : 'Moderate')}
             </div>
             {(tour.views !== undefined && tour.views > 0) && (
-              <div className="flex items-center gap-1.5 whitespace-nowrap" title={isKa ? 'ნახვა' : 'Views'}>
-                <span className="material-symbols-outlined text-[18px]">visibility</span>
+              <div className="flex items-center gap-1 whitespace-nowrap" title={isKa ? 'ნახვა' : 'Views'}>
+                <span className="material-symbols-outlined text-[16px]">visibility</span>
                 {tour.views}
               </div>
             )}
             {(tour.languages && tour.languages.length > 0) && (
-              <div className="flex items-center gap-1.5 ml-auto truncate" title={tour.languages.join(', ')}>
-                <span className="material-symbols-outlined text-[18px]">language</span>
+              <div className="flex items-center gap-1 ml-auto truncate" title={tour.languages.join(', ')}>
+                <span className="material-symbols-outlined text-[16px]">language</span>
                 <span className="truncate max-w-[60px]">{tour.languages.join(', ')}</span>
               </div>
             )}
           </div>
 
           {/* Bottom Row: Rating & Price */}
-          <div className="mt-auto pt-6 border-t border-border-light flex items-center justify-between">
+          <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
             <div className="flex items-center gap-1.5">
-              <span className="material-icons text-amber-400 text-[20px]">star</span>
-              <span className="text-sm font-black text-text-main">
+              <span className="material-icons text-amber-400 text-[18px]">star</span>
+              <span className="text-sm font-bold text-text-main">
                 {tour.reviews && tour.reviews > 0 ? (tour.rating || 0).toFixed(1) : '0.0'}
               </span>
-              <span className="text-[10px] font-bold text-text-muted">({tour.reviews || 0})</span>
+              <span className="text-[10px] font-medium text-text-muted">({tour.reviews || 0})</span>
             </div>
             
             <div className="flex items-center gap-2">
                <a 
                  href={`tel:${tour.phone || ''}`}
                  onClick={(e) => e.stopPropagation()}
-                 className="w-9 h-9 rounded-xl bg-gray-50 border border-border-light text-text-muted hover:text-primary hover:border-primary/30 transition-all flex items-center justify-center"
+                 className="w-8 h-8 rounded-lg bg-gray-50 text-text-muted hover:text-primary hover:bg-primary/5 transition-all duration-300 flex items-center justify-center"
                  title={isKa ? 'დარეკვა' : 'Call'}
                >
-                 <span className="material-symbols-outlined text-[18px]">call</span>
+                 <span className="material-symbols-outlined text-[16px]">call</span>
                </a>
                <a 
                  href={`https://wa.me/${(tour.phone || '').replace(/\+/g, '')}?text=${encodeURIComponent(isKa ? `გამარჯობა, მაინტერესებს ტური: ${tour.title}` : `Hi, I'm interested in the tour: ${tour.title}`)}`}
                  target="_blank"
                  rel="noopener noreferrer"
                  onClick={(e) => e.stopPropagation()}
-                 className="w-9 h-9 rounded-xl bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366] hover:text-white transition-all flex items-center justify-center"
+                 className="w-8 h-8 rounded-lg bg-[#25D366]/8 text-[#25D366] hover:bg-[#25D366] hover:text-white transition-all duration-300 flex items-center justify-center"
                  title="WhatsApp"
                >
-                 <span className="material-symbols-outlined text-[18px]">chat</span>
+                 <span className="material-symbols-outlined text-[16px]">chat</span>
                </a>
             </div>
 
             <div className="flex flex-col items-end">
-              <div className="flex flex-col items-end">
-                <span className="text-[10px] font-black text-text-muted uppercase mb-1">{t.from_price}</span>
-                <span className="text-2xl font-black text-primary flex items-baseline gap-0.5">
-                  <span className="text-lg">{getCurrencySymbol(targetCurrency)}</span>
-                  {convertPrice(tour.price, targetCurrency)}
-                </span>
-              </div>
+              <span className="text-[10px] font-medium text-text-muted uppercase mb-0.5">{t.from_price}</span>
+              <span className="text-xl font-bold text-text-main flex items-baseline gap-0.5 font-display">
+                <span className="text-sm text-text-muted">{getCurrencySymbol(targetCurrency)}</span>
+                {convertPrice(tour.price, targetCurrency)}
+              </span>
             </div>
           </div>
         </div>
@@ -154,4 +155,3 @@ export default function TourCard({ tour, onNavigate, language }: TourCardProps) 
     </TiltCard>
   );
 }
-

@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Text, Float, PerspectiveCamera, OrbitControls, Stars, Detailed } from '@react-three/drei'
 import * as THREE from 'three'
+import { Language } from '../translations'
 
 // Coordinate mappings for fly-through
 const LOCATIONS: Record<string, [number, number, number]> = {
@@ -120,15 +121,16 @@ function GeorgiaModel({ location }: { location: string }) {
   )
 }
 
-export default function Georgia3DMap({ location = '' }: { location?: string }) {
+export default function Georgia3DMap({ location = '', language = 'ka' }: { location?: string; language?: Language }) {
+  const isKa = language === 'ka';
   return (
     <div className="w-full h-[500px] bg-slate-950 rounded-[40px] overflow-hidden border border-border-light relative shadow-2xl group">
       <div className="absolute top-8 left-8 z-10">
          <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/20">
             <span className="material-symbols-outlined text-primary text-xl animate-pulse">radar</span>
             <div>
-               <p className="text-[10px] font-black text-white/50 uppercase tracking-widest">Live Explorer</p>
-               <p className="font-black text-white text-sm">{location || 'Exploring Georgia...'}</p>
+               <p className="text-[10px] font-black text-white/50 uppercase tracking-widest">{isKa ? 'ლაივ ექსპლორერი' : 'Live Explorer'}</p>
+               <p className="font-black text-white text-sm">{location || (isKa ? 'საქართველოს აღმოჩენა...' : 'Exploring Georgia...')}</p>
             </div>
          </div>
       </div>

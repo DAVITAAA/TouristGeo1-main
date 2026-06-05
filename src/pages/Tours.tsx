@@ -121,21 +121,21 @@ export default function Tours({ onNavigate, language }: ToursProps) {
 
   return (
     <div className="min-h-screen bg-background-light pt-24 pb-20">
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
         {/* Breadcrumbs */}
-        <nav className="flex items-center gap-2 text-sm font-bold text-text-muted mb-8">
+        <nav className="flex items-center gap-2 text-xs font-semibold text-text-muted mb-8 tracking-wide">
           <button onClick={() => onNavigate('home')} className="hover:text-primary transition-colors">{t.breadcrumb_home}</button>
-          <span className="material-symbols-outlined text-sm">chevron_right</span>
+          <span className="material-symbols-outlined text-[14px]">chevron_right</span>
           <span className="text-text-main">{isKa ? 'საქართველო' : 'Georgia'}</span>
-          <span className="material-symbols-outlined text-sm">chevron_right</span>
-          <span className="text-text-main">{isKa ? 'ტურების ძიება' : 'Tour Search Results'}</span>
+          <span className="material-symbols-outlined text-[14px]">chevron_right</span>
+          <span className="text-text-main font-bold">{isKa ? 'ტურების ძიება' : 'Tour Search Results'}</span>
         </nav>
 
-        <div className="flex flex-col lg:grid lg:grid-cols-12 gap-10">
+        <div className="flex flex-col lg:grid lg:grid-cols-12 gap-8 lg:gap-10">
           {/* Mobile Filter Toggle Button */}
           <button
             onClick={() => setMobileFiltersOpen(true)}
-            className="lg:hidden flex items-center justify-center gap-2 w-full py-3.5 bg-white rounded-2xl border border-border-light shadow-sm font-bold text-sm text-text-main active:scale-[0.98] transition-all"
+            className="lg:hidden flex items-center justify-center gap-2 w-full py-3.5 bg-white rounded-xl border border-border-light shadow-sm font-semibold text-sm text-text-main active:scale-[0.98] transition-all"
           >
             <span className="material-symbols-outlined text-primary text-[20px]">tune</span>
             {isKa ? 'ფილტრები' : 'Filters'}
@@ -148,43 +148,43 @@ export default function Tours({ onNavigate, language }: ToursProps) {
 
           {/* Mobile Filter Overlay */}
           {mobileFiltersOpen && (
-            <div className="fixed inset-0 z-[100] lg:hidden">
-              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" onClick={() => setMobileFiltersOpen(false)} />
-              <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl max-h-[85vh] overflow-y-auto mobile-filter-enter">
-                <div className="sticky top-0 bg-white z-10 px-6 pt-4 pb-3 border-b border-border-light flex items-center justify-between">
-                  <h2 className="text-lg font-black text-text-main">{t.filters}</h2>
-                  <button onClick={() => setMobileFiltersOpen(false)} className="w-9 h-9 rounded-full bg-background-light flex items-center justify-center text-text-muted">
+            <div className="fixed inset-0 z-[2100] lg:hidden">
+              <div className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fade-in" onClick={() => setMobileFiltersOpen(false)} />
+              <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl max-h-[85vh] overflow-y-auto mobile-filter-enter shadow-2xl">
+                <div className="sticky top-0 bg-white/95 backdrop-blur-md z-10 px-6 pt-5 pb-4 border-b border-border-light flex items-center justify-between">
+                  <h2 className="text-lg font-bold text-text-main font-display">{t.filters}</h2>
+                  <button onClick={() => setMobileFiltersOpen(false)} className="w-9 h-9 rounded-full bg-gray-50 flex items-center justify-center text-text-muted hover:text-text-main transition-colors">
                     <span className="material-symbols-outlined">close</span>
                   </button>
                 </div>
                 <div className="p-6 space-y-8">
                   {/* Destination Filter */}
                   <div className="space-y-4">
-                    <h3 className="text-sm font-black text-text-main flex items-center gap-2">
-                      <span className="material-symbols-outlined text-primary text-lg">map</span>
+                    <h3 className="text-sm font-bold text-text-main flex items-center gap-2 uppercase tracking-widest">
+                      <span className="material-symbols-outlined text-primary text-[18px]">map</span>
                       {t.destinations}
                     </h3>
                     <div className="space-y-3">
                       {filterOptions.destinations.map(dest => (
                         <label key={dest} className="flex items-center gap-3 cursor-pointer group">
                           <div className="relative flex items-center">
-                            <input type="checkbox" checked={selectedDestinations.includes(dest)} onChange={() => toggleDest(dest)} className="peer appearance-none w-5 h-5 rounded-md border-2 border-border-light checked:bg-primary checked:border-primary transition-all" />
-                            <span className="material-symbols-outlined absolute inset-0 text-white text-base font-black opacity-0 peer-checked:opacity-100 flex items-center justify-center">check</span>
+                            <input type="checkbox" checked={selectedDestinations.includes(dest)} onChange={() => toggleDest(dest)} className="peer appearance-none w-5 h-5 rounded-md border-2 border-gray-200 checked:bg-primary checked:border-primary transition-all duration-300" />
+                            <span className="material-symbols-outlined absolute inset-0 text-white text-[16px] font-bold opacity-0 peer-checked:opacity-100 flex items-center justify-center">check</span>
                           </div>
-                          <span className="text-sm font-bold text-text-muted group-hover:text-text-main transition-colors">{getTranslatedDest(dest)}</span>
+                          <span className="text-[13px] font-medium text-text-muted group-hover:text-text-main transition-colors">{getTranslatedDest(dest)}</span>
                         </label>
                       ))}
                     </div>
                   </div>
                   {/* Price Range */}
                   <div className="space-y-6">
-                    <h3 className="text-sm font-black text-text-main flex items-center gap-2">
-                      <span className="material-symbols-outlined text-primary text-lg">payments</span>
+                    <h3 className="text-sm font-bold text-text-main flex items-center gap-2 uppercase tracking-widest">
+                      <span className="material-symbols-outlined text-primary text-[18px]">payments</span>
                       {t.filter_price_range}
                     </h3>
                     <div className="px-2">
-                      <input type="range" min="0" max="50000" step="100" value={priceRange[1]} onChange={(e) => setPriceRange([0, parseInt(e.target.value)])} className="w-full accent-primary h-1 bg-border-light rounded-full appearance-none" />
-                      <div className="flex justify-between mt-4 text-xs font-black text-text-muted">
+                      <input type="range" min="0" max="50000" step="100" value={priceRange[1]} onChange={(e) => setPriceRange([0, parseInt(e.target.value)])} className="w-full accent-primary h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer" />
+                      <div className="flex justify-between mt-4 text-xs font-semibold text-text-muted">
                         <span>{symbol}{priceRange[0]}</span>
                         <span>{symbol}{priceRange[1]}</span>
                       </div>
@@ -192,21 +192,21 @@ export default function Tours({ onNavigate, language }: ToursProps) {
                   </div>
                   {/* Duration Filter */}
                   <div className="space-y-4">
-                    <h3 className="text-sm font-black text-text-main flex items-center gap-2">
-                      <span className="material-symbols-outlined text-primary text-lg">schedule</span>
+                    <h3 className="text-sm font-bold text-text-main flex items-center gap-2 uppercase tracking-widest">
+                      <span className="material-symbols-outlined text-primary text-[18px]">schedule</span>
                       {t.duration_label}
                     </h3>
                     <div className="grid grid-cols-2 gap-2">
                       {filterOptions.durations.map(dur => (
-                        <button key={dur} onClick={() => setSelectedDuration(selectedDuration === dur ? '' : dur)} className={`px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${selectedDuration === dur ? 'bg-primary/10 border-primary text-primary shadow-sm' : 'bg-background-light border-transparent text-text-muted hover:border-border-light'}`}>
+                        <button key={dur} onClick={() => setSelectedDuration(selectedDuration === dur ? '' : dur)} className={`px-3 py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-wider border transition-all duration-300 ${selectedDuration === dur ? 'bg-primary/5 border-primary text-primary shadow-sm' : 'bg-gray-50 border-transparent text-text-muted hover:border-gray-300 hover:text-text-main'}`}>
                           {getTranslatedDuration(dur)}
                         </button>
                       ))}
                     </div>
                   </div>
                   <div className="flex gap-3 pt-4">
-                    <button onClick={() => { setSelectedDestinations([]); setSelectedDuration(''); setPriceRange([0, 5000]); }} className="flex-1 py-3.5 bg-background-light text-text-muted rounded-xl font-bold text-sm">{t.clear_all}</button>
-                    <button onClick={() => setMobileFiltersOpen(false)} className="flex-1 py-3.5 bg-primary text-white rounded-xl font-bold text-sm shadow-lg shadow-primary/20">{isKa ? 'შედეგების ნახვა' : 'Show Results'}</button>
+                    <button onClick={() => { setSelectedDestinations([]); setSelectedDuration(''); setPriceRange([0, 5000]); }} className="flex-1 py-3.5 bg-gray-50 text-text-main rounded-xl font-semibold text-[13px] hover:bg-gray-100 transition-colors">{t.clear_all}</button>
+                    <button onClick={() => setMobileFiltersOpen(false)} className="flex-1 py-3.5 bg-primary text-white rounded-xl font-semibold text-[13px] shadow-md shadow-primary/20 active:scale-95 transition-all">{isKa ? 'შედეგების ნახვა' : 'Show Results'}</button>
                   </div>
                 </div>
               </div>
@@ -214,26 +214,26 @@ export default function Tours({ onNavigate, language }: ToursProps) {
           )}
 
           {/* Sidebar Filters — desktop only */}
-          <aside className="hidden lg:block lg:col-span-3 space-y-8">
-            <div className="bg-white p-8 rounded-[32px] shadow-sm border border-border-light sticky top-28">
+          <aside className="hidden lg:block lg:col-span-3">
+            <div className="bg-white p-6 xl:p-8 rounded-2xl shadow-sm border border-border-light sticky top-[100px]">
               <div className="flex items-center justify-between mb-8">
-                <h2 className="text-xl font-black text-text-main">{t.filters}</h2>
+                <h2 className="text-[17px] font-extrabold text-text-main font-display">{t.filters}</h2>
                 <button 
                   onClick={() => {
                     setSelectedDestinations([]);
                     setSelectedDuration('');
-                    setPriceRange([0, 5000]);
+                    setPriceRange([0, 50000]);
                   }}
-                  className="text-xs font-black text-primary uppercase tracking-widest hover:underline"
+                  className="text-[10px] font-bold text-text-muted uppercase tracking-wider hover:text-primary transition-colors"
                 >
                   {t.clear_all}
                 </button>
               </div>
 
               {/* Destination Filter */}
-              <div className="space-y-4 mb-10">
-                <h3 className="text-sm font-black text-text-main flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary text-lg">map</span>
+              <div className="space-y-4 mb-8">
+                <h3 className="text-[11px] font-bold text-text-muted uppercase tracking-widest flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-primary text-[16px]">map</span>
                   {t.destinations}
                 </h3>
                 <div className="space-y-3">
@@ -244,23 +244,23 @@ export default function Tours({ onNavigate, language }: ToursProps) {
                           type="checkbox" 
                           checked={selectedDestinations.includes(dest)}
                           onChange={() => toggleDest(dest)}
-                          className="peer appearance-none w-5 h-5 rounded-md border-2 border-border-light checked:bg-primary checked:border-primary transition-all"
+                          className="peer appearance-none w-[18px] h-[18px] rounded-[4px] border-2 border-gray-200 checked:bg-primary checked:border-primary transition-all duration-300"
                         />
-                        <span className="material-symbols-outlined absolute inset-0 text-white text-base font-black opacity-0 peer-checked:opacity-100 flex items-center justify-center">check</span>
+                        <span className="material-symbols-outlined absolute inset-0 text-white text-[14px] font-bold opacity-0 peer-checked:opacity-100 flex items-center justify-center">check</span>
                       </div>
-                      <span className="text-sm font-bold text-text-muted group-hover:text-text-main transition-colors">{getTranslatedDest(dest)}</span>
+                      <span className="text-[13px] font-medium text-text-main/70 group-hover:text-text-main transition-colors">{getTranslatedDest(dest)}</span>
                     </label>
                   ))}
                 </div>
               </div>
 
               {/* Price Range */}
-              <div className="space-y-6 mb-10">
-                <h3 className="text-sm font-black text-text-main flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary text-lg">payments</span>
+              <div className="space-y-5 mb-8">
+                <h3 className="text-[11px] font-bold text-text-muted uppercase tracking-widest flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-primary text-[16px]">payments</span>
                   {t.filter_price_range}
                 </h3>
-                <div className="px-2">
+                <div className="px-1">
                   <input 
                     type="range" 
                     min="0" 
@@ -268,9 +268,9 @@ export default function Tours({ onNavigate, language }: ToursProps) {
                     step="100"
                     value={priceRange[1]}
                     onChange={(e) => setPriceRange([0, parseInt(e.target.value)])}
-                    className="w-full accent-primary h-1 bg-border-light rounded-full appearance-none"
+                    className="w-full accent-primary h-1.5 bg-gray-100 rounded-full appearance-none cursor-pointer"
                   />
-                  <div className="flex justify-between mt-4 text-xs font-black text-text-muted">
+                  <div className="flex justify-between mt-3 text-[11px] font-semibold text-text-muted">
                     <span>{symbol}{priceRange[0]}</span>
                     <span>{symbol}{priceRange[1]}</span>
                   </div>
@@ -278,9 +278,9 @@ export default function Tours({ onNavigate, language }: ToursProps) {
               </div>
 
               {/* Duration Filter */}
-              <div className="space-y-4 mb-10">
-                <h3 className="text-sm font-black text-text-main flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary text-lg">schedule</span>
+              <div className="space-y-4 mb-8">
+                <h3 className="text-[11px] font-bold text-text-muted uppercase tracking-widest flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-primary text-[16px]">schedule</span>
                   {t.duration_label}
                 </h3>
                 <div className="grid grid-cols-2 gap-2">
@@ -288,10 +288,10 @@ export default function Tours({ onNavigate, language }: ToursProps) {
                     <button
                       key={dur}
                       onClick={() => setSelectedDuration(selectedDuration === dur ? '' : dur)}
-                      className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+                      className={`px-2.5 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider border transition-all duration-300 ${
                         selectedDuration === dur 
-                        ? 'bg-primary/10 border-primary text-primary shadow-sm' 
-                        : 'bg-background-light border-transparent text-text-muted hover:border-border-light'
+                        ? 'bg-primary/5 border-primary/40 text-primary shadow-sm' 
+                        : 'bg-gray-50 border-transparent text-text-muted hover:border-gray-200 hover:text-text-main'
                       }`}
                     >
                       {getTranslatedDuration(dur)}
@@ -300,7 +300,7 @@ export default function Tours({ onNavigate, language }: ToursProps) {
                 </div>
               </div>
 
-              <button className="w-full py-4 bg-primary text-white rounded-2xl font-black shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">
+              <button className="w-full py-3 bg-primary text-white rounded-xl font-semibold text-[13px] shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 active:scale-95 transition-all">
                 {isKa ? 'ფილტრის გამოყენება' : 'Apply Filters'}
               </button>
             </div>
@@ -308,31 +308,31 @@ export default function Tours({ onNavigate, language }: ToursProps) {
 
           {/* Main Results Area */}
           <main className="lg:col-span-9">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
-              <div className="space-y-2">
-                <h1 className="text-3xl md:text-4xl font-black text-text-main">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-5 mb-8">
+              <div className="space-y-1.5">
+                <h1 className="text-2xl md:text-3xl font-extrabold text-text-main font-display">
                   {t.search_results_title}
                 </h1>
-                <p className="text-text-muted font-bold text-sm">
+                <p className="text-text-muted text-[13px] font-medium">
                   {filteredTours.length} {t.tours_found}
                 </p>
               </div>
               
-              <div className="flex items-center gap-4">
-                <p className="text-xs font-black text-text-muted uppercase tracking-widest">{t.sort_by}</p>
+              <div className="flex items-center gap-3">
+                <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest hidden sm:block">{t.sort_by}</p>
                 <div className="relative">
                   <button 
                     onClick={() => setIsSortOpen(!isSortOpen)}
-                    className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl border border-border-light text-sm font-bold text-text-main shadow-sm hover:border-primary/50 transition-all min-w-[200px] justify-between"
+                    className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-border-light text-[13px] font-semibold text-text-main shadow-sm hover:border-gray-300 hover:bg-gray-50 transition-all min-w-[180px] justify-between"
                   >
                     {getSortLabel()}
-                    <span className={`material-symbols-outlined text-lg transition-transform ${isSortOpen ? 'rotate-180' : ''}`}>expand_more</span>
+                    <span className={`material-symbols-outlined text-[18px] text-text-muted transition-transform ${isSortOpen ? 'rotate-180' : ''}`}>expand_more</span>
                   </button>
 
                   {isSortOpen && (
                     <>
                       <div className="fixed inset-0 z-10" onClick={() => setIsSortOpen(false)} />
-                      <div className="absolute right-0 mt-2 w-full bg-white rounded-2xl shadow-xl border border-border-light py-2 z-20 animate-fade-in origin-top">
+                      <div className="absolute right-0 mt-1.5 w-full bg-white rounded-xl shadow-lg border border-border-light py-1.5 z-20 animate-fade-in origin-top">
                         {[
                           { id: 'recommended', label: t.recommended },
                           { id: 'price-asc', label: isKa ? 'ფასი: ზრდადი' : 'Price: Low to High' },
@@ -347,8 +347,8 @@ export default function Tours({ onNavigate, language }: ToursProps) {
                               setSortBy(opt.id as any);
                               setIsSortOpen(false);
                             }}
-                            className={`w-full text-left px-4 py-2.5 text-sm font-bold transition-colors hover:bg-background-light ${
-                              sortBy === opt.id ? 'text-primary bg-primary/5' : 'text-text-muted hover:text-text-main'
+                            className={`w-full text-left px-4 py-2 text-[13px] transition-colors hover:bg-gray-50 ${
+                              sortBy === opt.id ? 'text-primary font-semibold' : 'text-text-main font-medium'
                             }`}
                           >
                             {opt.label}
@@ -362,21 +362,21 @@ export default function Tours({ onNavigate, language }: ToursProps) {
             </div>
 
             {/* Active Tags */}
-            <div className="flex flex-wrap gap-2 mb-10">
+            <div className="flex flex-wrap gap-2 mb-8">
               {selectedDestinations.map(d => (
                 <button 
                   key={d}
                   onClick={() => toggleDest(d)}
-                  className="px-4 py-2 bg-primary/10 text-primary border border-primary/20 rounded-full text-xs font-black flex items-center gap-2 group hover:bg-primary/20 transition-all"
+                  className="px-3 py-1.5 bg-primary/5 text-primary border border-primary/20 rounded-lg text-[11px] font-bold flex items-center gap-1.5 group hover:bg-primary/10 transition-colors"
                 >
                   {getTranslatedDest(d)}
-                  <span className="material-symbols-outlined text-sm group-hover:scale-110">close</span>
+                  <span className="material-symbols-outlined text-[14px] group-hover:scale-110">close</span>
                 </button>
               ))}
               {selectedDestinations.length > 0 && (
                 <button 
                   onClick={() => setSelectedDestinations([])}
-                  className="text-xs font-black text-text-muted uppercase tracking-widest hover:text-red-500 transition-colors ml-2"
+                  className="text-[11px] font-bold text-text-muted hover:text-text-main transition-colors ml-1 px-2"
                 >
                   {t.clear_all}
                 </button>
@@ -385,55 +385,48 @@ export default function Tours({ onNavigate, language }: ToursProps) {
 
             {/* Grid */}
             {loading ? (
-              <div className="flex flex-col items-center justify-center py-40 gap-4">
-                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-                <p className="text-text-muted font-black">{isKa ? 'იტვირთება...' : 'Searching Tours...'}</p>
+              <div className="flex flex-col items-center justify-center py-32 gap-4">
+                <div className="w-10 h-10 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+                <p className="text-text-muted text-sm font-medium">{isKa ? 'იტვირთება...' : 'Searching Tours...'}</p>
               </div>
             ) : sortedTours.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
                 <AnimatePresence mode="popLayout">
                   {sortedTours.map((tour, idx) => (
                     <motion.div
                       key={tour.id}
                       layout
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: idx * 0.05 }}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: Math.min(idx * 0.05, 0.3) }}
                     >
                       <TourCard tour={tour} onNavigate={onNavigate} language={language} />
                     </motion.div>
                   ))}
                 </AnimatePresence>
-
-                {/* Floating Map Button temporarily hidden
-                <button className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-secondary text-white px-8 py-4 rounded-full font-black shadow-2xl flex items-center gap-3 z-50 hover:scale-105 transition-all">
-                  <span className="material-symbols-outlined">map</span>
-                  {t.show_map}
-                </button>
-                */}
               </div>
             ) : (
-              <div className="bg-white rounded-[32px] p-20 text-center border border-dashed border-border-light">
-                <span className="material-symbols-outlined text-[64px] text-gray-200 mb-6">explore_off</span>
-                <h3 className="text-2xl font-black text-text-main mb-2">{t.no_matches_found}</h3>
-                <p className="text-text-muted font-medium">{t.try_adjusting_filters}</p>
+              <div className="bg-white rounded-3xl p-16 text-center border border-dashed border-border-light">
+                <span className="material-symbols-outlined text-[48px] text-gray-300 mb-4">explore_off</span>
+                <h3 className="text-xl font-bold text-text-main mb-2 font-display">{t.no_matches_found}</h3>
+                <p className="text-text-muted text-[13px]">{t.try_adjusting_filters}</p>
               </div>
             )}
 
             {/* Pagination Controls */}
             {filteredTours.length > 0 && (
-              <div className="mt-20 flex items-center justify-center gap-2">
-                <button className="w-10 h-10 rounded-xl bg-white border border-border-light flex items-center justify-center text-text-muted hover:border-primary hover:text-primary transition-all">
-                  <span className="material-symbols-outlined">chevron_left</span>
+              <div className="mt-16 flex items-center justify-center gap-2">
+                <button className="w-9 h-9 rounded-xl bg-white border border-border-light flex items-center justify-center text-text-muted hover:border-gray-300 hover:text-text-main transition-all">
+                  <span className="material-symbols-outlined text-[18px]">chevron_left</span>
                 </button>
                 {[1, 2, 3].map(p => (
-                  <button key={p} className={`w-10 h-10 rounded-xl font-black transition-all ${p === 1 ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-white border border-border-light text-text-muted hover:border-primary hover:text-primary'}`}>
+                  <button key={p} className={`w-9 h-9 rounded-xl text-[13px] font-semibold transition-all ${p === 1 ? 'bg-primary text-white shadow-sm shadow-primary/20' : 'bg-white border border-border-light text-text-main hover:border-gray-300'}`}>
                     {p}
                   </button>
                 ))}
-                <span className="px-2 text-text-muted font-black">...</span>
-                <button className="w-10 h-10 rounded-xl bg-white border border-border-light flex items-center justify-center text-text-muted hover:border-primary hover:text-primary transition-all">
-                  <span className="material-symbols-outlined">chevron_right</span>
+                <span className="px-1 text-text-muted font-bold text-sm">...</span>
+                <button className="w-9 h-9 rounded-xl bg-white border border-border-light flex items-center justify-center text-text-muted hover:border-gray-300 hover:text-text-main transition-all">
+                  <span className="material-symbols-outlined text-[18px]">chevron_right</span>
                 </button>
               </div>
             )}
