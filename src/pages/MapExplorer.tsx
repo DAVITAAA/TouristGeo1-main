@@ -84,6 +84,9 @@ export default function MapExplorer({ language, onNavigate }: MapExplorerProps) 
             <MapContainer
                 center={[42.0, 43.5]}
                 zoom={8}
+                minZoom={7}
+                maxBounds={[[40.0, 38.5], [44.0, 47.5]]}
+                maxBoundsViscosity={1.0}
                 scrollWheelZoom={true}
                 className="w-full h-full"
                 zoomControl={false}
