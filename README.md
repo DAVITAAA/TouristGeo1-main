@@ -2,9 +2,6 @@
 
 A modern tourism and location-based web application designed to help users explore destinations, discover points of interest, and access geographic information through an intuitive and interactive interface.
 
-![Project Banner](https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6)
-
----
 
 ## Overview
 
