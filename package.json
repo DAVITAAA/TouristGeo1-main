@@ -14,7 +14,7 @@
     "dev:all": "npm run cleanup && concurrently \"npm run dev\" \"npm run server\""
   },
   "dependencies": {
-    "@google/genai": "^1.29.0",
+    "@google/genai": "^1.52.0",
     "@netlify/functions": "^5.1.5",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",

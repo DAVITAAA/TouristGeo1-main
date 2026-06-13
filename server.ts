@@ -9,6 +9,8 @@ import { Resend } from 'resend';
 import { OAuth2Client } from 'google-auth-library';
 import multer from 'multer';
 import { fileURLToPath } from 'url';
+import { GoogleGenAI } from '@google/genai';
+import { buildSystemPrompt } from './src/data/aiContext.js';
 
 let currentDir = process.cwd();
 try {
@@ -1858,6 +1860,41 @@ app.delete('/api/reviews/:id', async (req, res) => {
     res.json({ success: true });
   } catch (error: any) {
     res.status(500).json({ error: 'Failed to delete review', details: error.message });
+  }
+});
+
+// AI Chatbot endpoint
+app.post('/api/ai/chat', async (req, res) => {
+  try {
+    const { messages, mode, language } = req.body;
+    
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ error: 'Gemini API key is not configured' });
+    }
+
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const systemPrompt = buildSystemPrompt(language || 'en', mode || 'chat');
+    
+    // Convert messages to the format expected by GenAI
+    // The google/genai package expects parts: [{ text: "..." }]
+    const formattedMessages = messages.map((msg: any) => ({
+      role: msg.role === 'user' ? 'user' : 'model',
+      parts: [{ text: msg.content }]
+    }));
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: formattedMessages,
+      config: {
+        systemInstruction: systemPrompt,
+        temperature: 0.7,
+      }
+    });
+
+    res.json({ reply: response.text });
+  } catch (error: any) {
+    console.error('AI Error:', error);
+    res.status(500).json({ error: 'Failed to generate AI response', details: error.message });
   }
 });
 

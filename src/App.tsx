@@ -11,9 +11,11 @@ import TourDetail from './pages/TourDetail.tsx';
 import Operator from './pages/Operator.tsx';
 import Favorites from './pages/Favorites';
 import MapExplorer from './pages/MapExplorer';
+import AITourPlanner from './pages/AITourPlanner.tsx';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import AuthModal from './components/AuthModal';
+import AIChatbot from './components/AIChatbot';
 import { Language } from './translations';
 import { getMe, User, Tour, removeToken } from './api';
 
@@ -125,6 +127,7 @@ export default function App() {
       case 'operator': return <Operator onNavigate={handleNavigate} language={language} operator={selectedOperator} />;
       case 'favorites': return <Favorites onNavigate={handleNavigate} language={language} />;
       case 'map-explorer': return <MapExplorer language={language} onNavigate={handleNavigate} />;
+      case 'ai-planner': return <AITourPlanner language={language} onNavigate={handleNavigate} />;
       default: return <Home onNavigate={handleNavigate} language={language} />;
     }
   };
@@ -166,6 +169,8 @@ export default function App() {
           }}
         />
       )}
+
+      <AIChatbot language={language} onNavigate={handleNavigate} />
     </div>
   );
 }

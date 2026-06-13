@@ -176,6 +176,19 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
               }`}
             >
               {isKa ? 'ექსპლორერი' : 'Explorer'}
+            </button>
+
+            {/* AI Planner */}
+            <button
+              onClick={() => onNavigate('ai-planner')}
+              className={`px-4 py-2 rounded-xl text-[13px] font-semibold transition-all duration-300 flex items-center gap-1.5 ${
+                currentPage === 'ai-planner'
+                  ? 'text-primary bg-primary/5'
+                  : 'text-text-main hover:text-primary hover:bg-gray-50'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[16px] text-primary">auto_awesome</span>
+              {t.nav_ai_planner}
               <span className="px-1.5 py-0.5 rounded-md bg-primary/10 text-[9px] text-primary font-bold uppercase tracking-tight">{isKa ? 'ახალი' : 'New'}</span>
             </button>
 
@@ -360,6 +373,7 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
                 {[
                   { page: 'tours', label: t.nav_tours, icon: 'explore' },
                   { page: 'map-explorer', label: isKa ? 'ექსპლორერი' : 'Explorer', icon: 'map' },
+                  { page: 'ai-planner', label: t.nav_ai_planner, icon: 'auto_awesome' },
                   { page: 'places', label: t.nav_places, icon: 'place' },
                   { page: 'favorites', label: isKa ? 'რჩეულები' : 'Favorites', icon: 'favorite' },
                 ].map((item) => (
