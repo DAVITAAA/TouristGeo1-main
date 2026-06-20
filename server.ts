@@ -42,6 +42,7 @@ if (!process.env.RESEND_API_KEY || process.env.RESEND_API_KEY === 'your-resend-a
 }
 console.log('[DEBUG] GOOGLE_CLIENT_ID:', process.env.GOOGLE_CLIENT_ID ? 'LOADED' : 'MISSING');
 console.log('[DEBUG] GOOGLE_CLIENT_SECRET:', process.env.GOOGLE_CLIENT_SECRET ? 'LOADED' : 'MISSING');
+console.log('[DEBUG] GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? 'LOADED' : 'MISSING');
 
 const LOG_FILE = path.join(currentDir, 'error.log');
 
@@ -1893,7 +1894,7 @@ app.post('/api/ai/chat', async (req, res) => {
 
     res.json({ reply: response.text });
   } catch (error: any) {
-    console.error('AI Error:', error);
+    logError(`AI Chat Error: ${error.message}\n${error.stack}`);
     res.status(500).json({ error: 'Failed to generate AI response', details: error.message });
   }
 });

@@ -48,7 +48,12 @@ export default function AIChatbot({ language, onNavigate }: AIChatbotProps) {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to get response');
+        let errorMsg = 'Failed to get response';
+        try {
+          const errData = await response.json();
+          errorMsg = errData.details || errData.error || errorMsg;
+        } catch (_) {}
+        throw new Error(errorMsg);
       }
 
       const data = await response.json();
