@@ -136,30 +136,30 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
     <header
       className={`sticky top-0 z-[1010] w-full transition-all duration-500 ${
         scrolled
-          ? 'bg-white/90 backdrop-blur-xl border-b border-border-light shadow-[0_1px_3px_rgba(0,0,0,0.04)]'
-          : 'bg-white/70 backdrop-blur-lg border-b border-transparent'
+          ? 'bg-white/90 backdrop-blur-xl border-b border-border-light shadow-[0_4px_20px_rgba(0,0,0,0.03)]'
+          : 'bg-white/80 backdrop-blur-lg border-b border-transparent'
       }`}
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
-        <div className="flex h-[68px] items-center justify-between">
+        <div className="flex h-[80px] items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center gap-2.5 cursor-pointer select-none" onClick={() => onNavigate('home')}>
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-content shadow-md shadow-primary/15 transition-transform duration-300 hover:scale-105">
-              <span className="material-symbols-outlined text-[20px] font-bold">terrain</span>
+          <div className="flex items-center gap-2.5 cursor-pointer select-none group" onClick={() => onNavigate('home')}>
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-primary-content shadow-lg shadow-primary/20 transition-all duration-300 group-hover:scale-105">
+              <span className="material-symbols-outlined text-[24px] font-bold">terrain</span>
             </div>
-            <span className="text-[19px] font-extrabold tracking-tight text-text-main font-display">
+            <span className="text-[20px] font-extrabold tracking-tight text-text-main font-display">
               {isKa ? 'მოგზაურობა' : 'Travel'}<span className="text-primary">{isKa ? 'საქართველოში' : 'Georgia'}</span>
             </span>
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-1">
+          <nav className="hidden lg:flex items-center gap-2">
             {/* Tours */}
             <button
               onClick={() => onNavigate('tours')}
-              className={`px-4 py-2 rounded-xl text-[13px] font-semibold transition-all duration-300 ${
+              className={`px-5 py-2.5 rounded-full text-[14px] font-semibold transition-all duration-300 ${
                 currentPage === 'tours'
-                  ? 'text-primary bg-primary/5'
+                  ? 'text-primary bg-primary/10'
                   : 'text-text-main hover:text-primary hover:bg-gray-50'
               }`}
             >
@@ -169,9 +169,9 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
             {/* Map Explorer */}
             <button
               onClick={() => onNavigate('map-explorer')}
-              className={`px-4 py-2 rounded-xl text-[13px] font-semibold transition-all duration-300 flex items-center gap-1.5 ${
+              className={`px-5 py-2.5 rounded-full text-[14px] font-semibold transition-all duration-300 flex items-center gap-1.5 ${
                 currentPage === 'map-explorer'
-                  ? 'text-primary bg-primary/5'
+                  ? 'text-primary bg-primary/10'
                   : 'text-text-main hover:text-primary hover:bg-gray-50'
               }`}
             >
@@ -181,29 +181,29 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
             {/* AI Planner */}
             <button
               onClick={() => onNavigate('ai-planner')}
-              className={`px-4 py-2 rounded-xl text-[13px] font-semibold transition-all duration-300 flex items-center gap-1.5 ${
+              className={`px-5 py-2.5 rounded-full text-[14px] font-semibold transition-all duration-300 flex items-center gap-1.5 ${
                 currentPage === 'ai-planner'
-                  ? 'text-primary bg-primary/5'
+                  ? 'text-primary bg-primary/10'
                   : 'text-text-main hover:text-primary hover:bg-gray-50'
               }`}
             >
-              <span className="material-symbols-outlined text-[16px] text-primary">auto_awesome</span>
+              <span className="material-symbols-outlined text-[18px] text-primary">auto_awesome</span>
               {t.nav_ai_planner}
-              <span className="px-1.5 py-0.5 rounded-md bg-primary/10 text-[9px] text-primary font-bold uppercase tracking-tight">{isKa ? 'ახალი' : 'New'}</span>
+              <span className="px-2 py-0.5 rounded-md bg-primary/10 text-[10px] text-primary font-bold uppercase tracking-tight">{isKa ? 'ახალი' : 'New'}</span>
             </button>
 
             {/* Places with Dropdown */}
             <div className="group relative">
               <button
                 onClick={() => onNavigate('places')}
-                className={`px-4 py-2 rounded-xl text-[13px] font-semibold transition-all duration-300 flex items-center gap-1 ${
+                className={`px-5 py-2.5 rounded-full text-[14px] font-semibold transition-all duration-300 flex items-center gap-1.5 ${
                   currentPage === 'places'
-                    ? 'text-primary bg-primary/5'
+                    ? 'text-primary bg-primary/10'
                     : 'text-text-main hover:text-primary hover:bg-gray-50'
                 }`}
               >
                 {t.nav_places}
-                <span className="material-symbols-outlined text-[16px] transition-transform duration-300 group-hover:rotate-180">expand_more</span>
+                <span className="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:rotate-180">expand_more</span>
               </button>
 
               <div className="absolute top-full left-1/2 -translate-x-1/2 w-[680px] opacity-0 invisible translate-y-3 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 z-50 pt-3">
@@ -235,18 +235,18 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
           </nav>
 
           {/* Right Actions */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="flex items-center gap-2 sm:gap-3">
             {/* Favorites */}
             <button
               onClick={() => onNavigate('favorites')}
-              className={`relative w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${
+              className={`relative w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 ${
                 currentPage === 'favorites'
-                  ? 'text-primary bg-primary/5'
+                  ? 'text-primary bg-primary/10'
                   : 'text-text-muted hover:text-text-main hover:bg-gray-50'
               }`}
               title={isKa ? "რჩეულები" : "Favorites"}
             >
-              <Heart size={18} className={currentPage === 'favorites' ? "fill-primary text-primary" : ""} />
+              <Heart size={20} className={currentPage === 'favorites' ? "fill-primary text-primary" : ""} />
               {wishlist.length > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-content text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center ring-2 ring-white">
                   {wishlist.length}
@@ -273,20 +273,20 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
             {/* Language Toggle */}
             <button
               onClick={() => setLanguage(language === 'ka' ? 'en' : 'ka')}
-              className="hidden sm:flex items-center gap-1.5 h-9 px-3 rounded-xl text-[13px] font-semibold text-text-muted hover:text-text-main hover:bg-gray-50 transition-all duration-300"
+              className="hidden sm:flex items-center gap-1.5 h-11 px-4 rounded-full text-[14px] font-semibold text-text-muted hover:text-text-main hover:bg-gray-50 transition-all duration-300"
             >
-              <span className="material-symbols-outlined text-[18px]">language</span>
+              <span className="material-symbols-outlined text-[20px]">language</span>
               {language === 'ka' ? 'EN' : 'GE'}
             </button>
 
             {user ? (
-              <div className="hidden sm:flex items-center gap-2">
+              <div className="hidden sm:flex items-center gap-3">
                 {user.role === 'operator' && (
                   <button
                     onClick={() => onNavigate('add-tour')}
-                    className="h-9 px-4 bg-primary text-primary-content font-semibold text-[13px] rounded-xl shadow-sm shadow-primary/15 hover:shadow-md hover:shadow-primary/20 transition-all duration-300 flex items-center gap-1.5 active:scale-95"
+                    className="h-11 px-6 bg-primary text-primary-content font-bold text-[14px] rounded-full shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 flex items-center gap-2 active:scale-95"
                   >
-                    <span className="material-symbols-outlined text-[16px]">add_circle</span>
+                    <span className="material-symbols-outlined text-[20px]">add_circle</span>
                     {t.post_tour}
                   </button>
                 )}
@@ -314,7 +314,7 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
             ) : (
               <button
                 onClick={onLoginClick}
-                className="hidden sm:inline-flex h-9 items-center justify-center rounded-xl bg-secondary px-5 text-[13px] font-semibold text-white transition-all duration-300 hover:bg-secondary/90 active:scale-95"
+                className="hidden sm:inline-flex h-11 items-center justify-center rounded-full bg-secondary px-6 text-[14px] font-bold text-white transition-all duration-300 hover:bg-secondary/90 active:scale-95 shadow-lg shadow-secondary/20"
               >
                 {t.login}
               </button>
@@ -322,11 +322,11 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
 
             {/* Hamburger — mobile only */}
             <button
-              className="lg:hidden w-10 h-10 rounded-xl flex items-center justify-center text-text-main hover:bg-gray-50 transition-colors"
+              className="lg:hidden w-11 h-11 rounded-full flex items-center justify-center text-text-main hover:bg-gray-50 transition-colors"
               onClick={() => setMobileMenuOpen(true)}
               aria-label="Open menu"
             >
-              <span className="material-symbols-outlined text-[24px]">menu</span>
+              <span className="material-symbols-outlined text-[26px]">menu</span>
             </button>
           </div>
         </div>
@@ -360,7 +360,7 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
               </div>
               <button
                 onClick={closeMobileMenu}
-                className="w-9 h-9 rounded-xl bg-gray-50 flex items-center justify-center text-text-muted hover:text-text-main transition-colors"
+                className="w-11 h-11 rounded-xl bg-gray-50 flex items-center justify-center text-text-muted hover:text-text-main transition-colors"
               >
                 <span className="material-symbols-outlined text-[20px]">close</span>
               </button>

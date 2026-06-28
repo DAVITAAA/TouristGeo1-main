@@ -90,19 +90,11 @@ export default function MapExplorer({ language, onNavigate }: MapExplorerProps) 
                 scrollWheelZoom={true}
                 className="w-full h-full"
                 zoomControl={false}
+                attributionControl={false}
             >
-                <LayersControl position="topright">
-                    <LayersControl.BaseLayer checked name="Satellite View">
-                        <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" attribution='&copy; ESRI' />
-                    </LayersControl.BaseLayer>
-                    <LayersControl.BaseLayer name="Street View">
-                        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{y}/{x}.png" attribution='&copy; OpenStreetMap' />
-                    </LayersControl.BaseLayer>
-                    <LayersControl.BaseLayer name="Terrain View">
-                        <TileLayer url="https://{s}.tile.opentopomap.org/{z}/{y}/{x}.png" attribution='&copy; OpenTopoMap' />
-                    </LayersControl.BaseLayer>
-                </LayersControl>
-
+                <TileLayer 
+                  url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" 
+                />
                 <ZoomControl position="topright" />
 
                 {selectedSight && (
@@ -195,7 +187,7 @@ export default function MapExplorer({ language, onNavigate }: MapExplorerProps) 
                         <div className="p-8 md:w-3/5 flex flex-col justify-center relative">
                             <button
                                 onClick={() => setSelectedSight(null)}
-                                className="absolute top-4 right-4 p-2 text-white/40 hover:text-white transition-colors"
+                                className="absolute top-4 right-4 p-3 flex items-center justify-center text-white/40 hover:text-white transition-colors"
                             >
                                 <X size={20} />
                             </button>

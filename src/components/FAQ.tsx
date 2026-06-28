@@ -52,7 +52,7 @@ export default function FAQ({ language }: { language: Language }) {
                         return (
                             <ScrollReveal key={index} delay={index * 0.05}>
                                 <div
-                                    className={`bg-white rounded-2xl overflow-hidden transition-all duration-300 border ${isOpen ? 'border-primary/30 shadow-sm' : 'border-border-light hover:border-gray-300'}`}
+                                    className={`bg-white rounded-[2rem] overflow-hidden transition-all duration-300 border ${isOpen ? 'border-primary/30 shadow-sm' : 'border-border-light hover:border-gray-300'}`}
                                 >
                                     <button
                                         onClick={() => setOpenIndex(isOpen ? null : index)}

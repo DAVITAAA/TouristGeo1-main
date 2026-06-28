@@ -11,7 +11,7 @@ export default function Footer({ language, onNavigate }: FooterProps) {
   const t = translations[language];
 
   return (
-    <footer className="bg-white border-t border-border-light pt-16 pb-8 mt-auto">
+    <footer className="bg-white border-t border-border-light pt-16 pb-8 mt-auto hidden">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 lg:gap-8 mb-16">
           <div className="col-span-1 md:col-span-1">

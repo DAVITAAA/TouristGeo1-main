@@ -172,10 +172,10 @@ export default function Home({ onNavigate, language }: { onNavigate: (page: stri
                 <div className="mt-8 flex flex-wrap gap-3 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
                   <button
                     onClick={() => onNavigate('tours')}
-                    className="px-7 py-3.5 rounded-xl bg-primary text-primary-content font-semibold text-[15px] shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:bg-primary/90 transition-all duration-300 active:scale-95 flex items-center gap-2"
+                    className="px-8 py-4 rounded-full bg-primary text-primary-content font-bold text-[15px] shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-1 transition-all duration-300 active:scale-95 flex items-center gap-2"
                   >
                     {isKa ? 'ტურების ნახვა' : 'Browse Tours'}
-                    <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                    <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
                   </button>
                 </div>
               </div>
@@ -248,7 +248,7 @@ export default function Home({ onNavigate, language }: { onNavigate: (page: stri
                 </p>
                 <button 
                   onClick={() => onNavigate('map-explorer')}
-                  className="px-8 py-4 bg-primary text-primary-content rounded-xl font-semibold text-base shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.02] active:scale-95 transition-all duration-300 flex items-center gap-2.5"
+                  className="px-8 py-4 bg-primary text-primary-content rounded-full font-bold text-base shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-1 active:scale-95 transition-all duration-300 flex items-center gap-2.5"
                 >
                    {isKa ? 'გახსენი ექსპლორერი' : 'Open Geo-Explorer'}
                    <Compass size={20} />
@@ -302,7 +302,7 @@ export default function Home({ onNavigate, language }: { onNavigate: (page: stri
               {seasons.map((s, i) => (
                 <div
                   key={i}
-                  className="season-panel relative rounded-2xl overflow-hidden group"
+                  className="season-panel relative rounded-[2rem] overflow-hidden group shadow-md"
                   onClick={() => setSelectedSeason(s.nameKa)}
                 >
                   <img src={s.img} alt={isKa ? s.nameKa : s.nameEn} loading="lazy" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />

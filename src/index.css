@@ -1,21 +1,21 @@
 @import "tailwindcss";
 
 @theme {
-  /* ─── Color Palette — refined, warm, premium ─── */
-  --color-primary: #1db954;
-  --color-primary-hover: #17a34a;
+  /* ─── Color Palette — Premium Emerald & Slate ─── */
+  --color-primary: #059669; /* Emerald 600 */
+  --color-primary-hover: #047857; /* Emerald 700 */
+  --color-primary-light: #34d399; /* Emerald 400 */
   --color-primary-content: #ffffff;
-  --color-secondary: #111827;
-  --color-background-light: #fafaf8;
-  --color-background-dark: #111827;
+  --color-secondary: #0f172a; /* Slate 900 */
+  --color-background-light: #f8fafc; /* Slate 50 */
+  --color-background-dark: #020617; /* Slate 950 */
   --color-surface-light: #ffffff;
-  --color-surface-dark: #1e293b;
-  --color-border-light: #e8e8e4;
-  --color-border-dark: #334155;
-  --color-text-main: #111827;
-  --color-text-muted: #6b7280;
-  --color-accent-green: #1db954;
-  --color-accent-blue: #3b82f6;
+  --color-surface-dark: #0f172a; /* Slate 900 */
+  --color-border-light: #e2e8f0; /* Slate 200 */
+  --color-border-dark: #1e293b; /* Slate 800 */
+  --color-text-main: #0f172a; /* Slate 900 */
+  --color-text-muted: #64748b; /* Slate 500 */
+  --color-accent-gold: #d97706; /* Amber 600 */
 
   /* ─── Typography ─── */
   --font-display: "Outfit", "Noto Sans Georgian", system-ui, sans-serif;
@@ -23,14 +23,15 @@
 
   /* ─── Animation Tokens ─── */
   --animate-hero-progress: hero-progress 6s linear;
-  --animate-fade-in-up: fade-in-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  --animate-fade-in: fade-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  --animate-slow-zoom: slow-zoom 20s ease-in-out infinite alternate;
+  --animate-fade-in-up: fade-in-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-fade-in: fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-slow-zoom: slow-zoom 25s ease-in-out infinite alternate;
+  --animate-float: float 6s ease-in-out infinite;
 }
 
 /* ─── Root Design Tokens ─── */
 :root {
-  --color-primary-rgb: 29, 185, 84;
+  --color-primary-rgb: 5, 150, 105;
   --bg-color: var(--color-background-light);
   --surface-color: var(--color-surface-light);
   --text-main: var(--color-text-main);
@@ -38,11 +39,11 @@
   --border-color: var(--color-border-light);
 
   /* Spacing scale */
-  --section-padding-y: clamp(4rem, 8vw, 7rem);
-  --section-padding-x: clamp(1rem, 4vw, 2rem);
-  --card-radius: 1.25rem;
-  --card-radius-lg: 1.5rem;
-  --container-max: 80rem;
+  --section-padding-y: clamp(5rem, 10vw, 8rem);
+  --section-padding-x: clamp(1.25rem, 5vw, 2.5rem);
+  --card-radius: 1.5rem;
+  --card-radius-lg: 2rem;
+  --container-max: 84rem;
 }
 
 /* ─── Global Resets ─── */
@@ -109,7 +110,13 @@ input[type="submit"] {
 
 @keyframes slow-zoom {
   from { transform: scale(1); }
-  to { transform: scale(1.06); }
+  to { transform: scale(1.08); }
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
 }
 
 @keyframes slideProgress {

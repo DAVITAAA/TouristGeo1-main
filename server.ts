@@ -10,7 +10,7 @@ import { OAuth2Client } from 'google-auth-library';
 import multer from 'multer';
 import { fileURLToPath } from 'url';
 import { GoogleGenAI } from '@google/genai';
-import { buildSystemPrompt } from './src/data/aiContext.js';
+import { buildSystemPrompt } from './src/data/aiContext';
 
 let currentDir = process.cwd();
 try {
@@ -97,7 +97,8 @@ app.get('/api/health', (req, res) => {
       google_client_id: process.env.GOOGLE_CLIENT_ID ? 'LOADED' : 'MISSING',
       supabase_url: (process.env.SUPABASE_URL || process.env.SUPABASE_DATABASE_URL) ? 'LOADED' : 'MISSING',
       supabase_service_role_key: process.env.SUPABASE_SERVICE_ROLE_KEY ? 'LOADED' : 'MISSING',
-      resend_api_key: (process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== 'your-resend-api-key') ? 'LOADED' : 'MISSING'
+      resend_api_key: (process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== 'your-resend-api-key') ? 'LOADED' : 'MISSING',
+      gemini_api_key: process.env.GEMINI_API_KEY ? 'LOADED' : 'MISSING'
     }
   });
 });

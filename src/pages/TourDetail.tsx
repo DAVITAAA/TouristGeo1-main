@@ -161,20 +161,20 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
           <div className="flex gap-2.5">
             <button 
               onClick={handleShare}
-              className="flex items-center gap-2 px-4 py-2.5 bg-white rounded-xl border border-border-light font-semibold text-[13px] shadow-sm hover:border-gray-300 hover:text-text-main active:scale-95 transition-all text-text-muted"
+              className="flex items-center gap-2 px-5 py-3 bg-white rounded-full border border-border-light font-bold text-[13px] shadow-sm hover:border-gray-300 hover:text-text-main active:scale-95 transition-all text-text-muted"
             >
-              <span className="material-symbols-outlined text-[18px]">share</span>
+              <span className="material-symbols-outlined text-[20px]">share</span>
               {t.tour_share}
             </button>
             <button 
               onClick={toggleSave}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border font-semibold text-[13px] shadow-sm active:scale-95 transition-all ${
+              className={`flex items-center gap-2 px-5 py-3 rounded-full border font-bold text-[13px] shadow-sm active:scale-95 transition-all ${
                 isSaved 
                   ? 'bg-red-50 border-red-100 text-red-500 hover:bg-red-100' 
                   : 'bg-white border-border-light text-text-muted hover:border-gray-300 hover:text-text-main'
               }`}
             >
-              <span className={`material-symbols-outlined text-[18px] ${isSaved ? 'filled' : ''}`}>favorite</span>
+              <span className={`material-symbols-outlined text-[20px] ${isSaved ? 'filled' : ''}`}>favorite</span>
               {isSaved ? (isKa ? 'შენახულია' : 'Saved') : t.tour_save}
             </button>
           </div>
@@ -400,19 +400,19 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
           {/* Sidebar */}
           <div className="w-full lg:w-[360px] xl:w-[400px] flex-shrink-0 space-y-6 hidden lg:block">
             {/* Booking Card */}
-            <div className="bg-white p-6 xl:p-8 rounded-2xl shadow-lg shadow-black/5 border border-border-light sticky top-[100px]">
+            <div className="bg-white p-6 xl:p-8 rounded-[2rem] shadow-xl shadow-black/[0.03] border border-border-light sticky top-[100px]">
               <div className="mb-6">
                 <p className="text-[11px] font-bold text-text-muted uppercase tracking-widest mb-1.5">{isKa ? 'ფასი' : 'Price From'}</p>
                 <div className="flex items-baseline gap-1.5">
                   <span className="text-3xl font-extrabold text-text-main font-display">{getCurrencySymbol(targetCurrency)}{convertPrice(tour.price, targetCurrency)}</span>
                   <span className="text-text-muted font-medium text-[13px]">/ {isKa ? 'კაცზე' : 'person'}</span>
                 </div>
-                <div className="flex items-center gap-1 mt-4 bg-gray-50 p-1 rounded-xl w-fit border border-gray-100">
+                <div className="flex items-center gap-1 mt-4 bg-gray-50 p-1 rounded-2xl w-fit border border-gray-100">
                   {(['USD', 'EUR', 'GEL'] as const).map(c => (
                      <button 
                        key={c} 
                        onClick={() => setTargetCurrency(c)} 
-                       className={`px-4 py-1.5 text-[11px] font-bold rounded-lg transition-all ${targetCurrency === c ? 'bg-white shadow-sm text-primary border border-border-light' : 'text-text-muted hover:text-text-main'}`}
+                       className={`px-4 py-1.5 text-[11px] font-bold rounded-xl transition-all ${targetCurrency === c ? 'bg-white shadow-sm text-primary border border-border-light' : 'text-text-muted hover:text-text-main'}`}
                      >
                        {c}
                      </button>
@@ -423,7 +423,7 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
               <div className="space-y-3">
                 <button 
                   onClick={() => setShowReservation(true)}
-                  className="w-full py-4 bg-primary text-white rounded-xl font-bold text-[15px] shadow-sm hover:shadow-md hover:bg-primary/90 active:scale-95 transition-all flex items-center justify-center gap-2"
+                  className="w-full py-4 bg-primary text-white rounded-full font-bold text-[15px] shadow-lg shadow-primary/20 hover:shadow-xl hover:-translate-y-0.5 hover:bg-primary/95 active:scale-95 transition-all flex items-center justify-center gap-2"
                 >
                   <span className="material-symbols-outlined text-[20px]">event_available</span>
                   {isKa ? 'ტურის დაჯავშნა' : 'Reserve This Tour'}
@@ -432,7 +432,7 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
                   <div className="flex gap-2.5">
                     <a 
                       href={`tel:${tour.phone}`}
-                      className="flex-1 py-3.5 bg-white border border-border-light text-text-main rounded-xl font-semibold text-[13px] hover:border-gray-300 hover:bg-gray-50 transition-all flex items-center justify-center gap-1.5"
+                      className="flex-1 py-3.5 bg-white border border-border-light text-text-main rounded-full font-bold text-[13px] hover:border-gray-300 hover:bg-gray-50 transition-all flex items-center justify-center gap-1.5"
                     >
                       <span className="material-symbols-outlined text-[18px] text-primary">call</span>
                       {tour.phone ? (isKa ? 'დარეკვა' : 'Call') : (isKa ? 'ნომერი არ არის' : 'No Number')}
@@ -442,7 +442,7 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
                       href={`https://wa.me/${(tour.phone || '').replace(/\+/g, '')}?text=${encodeURIComponent(isKa ? `გამარჯობა, მაინტერესებს ტური: ${tour.title}` : `Hi, I'm interested in the tour: ${tour.title}`)}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex-1 py-3.5 bg-[#25D366] text-white rounded-xl font-semibold text-[13px] hover:bg-[#20b858] transition-all flex items-center justify-center gap-1.5"
+                      className="flex-1 py-3.5 bg-[#25D366] text-white rounded-full font-bold text-[13px] hover:bg-[#20b858] shadow-md shadow-[#25D366]/20 transition-all flex items-center justify-center gap-1.5"
                     >
                       <span className="material-symbols-outlined text-[18px]">chat</span>
                       {isKa ? 'ვოთსაპი' : 'WHATSAPP'}
@@ -457,19 +457,19 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
             {(tour.company_name || tour.operator_name) && (
               <div 
                 onClick={() => onNavigate('operator', { operator_id: tour.operator_id || tour.operator, operator_name: tour.company_name || tour.operator_name })}
-                className="bg-white p-5 rounded-2xl border border-border-light flex items-center gap-4 cursor-pointer hover:border-gray-300 transition-colors group shadow-sm"
+                className="bg-white p-5 rounded-[2rem] border border-border-light flex items-center gap-4 cursor-pointer hover:border-gray-300 hover:shadow-md transition-all group"
               >
-                 <div className="w-12 h-12 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center flex-shrink-0 group-hover:border-primary border border-transparent transition-colors">
+                 <div className="w-14 h-14 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center flex-shrink-0 group-hover:border-primary border border-transparent transition-colors">
                     {tour.operator_avatar ? (
                       <img src={tour.operator_avatar} className="w-full h-full object-cover" alt="" />
                     ) : (
-                      <span className="material-symbols-outlined text-[24px] text-gray-400">account_circle</span>
+                      <span className="material-symbols-outlined text-[28px] text-gray-400">account_circle</span>
                     )}
                  </div>
                  <div className="flex-1 min-w-0">
                     <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">{t.tour_provided_by}</p>
                     <div className="flex items-center gap-1.5 min-w-0">
-                      <p className="font-bold text-text-main truncate text-[14px] group-hover:text-primary transition-colors">{tour.company_name || tour.operator_name}</p>
+                      <p className="font-bold text-text-main truncate text-[15px] group-hover:text-primary transition-colors">{tour.company_name || tour.operator_name}</p>
                       {tour.is_verified && (
                         <span className="material-symbols-outlined text-blue-600 text-[18px] filled" title={isKa ? "ვერიფიცირებული ოპერატორი" : "Verified Operator"}>verified</span>
                       )}
@@ -525,16 +525,16 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
           <div className="flex gap-2">
             <a
               href={`tel:${tour.phone}`}
-              className="w-11 h-11 bg-white border border-border-light text-primary rounded-xl flex items-center justify-center shadow-sm active:scale-95 transition-all"
+              className="w-12 h-12 bg-white border border-border-light text-primary rounded-full flex items-center justify-center shadow-sm hover:bg-gray-50 active:scale-95 transition-all"
               title={isKa ? 'დარეკვა' : 'Call'}
             >
-              <span className="material-symbols-outlined text-[20px]">call</span>
+              <span className="material-symbols-outlined text-[22px]">call</span>
             </a>
             <button
               onClick={() => setShowReservation(true)}
-              className="px-5 py-2 bg-primary text-white rounded-xl font-bold text-[13px] shadow-sm hover:bg-primary/90 active:scale-95 transition-all flex items-center gap-1.5"
+              className="px-6 py-2.5 bg-primary text-white rounded-full font-bold text-[14px] shadow-lg shadow-primary/20 hover:bg-primary/95 hover:shadow-xl active:scale-95 transition-all flex items-center gap-2"
             >
-              {isKa ? 'დაჯავშნა' : 'Reserve'} <span className="material-symbols-outlined text-[16px]">event_available</span>
+              {isKa ? 'დაჯავშნა' : 'Reserve'} <span className="material-symbols-outlined text-[18px]">event_available</span>
             </button>
           </div>
         </div>

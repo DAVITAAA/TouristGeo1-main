@@ -20,9 +20,9 @@ export default function TourCard({ tour, onNavigate, language }: TourCardProps) 
   const t = translations[language];
 
   return (
-    <TiltCard className="rounded-2xl" maxTilt={3} glareOpacity={0.03}>
+    <TiltCard className="rounded-[2rem]" maxTilt={3} glareOpacity={0.03}>
       <div 
-        className="group bg-white rounded-2xl overflow-hidden border border-border-light hover:border-gray-200 hover:shadow-xl hover:shadow-black/[0.04] transition-all duration-500 cursor-pointer flex flex-col h-full"
+        className="group bg-white rounded-[2rem] overflow-hidden border border-border-light hover:border-primary/20 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 cursor-pointer flex flex-col h-full"
         onClick={() => onNavigate('tour-detail', tour)}
       >
         {/* Image Section */}
@@ -37,7 +37,7 @@ export default function TourCard({ tour, onNavigate, language }: TourCardProps) 
           {/* Wishlist Button */}
           <button
             onClick={(e) => { e.stopPropagation(); toggleWishlist(tour); }}
-            className={`absolute top-3.5 right-3.5 z-20 w-9 h-9 rounded-full backdrop-blur-md flex items-center justify-center transition-all duration-300 ${
+            className={`absolute top-3.5 right-3.5 z-20 w-11 h-11 rounded-full backdrop-blur-md flex items-center justify-center transition-all duration-300 ${
               isFavorite
                 ? 'bg-primary text-white shadow-lg shadow-primary/25'
                 : 'bg-white/85 text-gray-400 hover:text-primary hover:bg-white shadow-sm'
@@ -48,15 +48,15 @@ export default function TourCard({ tour, onNavigate, language }: TourCardProps) 
           
           {/* Top Badge — single, minimal */}
           <div className="absolute top-3.5 left-3.5 z-10">
-            <span className="bg-white/90 backdrop-blur-md text-text-main px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider shadow-sm">
+            <span className="bg-white/90 backdrop-blur-md text-text-main px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider shadow-sm">
               {tour.category === 'Historical' ? (isKa ? 'ისტორიული' : 'Historical') : tour.category}
             </span>
           </div>
 
           {/* Hover overlay — subtle */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end justify-center pb-5">
-             <span className="bg-white/90 backdrop-blur-md px-5 py-2 rounded-full text-[11px] font-semibold text-text-main flex items-center gap-1.5 translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
-                <span className="material-symbols-outlined text-[14px]">visibility</span>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end justify-center pb-6">
+             <span className="bg-white/90 backdrop-blur-md px-6 py-2.5 rounded-full text-[12px] font-bold text-text-main flex items-center gap-1.5 translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+                <span className="material-symbols-outlined text-[16px]">visibility</span>
                 {isKa ? 'სწრაფი ნახვა' : 'Quick View'}
              </span>
           </div>
@@ -125,20 +125,20 @@ export default function TourCard({ tour, onNavigate, language }: TourCardProps) 
                <a 
                  href={`tel:${tour.phone || ''}`}
                  onClick={(e) => e.stopPropagation()}
-                 className="w-8 h-8 rounded-lg bg-gray-50 text-text-muted hover:text-primary hover:bg-primary/5 transition-all duration-300 flex items-center justify-center"
+                 className="w-11 h-11 rounded-lg bg-gray-50 text-text-muted hover:text-primary hover:bg-primary/5 transition-all duration-300 flex items-center justify-center"
                  title={isKa ? 'დარეკვა' : 'Call'}
                >
-                 <span className="material-symbols-outlined text-[16px]">call</span>
+                 <span className="material-symbols-outlined text-[18px]">call</span>
                </a>
                <a 
                  href={`https://wa.me/${(tour.phone || '').replace(/\+/g, '')}?text=${encodeURIComponent(isKa ? `გამარჯობა, მაინტერესებს ტური: ${tour.title}` : `Hi, I'm interested in the tour: ${tour.title}`)}`}
                  target="_blank"
                  rel="noopener noreferrer"
                  onClick={(e) => e.stopPropagation()}
-                 className="w-8 h-8 rounded-lg bg-[#25D366]/8 text-[#25D366] hover:bg-[#25D366] hover:text-white transition-all duration-300 flex items-center justify-center"
+                 className="w-11 h-11 rounded-lg bg-[#25D366]/8 text-[#25D366] hover:bg-[#25D366] hover:text-white transition-all duration-300 flex items-center justify-center"
                  title="WhatsApp"
                >
-                 <span className="material-symbols-outlined text-[16px]">chat</span>
+                 <span className="material-symbols-outlined text-[18px]">chat</span>
                </a>
             </div>
 

@@ -205,8 +205,8 @@ export default function Tours({ onNavigate, language }: ToursProps) {
                     </div>
                   </div>
                   <div className="flex gap-3 pt-4">
-                    <button onClick={() => { setSelectedDestinations([]); setSelectedDuration(''); setPriceRange([0, 5000]); }} className="flex-1 py-3.5 bg-gray-50 text-text-main rounded-xl font-semibold text-[13px] hover:bg-gray-100 transition-colors">{t.clear_all}</button>
-                    <button onClick={() => setMobileFiltersOpen(false)} className="flex-1 py-3.5 bg-primary text-white rounded-xl font-semibold text-[13px] shadow-md shadow-primary/20 active:scale-95 transition-all">{isKa ? 'შედეგების ნახვა' : 'Show Results'}</button>
+                    <button onClick={() => { setSelectedDestinations([]); setSelectedDuration(''); setPriceRange([0, 5000]); }} className="flex-1 py-3.5 bg-gray-50 text-text-main rounded-full font-bold text-[14px] hover:bg-gray-100 transition-colors">{t.clear_all}</button>
+                    <button onClick={() => setMobileFiltersOpen(false)} className="flex-1 py-3.5 bg-primary text-white rounded-full font-bold text-[14px] shadow-lg shadow-primary/20 active:scale-95 transition-all">{isKa ? 'შედეგების ნახვა' : 'Show Results'}</button>
                   </div>
                 </div>
               </div>
@@ -215,7 +215,7 @@ export default function Tours({ onNavigate, language }: ToursProps) {
 
           {/* Sidebar Filters — desktop only */}
           <aside className="hidden lg:block lg:col-span-3">
-            <div className="bg-white p-6 xl:p-8 rounded-2xl shadow-sm border border-border-light sticky top-[100px]">
+            <div className="bg-white p-6 xl:p-8 rounded-[2rem] shadow-sm border border-border-light sticky top-[100px]">
               <div className="flex items-center justify-between mb-8">
                 <h2 className="text-[17px] font-extrabold text-text-main font-display">{t.filters}</h2>
                 <button 
@@ -300,7 +300,7 @@ export default function Tours({ onNavigate, language }: ToursProps) {
                 </div>
               </div>
 
-              <button className="w-full py-3 bg-primary text-white rounded-xl font-semibold text-[13px] shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 active:scale-95 transition-all">
+              <button className="w-full py-3.5 bg-primary text-white rounded-full font-bold text-[14px] shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 active:scale-95 transition-all">
                 {isKa ? 'ფილტრის გამოყენება' : 'Apply Filters'}
               </button>
             </div>
@@ -416,17 +416,17 @@ export default function Tours({ onNavigate, language }: ToursProps) {
             {/* Pagination Controls */}
             {filteredTours.length > 0 && (
               <div className="mt-16 flex items-center justify-center gap-2">
-                <button className="w-9 h-9 rounded-xl bg-white border border-border-light flex items-center justify-center text-text-muted hover:border-gray-300 hover:text-text-main transition-all">
-                  <span className="material-symbols-outlined text-[18px]">chevron_left</span>
+                <button className="w-11 h-11 rounded-full bg-white border border-border-light flex items-center justify-center text-text-muted hover:border-gray-300 hover:text-text-main transition-all">
+                  <span className="material-symbols-outlined text-[20px]">chevron_left</span>
                 </button>
                 {[1, 2, 3].map(p => (
-                  <button key={p} className={`w-9 h-9 rounded-xl text-[13px] font-semibold transition-all ${p === 1 ? 'bg-primary text-white shadow-sm shadow-primary/20' : 'bg-white border border-border-light text-text-main hover:border-gray-300'}`}>
+                  <button key={p} className={`w-11 h-11 rounded-full text-[14px] font-bold transition-all ${p === 1 ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-white border border-border-light text-text-main hover:border-gray-300 hover:bg-gray-50'}`}>
                     {p}
                   </button>
                 ))}
-                <span className="px-1 text-text-muted font-bold text-sm">...</span>
-                <button className="w-9 h-9 rounded-xl bg-white border border-border-light flex items-center justify-center text-text-muted hover:border-gray-300 hover:text-text-main transition-all">
-                  <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+                <span className="px-2 text-text-muted font-bold text-base">...</span>
+                <button className="w-11 h-11 rounded-full bg-white border border-border-light flex items-center justify-center text-text-muted hover:border-gray-300 hover:text-text-main transition-all">
+                  <span className="material-symbols-outlined text-[20px]">chevron_right</span>
                 </button>
               </div>
             )}
