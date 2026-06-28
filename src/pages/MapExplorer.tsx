@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, useMap, ZoomControl, LayersControl } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMap, ZoomControl } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { motion, AnimatePresence } from 'motion/react';
 import { Language } from '../translations';
 import { georgianSights, GeorgianSight } from '../data/georgianSights';
-import { X, Compass, Navigation, Info, ExternalLink } from 'lucide-react';
+import { X, Compass, Navigation, Info } from 'lucide-react';
 
-// Fix for default marker icons in Leaflet + React
+// Fix for default marker icons
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
@@ -68,8 +68,6 @@ export default function MapExplorer({ language, onNavigate }: MapExplorerProps) 
 
     const filteredSights = filter === 'all' ? georgianSights : georgianSights.filter(s => s.type === filter);
 
-
-
     return (
         <div className="relative w-full h-[calc(100vh-64px)] bg-[#050b1a] overflow-hidden explorer-map-container">
             <style>{`
@@ -77,7 +75,6 @@ export default function MapExplorer({ language, onNavigate }: MapExplorerProps) 
                 .leaflet-bar { border: none !important; box-shadow: 0 10px 25px rgba(0,0,0,0.3) !important; }
                 .leaflet-bar a { background-color: #0f172a !important; color: white !important; border: 1px solid rgba(255,255,255,0.1) !important; width: 40px !important; height: 40px !important; line-height: 40px !important; }
                 .leaflet-bar a:hover { background-color: var(--color-primary) !important; }
-                .leaflet-control-layers { background: #0f172a !important; color: white !important; border: 1px solid rgba(255,255,255,0.1) !important; border-radius: 12px !important; padding: 8px !important; }
                 .custom-marker-icon { background: none; border: none; }
             `}</style>
 
@@ -92,9 +89,12 @@ export default function MapExplorer({ language, onNavigate }: MapExplorerProps) 
                 zoomControl={false}
                 attributionControl={false}
             >
-                <TileLayer 
-                  url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" 
+                {/* Clean Satellite Imagery without labels */}
+                <TileLayer
+                    url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                    attribution="Esri"
                 />
+
                 <ZoomControl position="topright" />
 
                 {selectedSight && (
@@ -197,7 +197,7 @@ export default function MapExplorer({ language, onNavigate }: MapExplorerProps) 
                             </p>
                             <div className="flex gap-3">
                                 <button
-                                    onClick={() => window.open(`https://www.google.com/maps?q=${selectedSight.coords[0]},${selectedSight.coords[1]}`, '_blank')}
+                                    onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${selectedSight.coords[0]},${selectedSight.coords[1]}`, '_blank')}
                                     className="flex-1 px-6 py-3.5 bg-primary text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-primary/30 hover:bg-primary/90 transition-all flex items-center justify-center gap-2"
                                 >
                                     <Navigation size={14} />
@@ -208,18 +208,6 @@ export default function MapExplorer({ language, onNavigate }: MapExplorerProps) 
                     </motion.div>
                 )}
             </AnimatePresence>
-
-            {/* Hint */}
-            {!selectedSight && (
-                <div className="absolute bottom-6 left-6 z-[1000] pointer-events-none flex items-center gap-3 animate-fade-in">
-                    <div className="w-8 h-8 rounded-full bg-primary/20 backdrop-blur-md flex items-center justify-center text-primary">
-                        <Info size={16} />
-                    </div>
-                    <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
-                        {isKa ? 'დააჭირე ნიშნულს დეტალებისთვის' : 'Click a marker for details'}
-                    </p>
-                </div>
-            )}
         </div>
     );
 }
