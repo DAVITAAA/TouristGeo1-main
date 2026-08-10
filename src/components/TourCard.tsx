@@ -30,8 +30,13 @@ export default function TourCard({ tour, onNavigate, language }: TourCardProps) 
           <img
             alt={tour.title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-            src={tour.image}
+            src={tour.image || 'https://storage.georgia.travel/images/gomi-mountain-gnta.webp'}
             loading="lazy"
+            decoding="async"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = 'https://storage.georgia.travel/images/gomi-mountain-gnta.webp';
+            }}
           />
           
           {/* Wishlist Button */}

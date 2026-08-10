@@ -1,0 +1,22 @@
+{
+  "short_name": "TouristGeo",
+  "name": "TouristGeo — Discover Georgia with AI",
+  "description": "AI Travel Assistant & Tour Planner for Georgia. Access your itineraries and maps offline in mountain regions.",
+  "icons": [
+    {
+      "src": "https://storage.georgia.travel/images/gomi-mountain-gnta.webp",
+      "type": "image/webp",
+      "sizes": "192x192"
+    },
+    {
+      "src": "https://storage.georgia.travel/images/gomi-mountain-gnta.webp",
+      "type": "image/webp",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "display": "standalone",
+  "orientation": "portrait"
+}

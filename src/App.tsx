@@ -16,6 +16,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import AuthModal from './components/AuthModal';
 import AIChatbot from './components/AIChatbot';
+import OfflineNotice from './components/OfflineNotice';
 import { Language } from './translations';
 import { getMe, User, Tour, removeToken } from './api';
 
@@ -69,10 +70,29 @@ export default function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Scroll to top when page changes
+  // Dynamic Page Title for SEO & UX
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [currentPage]);
+
+    const isKa = language === 'ka';
+    const titles: Record<string, string> = {
+      home: isKa ? 'TouristGeo | აღმოაჩინე საქართველო' : 'TouristGeo | Discover Georgia',
+      tours: isKa ? 'ტურები საქართველოში | TouristGeo' : 'Explore Tours | TouristGeo',
+      search: isKa ? 'ძიება | TouristGeo' : 'Search | TouristGeo',
+      'why-georgia': isKa ? 'რატომ საქართველო? | TouristGeo' : 'Why Georgia? | TouristGeo',
+      places: isKa ? 'ღირშესანიშნაობები | TouristGeo' : 'Landmarks & Sights | TouristGeo',
+      'add-tour': isKa ? 'ტურის დამატება | TouristGeo' : 'Add Tour | TouristGeo',
+      'edit-tour': isKa ? 'ტურის რედაქტირება | TouristGeo' : 'Edit Tour | TouristGeo',
+      profile: isKa ? 'პროფილი | TouristGeo' : 'My Profile | TouristGeo',
+      'tour-detail': selectedTour ? `${selectedTour.title} | TouristGeo` : 'Tour Details | TouristGeo',
+      operator: selectedOperator ? `${selectedOperator.name} | TouristGeo` : 'Tour Operator | TouristGeo',
+      favorites: isKa ? 'ფავორიტები | TouristGeo' : 'Saved Favorites | TouristGeo',
+      'map-explorer': isKa ? 'ინტერაქტიული რუკა | TouristGeo' : '3D Map Explorer | TouristGeo',
+      'ai-planner': isKa ? 'AI მოგზაურობის დაგეგმვა | TouristGeo' : 'AI Tour Planner | TouristGeo',
+    };
+
+    document.title = titles[currentPage] || 'TouristGeo | Discover Georgia with AI';
+  }, [currentPage, language, selectedTour, selectedOperator]);
 
   const handleLogout = async () => {
     removeToken();
@@ -171,6 +191,7 @@ export default function App() {
       )}
 
       <AIChatbot language={language} onNavigate={handleNavigate} />
+      <OfflineNotice language={language} />
     </div>
   );
 }

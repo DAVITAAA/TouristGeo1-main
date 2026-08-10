@@ -68,14 +68,31 @@ export default function MapExplorer({ language, onNavigate }: MapExplorerProps) 
 
     const filteredSights = filter === 'all' ? georgianSights : georgianSights.filter(s => s.type === filter);
 
+    const [mapStyle, setMapStyle] = useState<'waze' | 'satellite'>('waze');
+
+    const WAZE_EMOJI: Record<string, string> = {
+        church: '⛪', monastery: '🛕', fortress: '🏰', nature: '🌲',
+        cave: '🕳️', canyon: '🏜️', waterfall: '💧', landmark: '📍',
+        village: '🏘️', lake: '🏞️', waves: '🌊', city: '🏙️',
+    };
+
+    const WAZE_COLOR: Record<string, string> = {
+        church: '#8B5CF6', monastery: '#F59E0B', fortress: '#EF4444', nature: '#10B981',
+        cave: '#6366F1', canyon: '#F97316', waterfall: '#06B6D4', landmark: '#F43F5E',
+        village: '#A855F7', lake: '#0EA5E9', waves: '#3B82F6', city: '#6366F1',
+    };
+
     return (
-        <div className="relative w-full h-[calc(100vh-64px)] bg-[#050b1a] overflow-hidden explorer-map-container">
+        <div className="relative w-full h-[calc(100vh-64px)] bg-[#0f172a] overflow-hidden explorer-map-container">
             <style>{`
-                .leaflet-container { background: #050b1a !important; }
-                .leaflet-bar { border: none !important; box-shadow: 0 10px 25px rgba(0,0,0,0.3) !important; }
-                .leaflet-bar a { background-color: #0f172a !important; color: white !important; border: 1px solid rgba(255,255,255,0.1) !important; width: 40px !important; height: 40px !important; line-height: 40px !important; }
-                .leaflet-bar a:hover { background-color: var(--color-primary) !important; }
+                .leaflet-container { background: #0f172a !important; }
+                .leaflet-tile-container { filter: brightness(0.84) contrast(1.05) saturate(0.95); }
+                .leaflet-bar { border: none !important; border-radius: 16px !important; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3) !important; }
+                .leaflet-bar a { background-color: #0f172a !important; color: #818cf8 !important; border: none !important; border-bottom: 1px solid rgba(255,255,255,0.1) !important; width: 44px !important; height: 44px !important; line-height: 44px !important; font-size: 18px !important; }
+                .leaflet-bar a:hover { background-color: #1e293b !important; }
                 .custom-marker-icon { background: none; border: none; }
+                .waze-pin { transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
+                .waze-pin:hover { transform: scale(1.25) translateY(-4px); }
             `}</style>
 
             <MapContainer
@@ -89,11 +106,17 @@ export default function MapExplorer({ language, onNavigate }: MapExplorerProps) 
                 zoomControl={false}
                 attributionControl={false}
             >
-                {/* Clean Satellite Imagery without labels */}
-                <TileLayer
-                    url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                    attribution="Esri"
-                />
+                {mapStyle === 'waze' ? (
+                    <TileLayer
+                        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                        attribution="CartoDB Voyager"
+                    />
+                ) : (
+                    <TileLayer
+                        url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                        attribution="Esri"
+                    />
+                )}
 
                 <ZoomControl position="topright" />
 
@@ -102,23 +125,24 @@ export default function MapExplorer({ language, onNavigate }: MapExplorerProps) 
                 )}
 
                 {filteredSights.map((sight) => {
-                    const svgPath = svgIcons[sight.type] || svgIcons['landmark'];
+                    const isSelected = selectedSight?.id === sight.id;
+                    const emoji = WAZE_EMOJI[sight.type] || '📍';
+                    const color = WAZE_COLOR[sight.type] || '#4F46E5';
+
                     const customIcon = L.divIcon({
                         className: 'custom-marker-icon',
                         html: `
-                            <div class="flex flex-col items-center group">
-                                <div class="p-2 rounded-full shadow-2xl border-2 transition-all duration-300 ${selectedSight?.id === sight.id ? 'bg-primary border-white text-white scale-125' : 'bg-white border-primary text-primary hover:scale-110'}">
-                                    <div class="w-5 h-5 flex items-center justify-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${svgPath}</svg>
-                                    </div>
+                            <div class="waze-pin flex flex-col items-center group cursor-pointer">
+                                <div style="background:${isSelected ? color : '#ffffff'}; border:3px solid ${color}; box-shadow: 0 6px 18px ${color}55; border-radius:50%; width:44px; height:44px; display:flex; align-items:center; justify-content:center; font-size:22px; ${isSelected ? 'transform:scale(1.3);' : ''} transition: all 0.3s">
+                                    <span>${emoji}</span>
                                 </div>
-                                <div class="mt-1 bg-black/80 backdrop-blur-md px-2 py-0.5 rounded text-[9px] font-black text-white uppercase tracking-wider shadow-lg whitespace-nowrap ${selectedSight?.id === sight.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity">
+                                <div style="background:${isSelected ? color : '#ffffff'}; color:${isSelected ? '#ffffff' : '#0f172a'}; border:2px solid ${isSelected ? color : '#e2e8f0'}; padding:3px 10px; border-radius:12px; font-size:11px; font-weight:800; margin-top:5px; white-space:nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.15); ${isSelected ? 'opacity:1' : 'opacity:0'}" class="group-hover:!opacity-100 transition-opacity">
                                     ${isKa ? sight.titleKa : sight.titleEn}
                                 </div>
                             </div>
                         `,
-                        iconSize: [40, 40],
-                        iconAnchor: [20, 40]
+                        iconSize: [48, 64],
+                        iconAnchor: [24, 32]
                     });
 
                     return (
@@ -139,17 +163,35 @@ export default function MapExplorer({ language, onNavigate }: MapExplorerProps) 
                     animate={{ opacity: 1, y: 0 }}
                     className="bg-[#0f172a]/90 backdrop-blur-2xl p-5 rounded-[28px] shadow-2xl border border-white/10 pointer-events-auto"
                 >
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2.5 bg-primary/20 rounded-2xl text-primary shadow-lg shadow-primary/20">
-                            <Compass className="animate-spin-slow" size={22} />
+                    <div className="flex items-center justify-between gap-3 mb-4">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2.5 bg-primary/20 rounded-2xl text-primary shadow-lg shadow-primary/20">
+                                <Compass className="animate-spin-slow" size={22} />
+                            </div>
+                            <div>
+                                <h1 className="text-lg font-black text-white tracking-tight leading-none">
+                                    {isKa ? 'გეო-ექსპლორერი' : 'Geo-Explorer'}
+                                </h1>
+                                <p className="text-[9px] font-bold text-primary uppercase tracking-[0.2em] mt-1">
+                                    {filteredSights.length} {isKa ? 'ადგილი' : 'Sites'}
+                                </p>
+                            </div>
                         </div>
-                        <div>
-                            <h1 className="text-lg font-black text-white tracking-tight leading-none">
-                                {isKa ? 'გეო-ექსპლორერი' : 'Geo-Explorer'}
-                            </h1>
-                            <p className="text-[9px] font-bold text-primary uppercase tracking-[0.2em] mt-1">
-                                {filteredSights.length} {isKa ? 'ადგილი' : 'Sites'}
-                            </p>
+
+                        {/* Map Mode Toggle */}
+                        <div className="flex items-center p-1 bg-white/10 rounded-xl border border-white/10 text-[10px] font-bold">
+                            <button
+                                onClick={() => setMapStyle('waze')}
+                                className={`px-2.5 py-1 rounded-lg transition-all ${mapStyle === 'waze' ? 'bg-indigo-600 text-white shadow-md' : 'text-white/60 hover:text-white'}`}
+                            >
+                                🚙 Waze
+                            </button>
+                            <button
+                                onClick={() => setMapStyle('satellite')}
+                                className={`px-2.5 py-1 rounded-lg transition-all ${mapStyle === 'satellite' ? 'bg-indigo-600 text-white shadow-md' : 'text-white/60 hover:text-white'}`}
+                            >
+                                🛰️ Satellite
+                            </button>
                         </div>
                     </div>
 
