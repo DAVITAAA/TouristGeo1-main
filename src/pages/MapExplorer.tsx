@@ -131,18 +131,13 @@ export default function MapExplorer({ language, onNavigate }: MapExplorerProps) 
 
                     const customIcon = L.divIcon({
                         className: 'custom-marker-icon',
-                        html: `
-                            <div class="waze-pin flex flex-col items-center group cursor-pointer">
-                                <div style="background:${isSelected ? color : '#ffffff'}; border:3px solid ${color}; box-shadow: 0 6px 18px ${color}55; border-radius:50%; width:44px; height:44px; display:flex; align-items:center; justify-content:center; font-size:22px; ${isSelected ? 'transform:scale(1.3);' : ''} transition: all 0.3s">
-                                    <span>${emoji}</span>
-                                </div>
-                                <div style="background:${isSelected ? color : '#ffffff'}; color:${isSelected ? '#ffffff' : '#0f172a'}; border:2px solid ${isSelected ? color : '#e2e8f0'}; padding:3px 10px; border-radius:12px; font-size:11px; font-weight:800; margin-top:5px; white-space:nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.15); ${isSelected ? 'opacity:1' : 'opacity:0'}" class="group-hover:!opacity-100 transition-opacity">
-                                    ${isKa ? sight.titleKa : sight.titleEn}
-                                </div>
-                            </div>
-                        `,
-                        iconSize: [48, 64],
-                        iconAnchor: [24, 32]
+                        html: `<div class="waze-pin flex flex-col items-center cursor-pointer">
+                                  <div style="background:${isSelected ? color : '#ffffff'}; border:3px solid ${color}; box-shadow: 0 6px 18px ${color}55; border-radius:50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center; font-size:20px; ${isSelected ? 'transform:scale(1.25);' : ''}">
+                                      <span>${emoji}</span>
+                                  </div>
+                               </div>`,
+                        iconSize: [40, 40],
+                        iconAnchor: [20, 20]
                     });
 
                     return (

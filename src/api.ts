@@ -47,7 +47,7 @@ export const fetchTours = async (category?: string, search?: string): Promise<To
     if (category) params.append('category', category);
     if (search) params.append('search', search);
 
-    const response = await fetch(`${API_BASE_URL}/tours?${params.toString()}&_cb=${Date.now()}`);
+    const response = await fetch(`${API_BASE_URL}/tours?${params.toString()}`);
     if (!response.ok) throw new Error('Failed to fetch tours');
     return response.json();
 };
@@ -830,4 +830,115 @@ export const getUnreadReviewCount = async (): Promise<number> => {
 export const markReviewNotificationsRead = () => {
     localStorage.setItem('reviewNotifLastSeen', new Date().toISOString());
 };
+
+// --- ADMIN API CLIENT ---
+
+export const fetchAdminStats = async () => {
+    const token = getToken();
+    const res = await fetch(`${API_BASE_URL}/admin/stats`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error('Failed to fetch admin stats');
+    return res.json();
+};
+
+export const fetchAdminUsers = async () => {
+    const token = getToken();
+    const res = await fetch(`${API_BASE_URL}/admin/users`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error('Failed to fetch users');
+    return res.json();
+};
+
+export const updateAdminUserRole = async (userId: string, role: 'tourist' | 'operator' | 'admin') => {
+    const token = getToken();
+    const res = await fetch(`${API_BASE_URL}/admin/users/${userId}/role`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role })
+    });
+    if (!res.ok) throw new Error('Failed to update user role');
+    return res.json();
+};
+
+export const updateAdminUserVerify = async (userId: string, is_verified: boolean, verification_status?: string) => {
+    const token = getToken();
+    const res = await fetch(`${API_BASE_URL}/admin/users/${userId}/verify`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_verified, verification_status })
+    });
+    if (!res.ok) throw new Error('Failed to update verification status');
+    return res.json();
+};
+
+export const deleteAdminUser = async (userId: string) => {
+    const token = getToken();
+    const res = await fetch(`${API_BASE_URL}/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error('Failed to delete user');
+    return res.json();
+};
+
+export const fetchAdminTours = async () => {
+    const token = getToken();
+    const res = await fetch(`${API_BASE_URL}/admin/tours`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error('Failed to fetch admin tours');
+    return res.json();
+};
+
+export const updateAdminTourStatus = async (tourId: number, status: string) => {
+    const token = getToken();
+    const res = await fetch(`${API_BASE_URL}/admin/tours/${tourId}/status`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+    });
+    if (!res.ok) throw new Error('Failed to update tour status');
+    return res.json();
+};
+
+export const deleteAdminTour = async (tourId: number) => {
+    const token = getToken();
+    const res = await fetch(`${API_BASE_URL}/admin/tours/${tourId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error('Failed to delete tour');
+    return res.json();
+};
+
+export const fetchAdminReservations = async () => {
+    const token = getToken();
+    const res = await fetch(`${API_BASE_URL}/admin/reservations`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error('Failed to fetch admin reservations');
+    return res.json();
+};
+
+export const fetchAdminReviews = async () => {
+    const token = getToken();
+    const res = await fetch(`${API_BASE_URL}/admin/reviews`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error('Failed to fetch admin reviews');
+    return res.json();
+};
+
+export const deleteAdminReview = async (reviewId: number) => {
+    const token = getToken();
+    const res = await fetch(`${API_BASE_URL}/admin/reviews/${reviewId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error('Failed to delete review');
+    return res.json();
+};
+
 

@@ -1374,73 +1374,211 @@ app.get('/api/categories', async (req, res) => {
   }
 });
 
-app.get('/api/categories', async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from('tours')
-      .select('category')
-      .not('category', 'is', null);
+// --- ADMIN ROUTES ---
 
-    if (error) throw error;
-    
-    const categories = Array.from(new Set(data.map((c: any) => c.category)));
-    res.json(categories);
-  } catch (error) {
-    console.error('Error fetching categories:', error);
-    res.status(500).json({ error: 'Failed to fetch categories' });
+const checkAdminAuth = (req: express.Request, res: express.Response): any => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    res.status(401).json({ error: 'Unauthorized: Token required' });
+    return null;
+  }
+  const payload = verifyToken(authHeader.split(' ')[1]);
+  if (!payload || payload.role !== 'admin') {
+    res.status(403).json({ error: 'Forbidden: Admin access required' });
+    return null;
+  }
+  return payload;
+};
+
+// Overview Stats
+app.get('/api/admin/stats', async (req, res) => {
+  if (!checkAdminAuth(req, res)) return;
+  try {
+    const [usersRes, toursRes, resRes, revRes] = await Promise.all([
+      supabase.from('profiles').select('id, role, is_verified', { count: 'exact' }),
+      supabase.from('tours').select('id, status', { count: 'exact' }),
+      supabase.from('reservations').select('id', { count: 'exact' }),
+      supabase.from('reviews').select('id', { count: 'exact' }),
+    ]);
+
+    const totalUsers = usersRes.count || 0;
+    const totalTours = toursRes.count || 0;
+    const totalReservations = resRes.count || 0;
+    const totalReviews = revRes.count || 0;
+    const operators = (usersRes.data || []).filter(u => u.role === 'operator').length;
+    const verifiedOperators = (usersRes.data || []).filter(u => u.is_verified).length;
+    const activeTours = (toursRes.data || []).filter(t => t.status === 'published').length;
+
+    res.json({
+      totalUsers,
+      totalTours,
+      totalReservations,
+      totalReviews,
+      operators,
+      verifiedOperators,
+      activeTours
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to fetch admin stats', details: error.message });
   }
 });
 
-    
+// Get All Users / Profiles
+app.get('/api/admin/users', async (req, res) => {
+  if (!checkAdminAuth(req, res)) return;
+  try {
+    const { data: profiles, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-app.post('/api/bookings', async (req, res) => {
-  const { tour_id, user_name, user_email, booking_date, guests, total_price } = req.body;
-  if (!tour_id || !user_name || !user_email || !booking_date) {
-    return res.status(400).json({ error: 'Missing required fields' });
+    if (error) throw error;
+    res.json(profiles);
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to fetch users', details: error.message });
   }
+});
 
+// Change User Role
+app.put('/api/admin/users/:id/role', async (req, res) => {
+  if (!checkAdminAuth(req, res)) return;
+  const { role } = req.body;
+  if (!['tourist', 'operator', 'admin'].includes(role)) {
+    return res.status(400).json({ error: 'Invalid role' });
+  }
   try {
     const { data, error } = await supabase
-      .from('bookings')
-      .insert([
-        { tour_id, user_name, user_email, booking_date, guests: guests || 1, total_price: total_price || 0 }
-      ])
+      .from('profiles')
+      .update({ role })
+      .eq('id', req.params.id)
       .select()
       .single();
 
     if (error) throw error;
-    res.json({ id: data.id });
-  } catch (error) {
-    console.error('Error creating booking:', error);
-    res.status(500).json({ error: 'Booking failed' });
+    res.json(data);
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to update user role', details: error.message });
   }
 });
 
-app.get('/api/bookings/me', async (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
-  const payload = verifyToken(authHeader.split(' ')[1]);
-  if (!payload) return res.status(401).json({ error: 'Invalid token' });
-
+// Approve / Verify User
+app.put('/api/admin/users/:id/verify', async (req, res) => {
+  if (!checkAdminAuth(req, res)) return;
+  const { is_verified, verification_status } = req.body;
   try {
-    const { data: bookings, error } = await supabase
-      .from('bookings')
-      .select('*, tours(title, image)')
-      .eq('user_email', payload.email)
-      .order('id', { ascending: false });
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({ 
+        is_verified: !!is_verified, 
+        verification_status: verification_status || (is_verified ? 'verified' : 'rejected')
+      })
+      .eq('id', req.params.id)
+      .select()
+      .single();
 
     if (error) throw error;
+    res.json(data);
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to update verification status', details: error.message });
+  }
+});
 
-    const formattedBookings = bookings.map((b: any) => ({
-      ...b,
-      tour_title: b.tours?.title,
-      tour_image: b.tours?.image
-    }));
+// Delete User
+app.delete('/api/admin/users/:id', async (req, res) => {
+  if (!checkAdminAuth(req, res)) return;
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .delete()
+      .eq('id', req.params.id);
 
-    res.json(formattedBookings);
-  } catch (error) {
-    console.error('Error fetching my bookings:', error);
-    res.status(500).json({ error: 'Failed to fetch bookings' });
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to delete user', details: error.message });
+  }
+});
+
+// Get All Tours (Admin)
+app.get('/api/admin/tours', async (req, res) => {
+  if (!checkAdminAuth(req, res)) return;
+  try {
+    const { data: tours, error } = await supabase
+      .from('tours')
+      .select('*, profiles!left(name, email, company_name, is_verified)')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    res.json(tours);
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to fetch admin tours', details: error.message });
+  }
+});
+
+// Update Tour Status (Admin)
+app.put('/api/admin/tours/:id/status', async (req, res) => {
+  if (!checkAdminAuth(req, res)) return;
+  const { status } = req.body;
+  try {
+    const { data, error } = await supabase
+      .from('tours')
+      .update({ status })
+      .eq('id', req.params.id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.json(data);
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to update tour status', details: error.message });
+  }
+});
+
+// Delete Tour (Admin)
+app.delete('/api/admin/tours/:id', async (req, res) => {
+  if (!checkAdminAuth(req, res)) return;
+  try {
+    const { error } = await supabase
+      .from('tours')
+      .delete()
+      .eq('id', req.params.id);
+
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to delete tour', details: error.message });
+  }
+});
+
+// Get All Reservations (Admin)
+app.get('/api/admin/reservations', async (req, res) => {
+  if (!checkAdminAuth(req, res)) return;
+  try {
+    const { data: reservations, error } = await supabase
+      .from('reservations')
+      .select('*, tours(title, operator_id)')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    res.json(reservations);
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to fetch admin reservations', details: error.message });
+  }
+});
+
+// Get All Reviews (Admin)
+app.get('/api/admin/reviews', async (req, res) => {
+  if (!checkAdminAuth(req, res)) return;
+  try {
+    const { data: reviews, error } = await supabase
+      .from('reviews')
+      .select('*, tours(title), profiles(name, email, avatar_url)')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    res.json(reviews);
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to fetch admin reviews', details: error.message });
   }
 });
 

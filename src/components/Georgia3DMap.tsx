@@ -22,20 +22,23 @@ const LOCATIONS: Record<string, [number, number, number]> = {
   'კახეთი': [1.2, 0.1, 0.4],
 }
 
+const tempTarget = new THREE.Vector3()
+const tempLookAt = new THREE.Vector3()
+const zeroVec = new THREE.Vector3(0, 0, 0)
+
 function GeorgiaModel({ location }: { location: string }) {
   const meshRef = useRef<THREE.Mesh>(null!)
   const [targetPos, setTargetPos] = useState<[number, number, number]>([0, 2, 5])
   const [lookAtPos, setLookAtPos] = useState<[number, number, number]>([0, 0, 0])
   
-  // Find matching location in the string
   useEffect(() => {
     const searchStr = location.toLowerCase();
     let found = false;
     for (const key in LOCATIONS) {
       if (searchStr.includes(key)) {
         const [lx, ly, lz] = LOCATIONS[key];
-        setTargetPos([lx, ly + 1.2, lz + 1.5]); // Fly above and behind
-        setLookAtPos([lx, ly, lz]); // Look at the spot
+        setTargetPos([lx, ly + 1.2, lz + 1.5]);
+        setLookAtPos([lx, ly, lz]);
         found = true;
         break;
       }
@@ -47,15 +50,10 @@ function GeorgiaModel({ location }: { location: string }) {
   }, [location]);
 
   useFrame((state) => {
-    // Smooth camera transition
-    state.camera.position.lerp(new THREE.Vector3(...targetPos), 0.05);
-    state.camera.lookAt(
-      new THREE.Vector3().lerpVectors(
-        new THREE.Vector3(0,0,0), // fallback center
-        new THREE.Vector3(...lookAtPos),
-        0.1
-      )
-    );
+    tempTarget.set(targetPos[0], targetPos[1], targetPos[2]);
+    tempLookAt.set(lookAtPos[0], lookAtPos[1], lookAtPos[2]);
+    state.camera.position.lerp(tempTarget, 0.05);
+    state.camera.lookAt(zeroVec.clone().lerp(tempLookAt, 0.1));
   });
 
   return (
@@ -140,7 +138,7 @@ export default function Georgia3DMap({ location = '', language = 'ka' }: { locat
         <ambientLight intensity={0.5} />
         <pointLight position={[10, 10, 10]} intensity={2} />
         <spotLight position={[-10, 15, 10]} angle={0.3} penumbra={1} intensity={2} castShadow />
-        <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+        <Stars radius={100} depth={50} count={1000} factor={3} saturation={0} fade speed={0.5} />
         
         <GeorgiaModel location={location} />
         

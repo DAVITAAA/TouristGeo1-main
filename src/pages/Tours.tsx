@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { translations, Language } from '../translations';
 import { fetchTours, Tour } from '../api';
@@ -29,6 +29,8 @@ export default function Tours({ onNavigate, language }: ToursProps) {
   const [selectedDestinations, setSelectedDestinations] = useState<string[]>([]);
   const [selectedDuration, setSelectedDuration] = useState<string>('');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 50000]);
+  const [sortBy, setSortBy] = useState<'recommended' | 'price-asc' | 'price-desc' | 'rating' | 'duration-asc' | 'duration-desc'>('recommended');
+  const [isSortOpen, setIsSortOpen] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -43,29 +45,6 @@ export default function Tours({ onNavigate, language }: ToursProps) {
     };
     loadData();
   }, []);
-
-  const filteredTours = tours.filter(tour => {
-    const title = tour.title || '';
-    const location = tour.location || '';
-    const durationStr = tour.duration || '0';
-
-    const matchesSearch = title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         location.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesDest = selectedDestinations.length === 0 || selectedDestinations.some(d => location.includes(d));
-    // Simple duration mapping for demo
-    const matchesDuration = !selectedDuration || (
-      selectedDuration === '1-3 Days' ? parseInt(durationStr) <= 3 :
-      selectedDuration === '4-7 Days' ? (parseInt(durationStr) > 3 && parseInt(durationStr) <= 7) :
-      selectedDuration === '8-14 Days' ? (parseInt(durationStr) > 7 && parseInt(durationStr) <= 14) :
-      parseInt(durationStr) > 14
-    );
-    // Be robust with price filtering, allow any string/number conversion
-    const tourPrice = typeof tour.price === 'string' ? parseInt(tour.price) : (tour.price || 0);
-    const convertedPrice = convertPrice(tourPrice, targetCurrency) || 0;
-    const matchesPrice = isNaN(convertedPrice) ? true : (convertedPrice >= priceRange[0] && convertedPrice <= priceRange[1]);
-
-    return matchesSearch && matchesDest && matchesDuration && matchesPrice;
-  });
 
   const toggleDest = (dest: string) => {
     setSelectedDestinations(prev => 
@@ -90,23 +69,42 @@ export default function Tours({ onNavigate, language }: ToursProps) {
     return dur.replace('Days', 'დღე').replace('Day', 'დღე');
   };
 
-  const [sortBy, setSortBy] = useState<'recommended' | 'price-asc' | 'price-desc' | 'rating' | 'duration-asc' | 'duration-desc'>('recommended');
-  const [isSortOpen, setIsSortOpen] = useState(false);
+  const sortedTours = useMemo(() => {
+    const filtered = tours.filter(tour => {
+      const title = tour.title || '';
+      const location = tour.location || '';
+      const durationStr = tour.duration || '0';
 
-  const sortedTours = [...filteredTours].sort((a, b) => {
-    const getPrice = (t: Tour) => typeof t.price === 'string' ? parseInt(t.price) : (t.price || 0);
-    const getDuration = (t: Tour) => parseInt(t.duration || '0');
-    const getRating = (t: Tour) => t.rating || 0;
+      const matchesSearch = !searchQuery || title.toLowerCase().includes(searchQuery.toLowerCase()) || location.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesDest = selectedDestinations.length === 0 || selectedDestinations.some(d => location.includes(d));
+      const matchesDuration = !selectedDuration || (
+        selectedDuration === '1-3 Days' ? parseInt(durationStr) <= 3 :
+        selectedDuration === '4-7 Days' ? (parseInt(durationStr) > 3 && parseInt(durationStr) <= 7) :
+        selectedDuration === '8-14 Days' ? (parseInt(durationStr) > 7 && parseInt(durationStr) <= 14) :
+        parseInt(durationStr) > 14
+      );
+      const tourPrice = typeof tour.price === 'string' ? parseInt(tour.price) : (tour.price || 0);
+      const convertedPrice = convertPrice(tourPrice, targetCurrency) || 0;
+      const matchesPrice = isNaN(convertedPrice) ? true : (convertedPrice >= priceRange[0] && convertedPrice <= priceRange[1]);
 
-    switch (sortBy) {
-      case 'price-asc': return getPrice(a) - getPrice(b);
-      case 'price-desc': return getPrice(b) - getPrice(a);
-      case 'rating': return getRating(b) - getRating(a);
-      case 'duration-asc': return getDuration(a) - getDuration(b);
-      case 'duration-desc': return getDuration(b) - getDuration(a);
-      default: return 0;
-    }
-  });
+      return matchesSearch && matchesDest && matchesDuration && matchesPrice;
+    });
+
+    return filtered.sort((a, b) => {
+      const getPrice = (t: Tour) => typeof t.price === 'string' ? parseInt(t.price) : (t.price || 0);
+      const getDuration = (t: Tour) => parseInt(t.duration || '0');
+      const getRating = (t: Tour) => t.rating || 0;
+
+      switch (sortBy) {
+        case 'price-asc': return getPrice(a) - getPrice(b);
+        case 'price-desc': return getPrice(b) - getPrice(a);
+        case 'rating': return getRating(b) - getRating(a);
+        case 'duration-asc': return getDuration(a) - getDuration(b);
+        case 'duration-desc': return getDuration(b) - getDuration(a);
+        default: return 0;
+      }
+    });
+  }, [tours, searchQuery, selectedDestinations, selectedDuration, priceRange, sortBy, targetCurrency, convertPrice]);
 
   const getSortLabel = () => {
     switch (sortBy) {
@@ -314,7 +312,7 @@ export default function Tours({ onNavigate, language }: ToursProps) {
                   {t.search_results_title}
                 </h1>
                 <p className="text-text-muted text-[13px] font-medium">
-                  {filteredTours.length} {t.tours_found}
+                  {sortedTours.length} {t.tours_found}
                 </p>
               </div>
               
@@ -414,7 +412,7 @@ export default function Tours({ onNavigate, language }: ToursProps) {
             )}
 
             {/* Pagination Controls */}
-            {filteredTours.length > 0 && (
+            {sortedTours.length > 0 && (
               <div className="mt-16 flex items-center justify-center gap-2">
                 <button className="w-11 h-11 rounded-full bg-white border border-border-light flex items-center justify-center text-text-muted hover:border-gray-300 hover:text-text-main transition-all">
                   <span className="material-symbols-outlined text-[20px]">chevron_left</span>

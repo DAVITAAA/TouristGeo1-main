@@ -1,17 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import Home from './pages/Home';
 import Search from './pages/Search';
-import WhyGeorgia from './pages/WhyGeorgia';
-import Places from './pages/Places';
-import AddTourWizard from './pages/AddTourWizard.tsx';
 import Tours from './pages/Tours.tsx';
-import Profile from './pages/Profile.tsx';
-import TourDetail from './pages/TourDetail.tsx';
-import Operator from './pages/Operator.tsx';
-import Favorites from './pages/Favorites';
-import MapExplorer from './pages/MapExplorer';
-import AITourPlanner from './pages/AITourPlanner.tsx';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import AuthModal from './components/AuthModal';
@@ -19,6 +10,18 @@ import AIChatbot from './components/AIChatbot';
 import OfflineNotice from './components/OfflineNotice';
 import { Language } from './translations';
 import { getMe, User, Tour, removeToken } from './api';
+
+// Code-split heavy pages to optimize initial bundle size & site performance
+const MapExplorer = lazy(() => import('./pages/MapExplorer'));
+const AITourPlanner = lazy(() => import('./pages/AITourPlanner.tsx'));
+const AddTourWizard = lazy(() => import('./pages/AddTourWizard.tsx'));
+const Profile = lazy(() => import('./pages/Profile.tsx'));
+const TourDetail = lazy(() => import('./pages/TourDetail.tsx'));
+const Operator = lazy(() => import('./pages/Operator.tsx'));
+const WhyGeorgia = lazy(() => import('./pages/WhyGeorgia'));
+const Places = lazy(() => import('./pages/Places'));
+const Favorites = lazy(() => import('./pages/Favorites'));
+const Admin = lazy(() => import('./pages/Admin.tsx'));
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState(() => {
@@ -89,6 +92,7 @@ export default function App() {
       favorites: isKa ? 'ფავორიტები | TouristGeo' : 'Saved Favorites | TouristGeo',
       'map-explorer': isKa ? 'ინტერაქტიული რუკა | TouristGeo' : '3D Map Explorer | TouristGeo',
       'ai-planner': isKa ? 'AI მოგზაურობის დაგეგმვა | TouristGeo' : 'AI Tour Planner | TouristGeo',
+      admin: isKa ? 'ადმინ პანელი | TouristGeo' : 'Admin Panel | TouristGeo',
     };
 
     document.title = titles[currentPage] || 'TouristGeo | Discover Georgia with AI';
@@ -148,6 +152,7 @@ export default function App() {
       case 'favorites': return <Favorites onNavigate={handleNavigate} language={language} />;
       case 'map-explorer': return <MapExplorer language={language} onNavigate={handleNavigate} />;
       case 'ai-planner': return <AITourPlanner language={language} onNavigate={handleNavigate} />;
+      case 'admin': return user ? <Admin user={user} language={language} onNavigate={handleNavigate} /> : <Home onNavigate={handleNavigate} language={language} />;
       default: return <Home onNavigate={handleNavigate} language={language} />;
     }
   };
@@ -164,17 +169,23 @@ export default function App() {
         onLogout={handleLogout}
       />
       <main className="flex-1">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentPage + (selectedTour?.id || '') + (selectedOperator?.id || '')}
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
-          >
-            {renderPage()}
-          </motion.div>
-        </AnimatePresence>
+        <Suspense fallback={
+          <div className="min-h-[60vh] flex items-center justify-center">
+            <div className="w-10 h-10 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
+          </div>
+        }>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentPage + (selectedTour?.id || '') + (selectedOperator?.id || '')}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
+            >
+              {renderPage()}
+            </motion.div>
+          </AnimatePresence>
+        </Suspense>
       </main>
       <Footer language={language} onNavigate={handleNavigate} />
 

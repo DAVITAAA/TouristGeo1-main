@@ -192,6 +192,21 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
               <span className="px-2 py-0.5 rounded-md bg-primary/10 text-[10px] text-primary font-bold uppercase tracking-tight">{isKa ? 'ახალი' : 'New'}</span>
             </button>
 
+            {/* Admin Panel Button if admin user */}
+            {user?.role === 'admin' && (
+              <button
+                onClick={() => onNavigate('admin')}
+                className={`px-4 py-2 rounded-full text-[13px] font-extrabold uppercase tracking-wider transition-all duration-300 flex items-center gap-1.5 ${
+                  currentPage === 'admin'
+                    ? 'bg-emerald-600 text-white shadow-md'
+                    : 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[18px]">admin_panel_settings</span>
+                {isKa ? 'ადმინ პანელი' : 'Admin Panel'}
+              </button>
+            )}
+
             {/* Places with Dropdown */}
             <div className="group relative">
               <button
@@ -376,6 +391,7 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
                   { page: 'ai-planner', label: t.nav_ai_planner, icon: 'auto_awesome' },
                   { page: 'places', label: t.nav_places, icon: 'place' },
                   { page: 'favorites', label: isKa ? 'რჩეულები' : 'Favorites', icon: 'favorite' },
+                  ...(user?.role === 'admin' ? [{ page: 'admin', label: isKa ? 'ადმინ პანელი' : 'Admin Panel', icon: 'admin_panel_settings' }] : []),
                 ].map((item) => (
                   <button
                     key={item.page}

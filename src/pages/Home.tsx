@@ -96,13 +96,15 @@ export default function Home({ onNavigate, language }: { onNavigate: (page: stri
     return () => clearInterval(timer);
   }, []);
 
-  /* Parallax scroll listener — throttled for performance */
+  /* Parallax scroll listener — optimized for high FPS */
   useEffect(() => {
     let ticking = false;
     const handleScroll = () => {
       if (!ticking) {
         requestAnimationFrame(() => {
-          setScrollY(window.scrollY);
+          if (window.scrollY <= 900) {
+            setScrollY(window.scrollY);
+          }
           ticking = false;
         });
         ticking = true;
