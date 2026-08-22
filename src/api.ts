@@ -100,12 +100,12 @@ export const removeToken = () => {
 export const deleteAccount = async () => {
     const token = getToken();
     if (!token) throw new Error('Not authenticated');
-    
+
     const response = await fetch(`${API_BASE_URL}/auth/me`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
     });
-    
+
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || 'Failed to delete account');
     removeToken();
@@ -120,7 +120,7 @@ export const initiateRegistration = async (data: any) => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data),
         });
-        
+
         const text = await response.text();
         let result;
         try {
@@ -162,7 +162,7 @@ export const loginUser = async (data: any) => {
         });
 
         const text = await response.text();
-        
+
         if (!response.ok) {
             let errorMsg = `Login failed (${response.status})`;
             try {
@@ -196,7 +196,7 @@ export const googleLogin = async (credential: string, role?: string) => {
         });
 
         const text = await response.text();
-        
+
         if (!response.ok) {
             let errorMsg = `Google login failed (${response.status})`;
             try {
@@ -233,7 +233,7 @@ export const googleLogin = async (credential: string, role?: string) => {
 export const getMe = async (): Promise<User | null> => {
     const token = getToken();
     if (!token) return null;
-    
+
     try {
         const response = await fetch(`${API_BASE_URL}/auth/me`, {
             headers: { 'Authorization': `Bearer ${token}` }
@@ -269,7 +269,7 @@ export const initiatePasswordChange = async (newPassword: string) => {
     const token = getToken();
     const response = await fetch(`${API_BASE_URL}/auth/password/initiate`, {
         method: 'POST',
-        headers: { 
+        headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
         },
@@ -284,7 +284,7 @@ export const completePasswordChange = async (code: string) => {
     const token = getToken();
     const response = await fetch(`${API_BASE_URL}/auth/password/complete`, {
         method: 'POST',
-        headers: { 
+        headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
         },
@@ -301,7 +301,7 @@ export const initiateGuestPasswordReset = async (email: string) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
     });
-    
+
     const text = await response.text();
     let result;
     try {
@@ -354,13 +354,13 @@ export const uploadFileToSupabase = async (file: File, bucket: string = 'tours')
     const formData = new FormData();
     formData.append('file', file);
     formData.append('bucket', bucket);
-    
+
     const response = await fetch(`${API_BASE_URL}/upload`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
         body: formData,
     });
-    
+
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || result.details || 'Upload failed');
     return result.url;
@@ -369,14 +369,14 @@ export const uploadFileToSupabase = async (file: File, bucket: string = 'tours')
 export const uploadAvatar = async (file: File) => {
     const token = getToken();
     if (!token) throw new Error('Not authenticated');
-    
+
     const publicUrl = await uploadFileToSupabase(file, 'avatars');
 
     const response = await fetch(`${API_BASE_URL}/auth/avatar`, {
         method: 'POST',
-        headers: { 
+        headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}` 
+            'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ avatar_url: publicUrl }),
     });
@@ -388,14 +388,14 @@ export const uploadAvatar = async (file: File) => {
 // removed fetchTours duplicate
 export const createTour = async (formData: FormData) => {
     const token = getToken();
-    
+
     // Extract and upload main image
     const mainImageFile = formData.get('image') as File | null;
     let imageUrl = '';
     if (mainImageFile && mainImageFile.size > 0) {
         try {
             imageUrl = await uploadFileToSupabase(mainImageFile, 'tours');
-        } catch(e: any) {
+        } catch (e: any) {
             throw new Error('Failed to upload main image: ' + e.message);
         }
     } else {
@@ -417,7 +417,7 @@ export const createTour = async (formData: FormData) => {
     // Extract itinerary images (dynamic fields `itineraryImage_${i}`)
     let itineraryJson = formData.get('itinerary') as string || '[]';
     let itinerary = JSON.parse(itineraryJson);
-    
+
     for (let i = 0; i < itinerary.length; i++) {
         const dayImage = formData.get(`itineraryImage_${i}`) as File | null;
         if (dayImage && dayImage.size > 0) {
@@ -446,9 +446,9 @@ export const createTour = async (formData: FormData) => {
 
     const response = await fetch(`${API_BASE_URL}/tours`, {
         method: 'POST',
-        headers: { 
+        headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}` 
+            'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(payload)
     });
@@ -461,14 +461,14 @@ export const createTour = async (formData: FormData) => {
 
 export const updateTour = async (id: number, formData: FormData) => {
     const token = getToken();
-    
+
     // Extract and upload main image
     const mainImageFile = formData.get('image') as File | null;
     let imageUrl = '';
     if (mainImageFile && mainImageFile.size > 0) {
         try {
             imageUrl = await uploadFileToSupabase(mainImageFile, 'tours');
-        } catch(e: any) {
+        } catch (e: any) {
             throw new Error('Failed to upload main image: ' + e.message);
         }
     } else {
@@ -490,7 +490,7 @@ export const updateTour = async (id: number, formData: FormData) => {
     // Extract itinerary images
     let itineraryJson = formData.get('itinerary') as string || '[]';
     let itinerary = JSON.parse(itineraryJson);
-    
+
     for (let i = 0; i < itinerary.length; i++) {
         const dayImage = formData.get(`itineraryImage_${i}`) as File | null;
         if (dayImage && dayImage.size > 0) {
@@ -519,9 +519,9 @@ export const updateTour = async (id: number, formData: FormData) => {
 
     const response = await fetch(`${API_BASE_URL}/tours/${id}`, {
         method: 'PUT',
-        headers: { 
+        headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}` 
+            'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(payload)
     });
@@ -643,7 +643,7 @@ export const createReservation = async (data: Omit<Reservation, 'id' | 'status' 
         },
         body: JSON.stringify(data)
     });
-    
+
     const text = await response.text();
     let responseData = null;
     try {
@@ -651,42 +651,42 @@ export const createReservation = async (data: Omit<Reservation, 'id' | 'status' 
     } catch (e) {
         console.error('Failed to parse response JSON:', text);
     }
-    
+
     if (!response.ok) {
         throw new Error(responseData?.error || 'Failed to create reservation (Server error)');
     }
-    
+
     if (!responseData) {
         throw new Error('Server returned an empty or invalid response');
     }
-    
+
     return responseData;
 };
 
 export const fetchOperatorReservations = async (operatorId: string): Promise<Reservation[]> => {
     const token = getToken();
     if (!token) throw new Error('Not authenticated');
-    
+
     const response = await fetch(`${API_BASE_URL}/reservations/me`, {
         headers: { 'Authorization': `Bearer ${token}` }
     });
-    
+
     if (!response.ok) {
         throw new Error('Failed to fetch reservations');
     }
-    
+
     return response.json();
 };
 
 export const getUnreadReservationCount = async (operatorId: string): Promise<number> => {
     const token = getToken();
     if (!token) return 0;
-    
+
     try {
         const response = await fetch(`${API_BASE_URL}/reservations/unread-count`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        
+
         if (response.ok) {
             const data = await response.json();
             return data.count;
@@ -700,12 +700,12 @@ export const getUnreadReservationCount = async (operatorId: string): Promise<num
 export const markReservationRead = async (reservationId: string): Promise<void> => {
     const token = getToken();
     if (!token) throw new Error('Not authenticated');
-    
+
     const response = await fetch(`${API_BASE_URL}/reservations/${reservationId}/read`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${token}` }
     });
-    
+
     if (!response.ok) {
         throw new Error('Failed to mark reservation as read');
     }
@@ -714,12 +714,12 @@ export const markReservationRead = async (reservationId: string): Promise<void> 
 export const markAllReservationsRead = async (operatorId: string): Promise<void> => {
     const token = getToken();
     if (!token) throw new Error('Not authenticated');
-    
+
     const response = await fetch(`${API_BASE_URL}/reservations/read-all`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${token}` }
     });
-    
+
     if (!response.ok) {
         throw new Error('Failed to mark all reservations as read');
     }
