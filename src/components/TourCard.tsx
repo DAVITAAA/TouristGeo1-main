@@ -11,7 +11,7 @@ interface TourCardProps {
   language: Language;
 }
 
-export default function TourCard({ tour, onNavigate, language }: TourCardProps) {
+function TourCard({ tour, onNavigate, language }: TourCardProps) {
   const { toggleWishlist, isInWishlist } = useWishlist();
   const { convertPrice, getCurrencySymbol } = useCurrency();
   const isKa = language === 'ka';
@@ -22,7 +22,7 @@ export default function TourCard({ tour, onNavigate, language }: TourCardProps) 
   return (
     <TiltCard className="rounded-[2rem]" maxTilt={3} glareOpacity={0.03}>
       <div 
-        className="group bg-white rounded-[2rem] overflow-hidden border border-border-light hover:border-primary/20 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 cursor-pointer flex flex-col h-full"
+        className="group bg-white rounded-[2rem] overflow-hidden border border-border-light hover:border-primary/20 hover:shadow-xl hover:shadow-primary/10 transition-shadow duration-300 cursor-pointer flex flex-col h-full"
         onClick={() => onNavigate('tour-detail', tour)}
       >
         {/* Image Section */}
@@ -42,7 +42,7 @@ export default function TourCard({ tour, onNavigate, language }: TourCardProps) 
           {/* Wishlist Button */}
           <button
             onClick={(e) => { e.stopPropagation(); toggleWishlist(tour); }}
-            className={`absolute top-3.5 right-3.5 z-20 w-11 h-11 rounded-full backdrop-blur-md flex items-center justify-center transition-all duration-300 ${
+            className={`absolute top-3.5 right-3.5 z-20 w-11 h-11 rounded-full backdrop-blur-md flex items-center justify-center transition-colors duration-200 ${
               isFavorite
                 ? 'bg-primary text-white shadow-lg shadow-primary/25'
                 : 'bg-white/85 text-gray-400 hover:text-primary hover:bg-white shadow-sm'
@@ -59,8 +59,8 @@ export default function TourCard({ tour, onNavigate, language }: TourCardProps) 
           </div>
 
           {/* Hover overlay — subtle */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end justify-center pb-6">
-             <span className="bg-white/90 backdrop-blur-md px-6 py-2.5 rounded-full text-[12px] font-bold text-text-main flex items-center gap-1.5 translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-6">
+             <span className="bg-white/90 backdrop-blur-md px-6 py-2.5 rounded-full text-[12px] font-bold text-text-main flex items-center gap-1.5 translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
                 <span className="material-symbols-outlined text-[16px]">visibility</span>
                 {isKa ? 'სწრაფი ნახვა' : 'Quick View'}
              </span>
@@ -130,7 +130,7 @@ export default function TourCard({ tour, onNavigate, language }: TourCardProps) 
                <a 
                  href={`tel:${tour.phone || ''}`}
                  onClick={(e) => e.stopPropagation()}
-                 className="w-11 h-11 rounded-lg bg-gray-50 text-text-muted hover:text-primary hover:bg-primary/5 transition-all duration-300 flex items-center justify-center"
+                 className="w-11 h-11 rounded-lg bg-gray-50 text-text-muted hover:text-primary hover:bg-primary/5 transition-colors duration-200 flex items-center justify-center"
                  title={isKa ? 'დარეკვა' : 'Call'}
                >
                  <span className="material-symbols-outlined text-[18px]">call</span>
@@ -140,7 +140,7 @@ export default function TourCard({ tour, onNavigate, language }: TourCardProps) 
                  target="_blank"
                  rel="noopener noreferrer"
                  onClick={(e) => e.stopPropagation()}
-                 className="w-11 h-11 rounded-lg bg-[#25D366]/8 text-[#25D366] hover:bg-[#25D366] hover:text-white transition-all duration-300 flex items-center justify-center"
+                 className="w-11 h-11 rounded-lg bg-[#25D366]/8 text-[#25D366] hover:bg-[#25D366] hover:text-white transition-colors duration-200 flex items-center justify-center"
                  title="WhatsApp"
                >
                  <span className="material-symbols-outlined text-[18px]">chat</span>
@@ -160,3 +160,5 @@ export default function TourCard({ tour, onNavigate, language }: TourCardProps) 
     </TiltCard>
   );
 }
+
+export default React.memo(TourCard);

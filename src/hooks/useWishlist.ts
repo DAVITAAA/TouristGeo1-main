@@ -1,53 +1,64 @@
 import { useState, useEffect } from 'react';
 import { Tour } from '../api';
 
-export function useWishlist(isAuthenticated: boolean = false) {
-    const [wishlist, setWishlist] = useState<any[]>(() => {
-        if (typeof window !== 'undefined') {
-            const saved = localStorage.getItem('travel_georgia_wishlist');
-            if (saved) {
-                try {
-                    const items = JSON.parse(saved);
-                    const now = Date.now();
-                    const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
-                    
-                    // Filter logic
-                    const validItems = items.filter((item: any) => {
-                        if (isAuthenticated) return true; // keep all if logged in
-                        if (!item.savedAt) return true; // safely keep older items
-                        return (now - item.savedAt) <= SEVEN_DAYS;
-                    });
-                    
-                    if (validItems.length !== items.length) {
-                        localStorage.setItem('travel_georgia_wishlist', JSON.stringify(validItems));
-                    }
-                    return validItems;
-                } catch (e) {
-                    console.error('Failed to parse wishlist', e);
-                }
+let memoryWishlist: any[] | null = null;
+const wishlistListeners = new Set<() => void>();
+
+function getInitialWishlist(isAuthenticated: boolean) {
+    if (memoryWishlist !== null) return memoryWishlist;
+    if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem('travel_georgia_wishlist');
+        if (saved) {
+            try {
+                const items = JSON.parse(saved);
+                const now = Date.now();
+                const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+                
+                const validItems = items.filter((item: any) => {
+                    if (isAuthenticated) return true;
+                    if (!item.savedAt) return true;
+                    return (now - item.savedAt) <= SEVEN_DAYS;
+                });
+                
+                memoryWishlist = validItems;
+                return validItems;
+            } catch (e) {
+                console.error('Failed to parse wishlist', e);
             }
         }
-        return [];
-    });
+    }
+    memoryWishlist = [];
+    return memoryWishlist;
+}
+
+export function useWishlist(isAuthenticated: boolean = false) {
+    const [wishlist, setWishlist] = useState<any[]>(() => getInitialWishlist(isAuthenticated));
 
     useEffect(() => {
-        localStorage.setItem('travel_georgia_wishlist', JSON.stringify(wishlist));
-    }, [wishlist]);
+        const handler = () => {
+            if (memoryWishlist) setWishlist([...memoryWishlist]);
+        };
+        wishlistListeners.add(handler);
+        return () => { wishlistListeners.delete(handler); };
+    }, []);
 
     const toggleWishlist = (tour: Tour) => {
-        setWishlist((prev) => {
-            const isSaved = prev.some((t) => t.id === tour.id);
-            if (isSaved) {
-                return prev.filter((t) => t.id !== tour.id);
-            } else {
-                return [...prev, { ...tour, savedAt: Date.now() }];
-            }
-        });
+        const current = memoryWishlist || [];
+        const isSaved = current.some((t) => t.id === tour.id);
+        const updated = isSaved
+            ? current.filter((t) => t.id !== tour.id)
+            : [...current, { ...tour, savedAt: Date.now() }];
+        
+        memoryWishlist = updated;
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('travel_georgia_wishlist', JSON.stringify(updated));
+        }
+        wishlistListeners.forEach(fn => fn());
     };
 
     const isInWishlist = (tourId: number) => {
-        return wishlist.some((t) => t.id === tourId);
+        return (memoryWishlist || wishlist).some((t) => t.id === tourId);
     };
 
-    return { wishlist, toggleWishlist, isInWishlist };
+    return { wishlist: memoryWishlist || wishlist, toggleWishlist, isInWishlist };
 }

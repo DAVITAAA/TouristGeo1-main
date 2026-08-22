@@ -25,12 +25,14 @@ export default function TiltCard({
         const rotateY = (x - 0.5) * maxTilt * 2;
         const rotateX = (0.5 - y) * maxTilt * 2;
 
+        card.style.transition = 'none';
         card.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.015, 1.015, 1.015)`;
     }, [maxTilt]);
 
     const handleMouseLeave = useCallback(() => {
         const card = cardRef.current;
         if (!card) return;
+        card.style.transition = 'transform 0.4s cubic-bezier(0.2, 0, 0, 1)';
         card.style.transform = 'perspective(800px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
     }, []);
 
@@ -39,7 +41,6 @@ export default function TiltCard({
             ref={cardRef}
             className={`tilt-card ${className}`}
             style={{
-                transition: 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)',
                 transformStyle: 'preserve-3d',
                 willChange: 'transform',
             }}

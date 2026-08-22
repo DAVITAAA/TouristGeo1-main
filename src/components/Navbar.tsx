@@ -90,9 +90,18 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
   const [unreadReservations, setUnreadReservations] = useState(0);
   const [scrolled, setScrolled] = useState(false);
 
-  // Track scroll for navbar background change
+  // Track scroll for navbar background change — optimized to only trigger state change on threshold crossing
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
+    let prevScrolled = window.scrollY > 20;
+    setScrolled(prevScrolled);
+
+    const handleScroll = () => {
+      const isScrolledNow = window.scrollY > 20;
+      if (isScrolledNow !== prevScrolled) {
+        prevScrolled = isScrolledNow;
+        setScrolled(isScrolledNow);
+      }
+    };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -164,18 +173,6 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
               }`}
             >
               {t.nav_tours}
-            </button>
-
-            {/* Map Explorer */}
-            <button
-              onClick={() => onNavigate('map-explorer')}
-              className={`px-5 py-2.5 rounded-full text-[14px] font-semibold transition-all duration-300 flex items-center gap-1.5 ${
-                currentPage === 'map-explorer'
-                  ? 'text-primary bg-primary/10'
-                  : 'text-text-main hover:text-primary hover:bg-gray-50'
-              }`}
-            >
-              {isKa ? 'ექსპლორერი' : 'Explorer'}
             </button>
 
             {/* AI Planner */}
@@ -387,7 +384,6 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
               <nav className="px-4 space-y-1">
                 {[
                   { page: 'tours', label: t.nav_tours, icon: 'explore' },
-                  { page: 'map-explorer', label: isKa ? 'ექსპლორერი' : 'Explorer', icon: 'map' },
                   { page: 'ai-planner', label: t.nav_ai_planner, icon: 'auto_awesome' },
                   { page: 'places', label: t.nav_places, icon: 'place' },
                   { page: 'favorites', label: isKa ? 'რჩეულები' : 'Favorites', icon: 'favorite' },

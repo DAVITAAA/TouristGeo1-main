@@ -3,7 +3,6 @@ import { translations, Language } from '../translations';
 import SeasonModal from '../components/SeasonModal';
 import TiltCard from '../components/TiltCard';
 import { useScrollReveal } from '../hooks/useScrollReveal';
-import { Compass, Satellite } from 'lucide-react';
 
 /* ═══════════════════════════════════════
    DATA
@@ -155,8 +154,8 @@ export default function Home({ onNavigate, language }: { onNavigate: (page: stri
               loading={idx === 0 ? "eager" : "lazy"}
               className="absolute inset-0 w-full h-full object-cover will-change-transform"
               style={{
-                transform: `translateY(${scrollY * 0.3}px) scale(${idx === activeSlide ? 1.05 : 1})`,
-                transition: 'transform 0.1s linear',
+                transform: `translate3d(0, ${scrollY * 0.2}px, 0) scale(${idx === activeSlide ? 1.05 : 1})`,
+                transition: 'scale 1.2s ease-out',
               }}
             />
             {/* Dark gradient overlay — cinematic */}
@@ -218,69 +217,7 @@ export default function Home({ onNavigate, language }: { onNavigate: (page: stri
 
 
       {/* ════════════════════════════════════
-          SECTION 2 — MAP EXPLORER PROMO
-          ════════════════════════════════════ */}
-      <section className="relative overflow-hidden" style={{ padding: 'clamp(4rem, 8vw, 7rem) 0' }}>
-        {/* Background */}
-        <div className="absolute inset-0 bg-[#0a0f1e]" />
-        <div className="absolute top-0 right-0 w-1/2 h-full opacity-20 pointer-events-none">
-           <div className="w-full h-full bg-[radial-gradient(circle_at_center,_var(--color-primary)_0%,_transparent_70%)] blur-[120px]" />
-        </div>
-        
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl relative z-10">
-          <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
-            <div className="lg:w-1/2">
-              <ScrollReveal variant="left">
-                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-semibold uppercase tracking-widest mb-5 border border-primary/15">
-                  <span className="relative flex h-1.5 w-1.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary"></span>
-                  </span>
-                  {isKa ? 'ახალი ტექნოლოგია' : 'New Technology'}
-                </span>
-                <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white leading-tight mb-6 font-display">
-                   {isKa 
-                    ? <>აღმოაჩინე საქართველო <span className="text-primary">კოსმოსიდან</span></>
-                    : <>Discover Georgia from <span className="text-primary">Space</span></>}
-                </h2>
-                <p className="text-white/60 text-base sm:text-lg mb-8 leading-relaxed max-w-xl">
-                  {isKa 
-                    ? 'გაეცანი საქართველოს კულტურულ ძეგლებსა და ბუნებრივ საოცრებებს რეალისტური სატელიტური რუკის მეშვეობით. 3D რელიეფი და მაღალი ხარისხის გამოსახულება.'
-                    : 'Explore Georgia\'s cultural landmarks and natural wonders through a realistic satellite map. High-resolution 3D terrain and interactive exploration.'}
-                </p>
-                <button 
-                  onClick={() => onNavigate('map-explorer')}
-                  className="px-8 py-4 bg-primary text-primary-content rounded-full font-bold text-base shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-1 active:scale-95 transition-all duration-300 flex items-center gap-2.5"
-                >
-                   {isKa ? 'გახსენი ექსპლორერი' : 'Open Geo-Explorer'}
-                   <Compass size={20} />
-                </button>
-              </ScrollReveal>
-            </div>
-            <div className="lg:w-1/2 relative">
-               <ScrollReveal variant="scale" delay={0.2}>
-                 <div className="relative rounded-3xl overflow-hidden border border-white/5 shadow-2xl shadow-black/40 aspect-square max-w-[480px] mx-auto group">
-                    <img 
-                      src="/images/georgia_satellite.png" 
-                      alt="Explorer Preview" 
-                      loading="lazy"
-                      className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-[3000ms] ease-out" 
-                    />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                       <div className="w-20 h-20 rounded-full bg-primary/15 backdrop-blur-xl border border-primary/25 flex items-center justify-center">
-                          <Satellite size={40} className="text-primary" />
-                       </div>
-                    </div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f1e] via-transparent to-transparent" />
-                 </div>
-               </ScrollReveal>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ════════════════════════════════════
-          SECTION 3 — SEASONS
+          SECTION 2 — SEASONS
           ════════════════════════════════════ */}
       <section style={{ padding: 'clamp(4rem, 8vw, 7rem) 0' }} className="bg-white">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">

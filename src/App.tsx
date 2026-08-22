@@ -12,7 +12,6 @@ import { Language } from './translations';
 import { getMe, User, Tour, removeToken } from './api';
 
 // Code-split heavy pages to optimize initial bundle size & site performance
-const MapExplorer = lazy(() => import('./pages/MapExplorer'));
 const AITourPlanner = lazy(() => import('./pages/AITourPlanner.tsx'));
 const AddTourWizard = lazy(() => import('./pages/AddTourWizard.tsx'));
 const Profile = lazy(() => import('./pages/Profile.tsx'));
@@ -90,7 +89,6 @@ export default function App() {
       'tour-detail': selectedTour ? `${selectedTour.title} | TouristGeo` : 'Tour Details | TouristGeo',
       operator: selectedOperator ? `${selectedOperator.name} | TouristGeo` : 'Tour Operator | TouristGeo',
       favorites: isKa ? 'ფავორიტები | TouristGeo' : 'Saved Favorites | TouristGeo',
-      'map-explorer': isKa ? 'ინტერაქტიული რუკა | TouristGeo' : '3D Map Explorer | TouristGeo',
       'ai-planner': isKa ? 'AI მოგზაურობის დაგეგმვა | TouristGeo' : 'AI Tour Planner | TouristGeo',
       admin: isKa ? 'ადმინ პანელი | TouristGeo' : 'Admin Panel | TouristGeo',
     };
@@ -150,7 +148,6 @@ export default function App() {
       case 'tour-detail': return selectedTour ? <TourDetail tour={selectedTour} onNavigate={handleNavigate} language={language} user={user} /> : <Home onNavigate={handleNavigate} language={language} />;
       case 'operator': return <Operator onNavigate={handleNavigate} language={language} operator={selectedOperator} />;
       case 'favorites': return <Favorites onNavigate={handleNavigate} language={language} />;
-      case 'map-explorer': return <MapExplorer language={language} onNavigate={handleNavigate} />;
       case 'ai-planner': return <AITourPlanner language={language} onNavigate={handleNavigate} />;
       case 'admin': return user ? <Admin user={user} language={language} onNavigate={handleNavigate} /> : <Home onNavigate={handleNavigate} language={language} />;
       default: return <Home onNavigate={handleNavigate} language={language} />;

@@ -9,13 +9,17 @@ let cachedRates: any = {
 
 let fetchPromise: Promise<void> | null = null;
 
+const currencyListeners = new Set<() => void>();
+
 export type CurrencyOption = 'USD' | 'EUR' | 'GEL';
 
 export function useCurrency() {
     const [rates, setRates] = useState(cachedRates);
 
     useEffect(() => {
-        let isMounted = true;
+        const handler = () => setRates({ ...cachedRates });
+        currencyListeners.add(handler);
+
         if (!fetchPromise) {
             fetchPromise = fetch('https://nbg.gov.ge/gw/api/ct/monetarypolicy/currencies/en/json')
                 .then(res => res.json())
@@ -31,23 +35,19 @@ export function useCurrency() {
                             GEL: usdRate,
                             EUR: usdRate / eurRate
                         };
+                        currencyListeners.forEach(fn => fn());
                     }
                 })
                 .catch(err => {
                     console.error("Failed to fetch NBG rates", err);
                 });
         }
-        fetchPromise.then(() => {
-            if (isMounted) setRates({ ...cachedRates });
-        });
-        return () => { isMounted = false; };
+        return () => { currencyListeners.delete(handler); };
     }, []);
 
     // Convert a base price (assumed to be in USD in DB/API)
     const convertPrice = (basePriceUsd: number, targetCurrency: CurrencyOption) => {
-        const rate = rates[targetCurrency] || 1;
-        
-        // Return 2 decimal places exactly for better precision when converting
+        const rate = cachedRates[targetCurrency] || 1;
         return Number((basePriceUsd * rate).toFixed(2));
     };
 
@@ -58,7 +58,7 @@ export function useCurrency() {
             case 'USD':
             default: return '$';
         }
-    }
+    };
 
     return { convertPrice, getCurrencySymbol, rates };
 }

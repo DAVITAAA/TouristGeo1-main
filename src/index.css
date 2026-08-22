@@ -250,16 +250,16 @@ input[type="submit"] {
 
 /* ═══ Glassmorphism — refined for luxury ═══ */
 .glass {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .glass-dark {
-  background: rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -504,19 +504,20 @@ img[loading="lazy"]:not([src=""]) {
   position: relative;
 }
 
-/* ── Aurora Overlay Blobs ── */
+/* ── Aurora Overlay Blobs — Hardware Accelerated ── */
 .ai-aurora {
   position: absolute;
   border-radius: 50%;
-  filter: blur(120px);
-  opacity: 0.15;
+  opacity: 0.25;
   will-change: transform;
+  transform: translate3d(0, 0, 0);
+  pointer-events: none;
 }
 
 .ai-aurora-1 {
   width: 600px;
   height: 600px;
-  background: radial-gradient(circle, #4ae3b5, transparent 70%);
+  background: radial-gradient(circle, rgba(74, 227, 181, 0.4) 0%, rgba(74, 227, 181, 0.1) 45%, transparent 70%);
   top: -20%;
   left: -10%;
   animation: ai-aurora-drift-1 12s ease-in-out infinite alternate;
@@ -525,7 +526,7 @@ img[loading="lazy"]:not([src=""]) {
 .ai-aurora-2 {
   width: 500px;
   height: 500px;
-  background: radial-gradient(circle, #8b5cf6, transparent 70%);
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.35) 0%, rgba(139, 92, 246, 0.08) 45%, transparent 70%);
   bottom: -15%;
   right: -10%;
   animation: ai-aurora-drift-2 15s ease-in-out infinite alternate;
@@ -534,7 +535,7 @@ img[loading="lazy"]:not([src=""]) {
 .ai-aurora-3 {
   width: 400px;
   height: 400px;
-  background: radial-gradient(circle, #06b6d4, transparent 70%);
+  background: radial-gradient(circle, rgba(6, 182, 212, 0.35) 0%, rgba(6, 182, 212, 0.08) 45%, transparent 70%);
   top: 30%;
   right: 20%;
   animation: ai-aurora-drift-3 18s ease-in-out infinite alternate;
