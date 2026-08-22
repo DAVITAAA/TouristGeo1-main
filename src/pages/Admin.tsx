@@ -62,18 +62,24 @@ export default function Admin({ user, language, onNavigate }: AdminProps) {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [sData, uData, tData, rData, revData] = await Promise.all([
+      const results = await Promise.allSettled([
         fetchAdminStats(),
         fetchAdminUsers(),
         fetchAdminTours(),
         fetchAdminReservations(),
         fetchAdminReviews(),
       ]);
-      setStats(sData);
-      setUsers(uData || []);
-      setTours(tData || []);
-      setReservations(rData || []);
-      setReviews(revData || []);
+
+      if (results[0].status === 'fulfilled') setStats(results[0].value);
+      if (results[1].status === 'fulfilled') setUsers(results[1].value || []);
+      if (results[2].status === 'fulfilled') setTours(results[2].value || []);
+      if (results[3].status === 'fulfilled') setReservations(results[3].value || []);
+      if (results[4].status === 'fulfilled') setReviews(results[4].value || []);
+
+      const rejected = results.find(r => r.status === 'rejected') as PromiseRejectedResult | undefined;
+      if (rejected) {
+        console.warn('Some admin data failed to load:', rejected.reason);
+      }
     } catch (err: any) {
       setToast({ 
         message: isKa ? `შეცდომა მონაცემების ჩატვირთვისას: ${err.message}` : `Error loading admin data: ${err.message}`, 
