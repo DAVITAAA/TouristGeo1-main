@@ -4,6 +4,12 @@ import App from './App.tsx';
 import ErrorBoundary from './components/ErrorBoundary.tsx';
 import './index.css';
 
+// Auto-recovery for Vite dynamic module preload errors after deployments
+window.addEventListener('vite:preloadError', (event) => {
+  console.warn('Vite preload error encountered, reloading page to fetch newest assets...', event);
+  window.location.reload();
+});
+
 // Register PWA Service Worker for Offline Mode in Mountain Regions
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {

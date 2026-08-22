@@ -11,16 +11,35 @@ import OfflineNotice from './components/OfflineNotice';
 import { Language } from './translations';
 import { getMe, User, Tour, removeToken } from './api';
 
+// Helper to handle dynamic chunk import failures gracefully after deployment updates
+const lazyWithRetry = (componentImport: () => Promise<any>) =>
+  lazy(async () => {
+    const pageHasBeenReloaded = sessionStorage.getItem('chunk_reload');
+    try {
+      const component = await componentImport();
+      sessionStorage.removeItem('chunk_reload');
+      return component;
+    } catch (error: any) {
+      console.error('Failed to dynamic import component chunk:', error);
+      if (!pageHasBeenReloaded) {
+        sessionStorage.setItem('chunk_reload', 'true');
+        window.location.reload();
+        return new Promise(() => {});
+      }
+      throw error;
+    }
+  });
+
 // Code-split heavy pages to optimize initial bundle size & site performance
-const AITourPlanner = lazy(() => import('./pages/AITourPlanner.tsx'));
-const AddTourWizard = lazy(() => import('./pages/AddTourWizard.tsx'));
-const Profile = lazy(() => import('./pages/Profile.tsx'));
-const TourDetail = lazy(() => import('./pages/TourDetail.tsx'));
-const Operator = lazy(() => import('./pages/Operator.tsx'));
-const WhyGeorgia = lazy(() => import('./pages/WhyGeorgia'));
-const Places = lazy(() => import('./pages/Places'));
-const Favorites = lazy(() => import('./pages/Favorites'));
-const Admin = lazy(() => import('./pages/Admin.tsx'));
+const AITourPlanner = lazyWithRetry(() => import('./pages/AITourPlanner'));
+const AddTourWizard = lazyWithRetry(() => import('./pages/AddTourWizard'));
+const Profile = lazyWithRetry(() => import('./pages/Profile'));
+const TourDetail = lazyWithRetry(() => import('./pages/TourDetail'));
+const Operator = lazyWithRetry(() => import('./pages/Operator'));
+const WhyGeorgia = lazyWithRetry(() => import('./pages/WhyGeorgia'));
+const Places = lazyWithRetry(() => import('./pages/Places'));
+const Favorites = lazyWithRetry(() => import('./pages/Favorites'));
+const Admin = lazyWithRetry(() => import('./pages/Admin'));
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState(() => {
