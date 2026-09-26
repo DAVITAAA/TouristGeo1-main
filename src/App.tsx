@@ -1,8 +1,7 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import Home from './pages/Home';
 import Search from './pages/Search';
-import Tours from './pages/Tours.tsx';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import AuthModal from './components/AuthModal';
@@ -31,6 +30,7 @@ const lazyWithRetry = (componentImport: () => Promise<any>) =>
   });
 
 // Code-split heavy pages to optimize initial bundle size & site performance
+const Tours = lazyWithRetry(() => import('./pages/Tours'));
 const AITourPlanner = lazyWithRetry(() => import('./pages/AITourPlanner'));
 const AddTourWizard = lazyWithRetry(() => import('./pages/AddTourWizard'));
 const Profile = lazyWithRetry(() => import('./pages/Profile'));
@@ -91,10 +91,13 @@ export default function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Dynamic Page Title for SEO & UX
+  // Scroll to top on page navigation
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentPage, selectedTour?.id, selectedOperator?.id]);
 
+  // Dynamic Page Title for SEO & UX
+  useEffect(() => {
     const isKa = language === 'ka';
     const titles: Record<string, string> = {
       home: isKa ? 'TouristGeo | აღმოაჩინე საქართველო' : 'TouristGeo | Discover Georgia',

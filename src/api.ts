@@ -1,5 +1,4 @@
 const API_BASE_URL = '/api';
-import { supabase } from './supabase';
 
 const handleFetchError = (error: any) => {
     if (error.name === 'TypeError' && error.message.toLowerCase().includes('failed to fetch')) {
@@ -87,8 +86,10 @@ export interface User {
 export const setToken = (token: string, remember: boolean = true) => {
     if (remember) {
         localStorage.setItem('auth_token', token);
+        sessionStorage.removeItem('auth_token');
     } else {
         sessionStorage.setItem('auth_token', token);
+        localStorage.removeItem('auth_token');
     }
 };
 export const getToken = () => localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
@@ -385,64 +386,65 @@ export const uploadAvatar = async (file: File) => {
     return result;
 };
 
-// removed fetchTours duplicate
-export const createTour = async (formData: FormData) => {
-    const token = getToken();
-
-    // Extract and upload main image
+// Helper for concurrent image uploads
+const processTourMedia = async (formData: FormData) => {
     const mainImageFile = formData.get('image') as File | null;
-    let imageUrl = '';
+    let imageUrl = formData.get('imageUrl') as string || '';
     if (mainImageFile && mainImageFile.size > 0) {
-        try {
-            imageUrl = await uploadFileToSupabase(mainImageFile, 'tours');
-        } catch (e: any) {
-            throw new Error('Failed to upload main image: ' + e.message);
-        }
-    } else {
-        imageUrl = formData.get('imageUrl') as string || '';
+        imageUrl = await uploadFileToSupabase(mainImageFile, 'tours');
     }
 
-    // Extract and upload gallery images
     const galleryFiles = formData.getAll('gallery') as File[];
-    const galleryUrls: string[] = [];
-    for (const file of galleryFiles) {
-        if (file && file.size > 0) {
-            const url = await uploadFileToSupabase(file, 'tours');
-            galleryUrls.push(url);
-        }
-    }
-
-    const existingGallery = formData.get('existingGallery') as string || '[]';
-
-    // Extract itinerary images (dynamic fields `itineraryImage_${i}`)
-    let itineraryJson = formData.get('itinerary') as string || '[]';
-    let itinerary = JSON.parse(itineraryJson);
-
-    for (let i = 0; i < itinerary.length; i++) {
+    const galleryUploadPromises = galleryFiles
+        .filter(file => file && file.size > 0)
+        .map(file => uploadFileToSupabase(file, 'tours'));
+    
+    const itineraryJson = formData.get('itinerary') as string || '[]';
+    const itinerary = JSON.parse(itineraryJson);
+    
+    const itineraryUploadPromises = itinerary.map(async (day: any, i: number) => {
         const dayImage = formData.get(`itineraryImage_${i}`) as File | null;
         if (dayImage && dayImage.size > 0) {
-            const url = await uploadFileToSupabase(dayImage, 'tours');
-            itinerary[i].image = url;
+            day.image = await uploadFileToSupabase(dayImage, 'tours');
         }
-    }
+    });
 
-    const payload = {
-        title: formData.get('title'),
-        category: formData.get('category'),
-        location: formData.get('location'),
-        duration: formData.get('duration'),
-        description: formData.get('description'),
-        price: formData.get('price'),
-        full_price: formData.get('full_price'),
-        difficulty: formData.get('difficulty'),
-        languages: formData.get('languages'),
-        phone: formData.get('phone'),
-        maxGroupSize: formData.get('maxGroupSize'),
-        itinerary: JSON.stringify(itinerary),
-        imageUrl: imageUrl,
-        existingGallery: existingGallery,
-        newGalleryUrls: JSON.stringify(galleryUrls)
+    // Execute all uploads concurrently
+    const [galleryUrls] = await Promise.all([
+        Promise.all(galleryUploadPromises),
+        Promise.all(itineraryUploadPromises)
+    ]);
+
+    return {
+        imageUrl,
+        galleryUrls,
+        existingGallery: formData.get('existingGallery') as string || '[]',
+        itinerary
     };
+};
+
+const getTourPayload = (formData: FormData, media: any) => ({
+    title: formData.get('title'),
+    category: formData.get('category'),
+    location: formData.get('location'),
+    duration: formData.get('duration'),
+    description: formData.get('description'),
+    price: formData.get('price'),
+    full_price: formData.get('full_price'),
+    difficulty: formData.get('difficulty'),
+    languages: formData.get('languages'),
+    phone: formData.get('phone'),
+    maxGroupSize: formData.get('maxGroupSize'),
+    itinerary: JSON.stringify(media.itinerary),
+    imageUrl: media.imageUrl,
+    existingGallery: media.existingGallery,
+    newGalleryUrls: JSON.stringify(media.galleryUrls)
+});
+
+export const createTour = async (formData: FormData) => {
+    const token = getToken();
+    const media = await processTourMedia(formData);
+    const payload = getTourPayload(formData, media);
 
     const response = await fetch(`${API_BASE_URL}/tours`, {
         method: 'POST',
@@ -453,69 +455,14 @@ export const createTour = async (formData: FormData) => {
         body: JSON.stringify(payload)
     });
     const result = await response.json();
-    if (!response.ok) {
-        throw new Error(result.error || result.details || 'Failed to create tour');
-    }
+    if (!response.ok) throw new Error(result.error || result.details || 'Failed to create tour');
     return result;
 };
 
 export const updateTour = async (id: number, formData: FormData) => {
     const token = getToken();
-
-    // Extract and upload main image
-    const mainImageFile = formData.get('image') as File | null;
-    let imageUrl = '';
-    if (mainImageFile && mainImageFile.size > 0) {
-        try {
-            imageUrl = await uploadFileToSupabase(mainImageFile, 'tours');
-        } catch (e: any) {
-            throw new Error('Failed to upload main image: ' + e.message);
-        }
-    } else {
-        imageUrl = formData.get('imageUrl') as string || '';
-    }
-
-    // Extract and upload gallery images
-    const galleryFiles = formData.getAll('gallery') as File[];
-    const galleryUrls: string[] = [];
-    for (const file of galleryFiles) {
-        if (file && file.size > 0) {
-            const url = await uploadFileToSupabase(file, 'tours');
-            galleryUrls.push(url);
-        }
-    }
-
-    const existingGallery = formData.get('existingGallery') as string || '[]';
-
-    // Extract itinerary images
-    let itineraryJson = formData.get('itinerary') as string || '[]';
-    let itinerary = JSON.parse(itineraryJson);
-
-    for (let i = 0; i < itinerary.length; i++) {
-        const dayImage = formData.get(`itineraryImage_${i}`) as File | null;
-        if (dayImage && dayImage.size > 0) {
-            const url = await uploadFileToSupabase(dayImage, 'tours');
-            itinerary[i].image = url;
-        }
-    }
-
-    const payload = {
-        title: formData.get('title'),
-        category: formData.get('category'),
-        location: formData.get('location'),
-        duration: formData.get('duration'),
-        description: formData.get('description'),
-        price: formData.get('price'),
-        full_price: formData.get('full_price'),
-        difficulty: formData.get('difficulty'),
-        languages: formData.get('languages'),
-        phone: formData.get('phone'),
-        maxGroupSize: formData.get('maxGroupSize'),
-        itinerary: JSON.stringify(itinerary),
-        imageUrl: imageUrl,
-        existingGallery: existingGallery,
-        newGalleryUrls: JSON.stringify(galleryUrls)
-    };
+    const media = await processTourMedia(formData);
+    const payload = getTourPayload(formData, media);
 
     const response = await fetch(`${API_BASE_URL}/tours/${id}`, {
         method: 'PUT',

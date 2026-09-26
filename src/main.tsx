@@ -7,7 +7,13 @@ import './index.css';
 // Auto-recovery for Vite dynamic module preload errors after deployments
 window.addEventListener('vite:preloadError', (event) => {
   console.warn('Vite preload error encountered, reloading page to fetch newest assets...', event);
-  window.location.reload();
+  const reloads = parseInt(sessionStorage.getItem('vite-preload-reloads') || '0', 10);
+  if (reloads < 3) {
+    sessionStorage.setItem('vite-preload-reloads', (reloads + 1).toString());
+    window.location.reload();
+  } else {
+    console.error('Max reload attempts reached for vite:preloadError.');
+  }
 });
 
 // Register PWA Service Worker for Offline Mode in Mountain Regions
