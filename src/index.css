@@ -789,3 +789,283 @@ img[loading="lazy"]:not([src=""]) {
   0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
   40% { transform: scale(1.1); opacity: 1; }
 }
+
+/* ══════════════════════════════════════════════════════
+   ITINERARY PLANNER — Structured Form & Timeline
+   ══════════════════════════════════════════════════════ */
+
+/* ── Planner Form Wrapper ── */
+.planner-form {
+  background: rgba(13, 19, 18, 0.9);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(74, 227, 181, 0.1);
+  border-radius: 24px;
+  padding: 28px;
+}
+
+.planner-form-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
+.planner-form-select,
+.planner-form-input {
+  width: 100%;
+  background: rgba(19, 27, 26, 0.8);
+  border: 1px solid rgba(26, 37, 36, 0.9);
+  border-radius: 14px;
+  padding: 12px 16px;
+  color: #e5e7eb;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  outline: none;
+  appearance: none;
+}
+
+.planner-form-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+}
+
+.planner-form-select:focus,
+.planner-form-input:focus {
+  border-color: rgba(74, 227, 181, 0.4);
+  box-shadow: 0 0 0 3px rgba(74, 227, 181, 0.08);
+}
+
+.planner-form-select option {
+  background: #131b1a;
+  color: #e5e7eb;
+}
+
+/* ── Generate Button ── */
+.planner-generate-btn {
+  width: 100%;
+  padding: 16px 24px;
+  background: linear-gradient(135deg, #4ae3b5 0%, #06b6d4 50%, #8b5cf6 100%);
+  background-size: 200% 200%;
+  color: #0a0e0e;
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.05em;
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 24px rgba(74, 227, 181, 0.2);
+  animation: planner-btn-gradient 4s ease-in-out infinite;
+}
+
+@keyframes planner-btn-gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.planner-generate-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 36px rgba(74, 227, 181, 0.35);
+}
+
+.planner-generate-btn:active {
+  transform: scale(0.98);
+}
+
+.planner-generate-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  animation: none;
+}
+
+/* ── Vibe Pill Selector ── */
+.vibe-pill {
+  padding: 8px 18px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid rgba(26, 37, 36, 0.9);
+  background: rgba(19, 27, 26, 0.6);
+  color: #9ca3af;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vibe-pill:hover {
+  border-color: rgba(74, 227, 181, 0.3);
+  color: #d1d5db;
+  background: rgba(74, 227, 181, 0.05);
+}
+
+.vibe-pill-active {
+  background: rgba(74, 227, 181, 0.12) !important;
+  border-color: rgba(74, 227, 181, 0.5) !important;
+  color: #4ae3b5 !important;
+  box-shadow: 0 0 12px rgba(74, 227, 181, 0.12);
+}
+
+/* ══════════════════════════════════════════════════════
+   ITINERARY TIMELINE — Day-by-Day Visual Cards
+   ══════════════════════════════════════════════════════ */
+
+.itinerary-timeline {
+  position: relative;
+  padding-left: 32px;
+}
+
+.itinerary-timeline::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, #4ae3b5 0%, #06b6d4 50%, #8b5cf6 100%);
+  border-radius: 2px;
+  opacity: 0.3;
+}
+
+/* ── Day Card ── */
+.itinerary-day-card {
+  position: relative;
+  background: rgba(19, 27, 26, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(26, 37, 36, 0.8);
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 20px;
+  transition: all 0.3s ease;
+}
+
+.itinerary-day-card:hover {
+  border-color: rgba(74, 227, 181, 0.25);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+/* Timeline dot */
+.itinerary-day-card::before {
+  content: '';
+  position: absolute;
+  left: -28px;
+  top: 28px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #4ae3b5;
+  border: 3px solid #0a0e0e;
+  box-shadow: 0 0 10px rgba(74, 227, 181, 0.4);
+}
+
+.itinerary-day-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 14px;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, rgba(74, 227, 181, 0.15) 0%, rgba(6, 182, 212, 0.1) 100%);
+  border: 1px solid rgba(74, 227, 181, 0.2);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #4ae3b5;
+  margin-bottom: 14px;
+}
+
+.itinerary-day-content {
+  color: #d1d5db;
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.itinerary-day-content strong {
+  color: #fff;
+  font-weight: 700;
+}
+
+.itinerary-day-content em {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+/* ── Itinerary Summary Header ── */
+.itinerary-header {
+  background: linear-gradient(135deg, rgba(74, 227, 181, 0.08) 0%, rgba(139, 92, 246, 0.05) 100%);
+  border: 1px solid rgba(74, 227, 181, 0.15);
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+/* ── Itinerary Action Buttons ── */
+.itinerary-action-btn {
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  border: 1px solid rgba(26, 37, 36, 0.8);
+  background: rgba(19, 27, 26, 0.6);
+  color: #9ca3af;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.itinerary-action-btn:hover {
+  border-color: rgba(74, 227, 181, 0.3);
+  color: #4ae3b5;
+  background: rgba(74, 227, 181, 0.06);
+}
+
+/* ── New Itinerary / Reset ── */
+.planner-reset-btn {
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.planner-reset-btn:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #9ca3af;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ── Loading Skeleton ── */
+.planner-skeleton {
+  background: linear-gradient(90deg, rgba(19, 27, 26, 0.4) 25%, rgba(26, 37, 36, 0.6) 50%, rgba(19, 27, 26, 0.4) 75%);
+  background-size: 200% 100%;
+  animation: planner-shimmer 1.8s ease-in-out infinite;
+  border-radius: 12px;
+}
+
+@keyframes planner-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

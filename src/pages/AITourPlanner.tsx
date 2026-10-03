@@ -1,7 +1,7 @@
-import React, { useState, useRef, useEffect, Suspense } from 'react';
+import React, { useState, useRef, useEffect, Suspense, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Language } from '../translations';
-import { Sparkles, ArrowRight, Play, X, Video } from 'lucide-react';
+import { Sparkles, ArrowRight, Play, X, Video, Calendar, MapPin, Compass, Zap, RotateCcw, Download, Heart, ChevronDown, ChevronUp } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, useMap, ZoomControl } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -67,7 +67,119 @@ function MapController({ coords, zoom }: { coords: [number, number] | null, zoom
 }
 
 interface AITourPlannerProps { language: Language; onNavigate: (page: string, data?: any) => void; }
-interface Message { role: 'user' | 'ai'; content: string; }
+
+// ── Structured Form Options ──
+const REGIONS = {
+  en: [
+    { value: '', label: 'All Georgia' },
+    { value: 'Kakheti', label: '🍷 Kakheti (Wine Region)' },
+    { value: 'Svaneti', label: '🏔️ Svaneti (Mountains)' },
+    { value: 'Kazbegi', label: '⛰️ Kazbegi (High Caucasus)' },
+    { value: 'Adjara', label: '🌊 Adjara (Black Sea Coast)' },
+    { value: 'Imereti', label: '🏜️ Imereti (Caves & Canyons)' },
+    { value: 'Samtskhe-Javakheti', label: '🏰 Samtskhe-Javakheti (Historical)' },
+    { value: 'Tusheti', label: '🏘️ Tusheti (Remote Villages)' },
+    { value: 'Racha', label: '🌿 Racha (Hidden Gem)' },
+    { value: 'Tbilisi', label: '🏙️ Tbilisi (Capital City)' },
+  ],
+  ka: [
+    { value: '', label: 'მთელი საქართველო' },
+    { value: 'Kakheti', label: '🍷 კახეთი' },
+    { value: 'Svaneti', label: '🏔️ სვანეთი' },
+    { value: 'Kazbegi', label: '⛰️ ყაზბეგი' },
+    { value: 'Adjara', label: '🌊 აჭარა' },
+    { value: 'Imereti', label: '🏜️ იმერეთი' },
+    { value: 'Samtskhe-Javakheti', label: '🏰 სამცხე-ჯავახეთი' },
+    { value: 'Tusheti', label: '🏘️ თუშეთი' },
+    { value: 'Racha', label: '🌿 რაჭა' },
+    { value: 'Tbilisi', label: '🏙️ თბილისი' },
+  ],
+};
+
+const VIBES = {
+  en: [
+    { value: 'adventure', label: '🧗 Adventure', desc: 'Hiking, Off-road, Extreme' },
+    { value: 'cultural', label: '🏛️ Cultural', desc: 'History, Churches, Museums' },
+    { value: 'relaxation', label: '🧘 Relaxation', desc: 'Spa, Nature, Slow Travel' },
+    { value: 'foodie', label: '🍷 Food & Wine', desc: 'Gastro, Wine, Cooking' },
+    { value: 'photography', label: '📸 Photography', desc: 'Scenic, Golden Hour, Views' },
+    { value: 'family', label: '👨‍👩‍👧‍👦 Family', desc: 'Kid-friendly, Easy Trails' },
+  ],
+  ka: [
+    { value: 'adventure', label: '🧗 თავგადასავალი', desc: 'ლაშქრობა, ჯიპ-ტური' },
+    { value: 'cultural', label: '🏛️ კულტურული', desc: 'ისტორია, ტაძრები' },
+    { value: 'relaxation', label: '🧘 დასვენება', desc: 'სპა, ბუნება' },
+    { value: 'foodie', label: '🍷 გასტრო', desc: 'ღვინო, სამზარეულო' },
+    { value: 'photography', label: '📸 ფოტოგრაფია', desc: 'ხედები, ბუნება' },
+    { value: 'family', label: '👨‍👩‍👧‍👦 ოჯახური', desc: 'ბავშვებისთვის' },
+  ],
+};
+
+// ── Parse AI Response into Day Cards ──
+interface DayCard {
+  dayLabel: string;
+  title: string;
+  content: string;
+}
+
+function parseItinerary(text: string, isKa: boolean): { header: string; days: DayCard[]; footer: string } {
+  const lines = text.split('\n');
+  const days: DayCard[] = [];
+  let header = '';
+  let footer = '';
+  let currentDay: DayCard | null = null;
+  let headerDone = false;
+  let footerStarted = false;
+
+  const dayRegex = isKa
+    ? /^[\s#*]*(?:დღე|Day)\s*(\d+)/i
+    : /^[\s#*]*Day\s*(\d+)/i;
+
+  const tipRegex = /^[\s#*]*(?:Tips?|Tip|Notes?| რჩევა|შენიშვნა|Additional|Enjoy|Safe|Have)/i;
+
+  for (const line of lines) {
+    const dayMatch = line.match(dayRegex);
+    if (dayMatch) {
+      if (currentDay) days.push(currentDay);
+      headerDone = true;
+      footerStarted = false;
+      const dayNum = dayMatch[1];
+      const titlePart = line.replace(dayRegex, '').replace(/^[\s:—\-*#]+/, '').trim();
+      currentDay = {
+        dayLabel: isKa ? `დღე ${dayNum}` : `Day ${dayNum}`,
+        title: titlePart || (isKa ? `დღე ${dayNum}` : `Day ${dayNum}`),
+        content: '',
+      };
+    } else if (currentDay) {
+      if (tipRegex.test(line) && days.length > 0) {
+        days.push(currentDay);
+        currentDay = null;
+        footerStarted = true;
+        footer += line + '\n';
+      } else {
+        currentDay.content += line + '\n';
+      }
+    } else if (footerStarted) {
+      footer += line + '\n';
+    } else if (!headerDone) {
+      header += line + '\n';
+    } else {
+      footer += line + '\n';
+    }
+  }
+  if (currentDay) days.push(currentDay);
+
+  return { header: header.trim(), days, footer: footer.trim() };
+}
+
+// ── Format markdown text ──
+function formatMarkdown(text: string): string {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/^[-•]\s+/gm, '<span style="color:#4ae3b5;margin-right:4px;">›</span> ')
+    .replace(/\n/g, '<br/>');
+}
 
 const TRENDING = [
   { label: 'Wine Route in Kakheti', prompt: 'Plan a 2-day wine tasting tour in the Kakheti region', icon: '🍷' },
@@ -83,28 +195,42 @@ const TRENDING_KA = [
 
 export default function AITourPlanner({ language, onNavigate }: AITourPlannerProps) {
   const isKa = language === 'ka';
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
+
+  // ── Form State ──
+  const [days, setDays] = useState('3');
+  const [region, setRegion] = useState('');
+  const [vibes, setVibes] = useState<string[]>([]);
+  const [pace, setPace] = useState('balanced');
+  const [extraNotes, setExtraNotes] = useState('');
+
+  // ── Itinerary State ──
+  const [itinerary, setItinerary] = useState<{ header: string; days: DayCard[]; footer: string } | null>(null);
+  const [rawResponse, setRawResponse] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [started, setStarted] = useState(false);
+  const [showForm, setShowForm] = useState(true);
+  const [expandedDays, setExpandedDays] = useState<Set<number>>(new Set());
+  const [saved, setSaved] = useState(false);
+
+  // ── Map State ──
   const [activeCoords, setActiveCoords] = useState<[number, number] | null>(null);
   const [highlightedSights, setHighlightedSights] = useState<GeorgianSight[]>([]);
   const [relatedVideos, setRelatedVideos] = useState<GeorgiaVideo[]>([]);
   const [activeVideo, setActiveVideo] = useState<string | null>(null);
   const [inputFocused, setInputFocused] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [input, setInput] = useState('');
 
-  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, relatedVideos]);
+  const timelineRef = useRef<HTMLDivElement>(null);
 
-  const analyzeResponseForLocations = (text: string) => {
-    const mentionedSights = georgianSights.filter(sight => {
-      return new RegExp(sight.titleEn, 'i').test(text) || new RegExp(sight.titleKa, 'i').test(text) || new RegExp(sight.locationEn, 'i').test(text);
-    });
-    const mentionedVideos = georgiaVideos.filter(video => {
-      return new RegExp(video.id, 'i').test(text) ||
-             new RegExp(video.regionEn, 'i').test(text) ||
-             new RegExp(video.titleEn.split('—')[0].trim(), 'i').test(text);
-    });
+  const analyzeResponseForLocations = useCallback((text: string) => {
+    const mentionedSights = georgianSights.filter(sight =>
+      new RegExp(sight.titleEn, 'i').test(text) || new RegExp(sight.titleKa, 'i').test(text) || new RegExp(sight.locationEn, 'i').test(text)
+    );
+    const mentionedVideos = georgiaVideos.filter(video =>
+      new RegExp(video.id, 'i').test(text) ||
+      new RegExp(video.regionEn, 'i').test(text) ||
+      new RegExp(video.titleEn.split('—')[0].trim(), 'i').test(text)
+    );
     if (mentionedSights.length > 0) {
       setHighlightedSights(mentionedSights);
       setActiveCoords(mentionedSights[0].coords);
@@ -112,42 +238,95 @@ export default function AITourPlanner({ language, onNavigate }: AITourPlannerPro
     if (mentionedVideos.length > 0) {
       setRelatedVideos(mentionedVideos);
     }
+  }, []);
+
+  const toggleVibe = (v: string) => {
+    setVibes(prev => prev.includes(v) ? prev.filter(x => x !== v) : [...prev, v]);
   };
 
-  const handleSend = async (overrideInput?: string) => {
-    const userMsg = (overrideInput || input).trim();
-    if (!userMsg || isLoading) return;
-    setInput('');
+  const toggleDay = (idx: number) => {
+    setExpandedDays(prev => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx); else next.add(idx);
+      return next;
+    });
+  };
+
+  // ── Build prompt from form and send ──
+  const handleGenerate = async (overridePrompt?: string) => {
+    const prompt = overridePrompt || buildPromptFromForm();
+    if (!prompt || isLoading) return;
+
     if (!started) setStarted(true);
-    const newMessages: Message[] = [...messages, { role: 'user', content: userMsg }];
-    setMessages(newMessages);
+    setShowForm(false);
     setIsLoading(true);
+    setItinerary(null);
+    setRawResponse('');
     setRelatedVideos([]);
+    setSaved(false);
 
     try {
       const response = await fetch('/api/ai/chat', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: newMessages.map(m => ({ role: m.role, content: m.content })), mode: 'planner', language })
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: prompt }],
+          mode: 'planner',
+          language,
+        }),
       });
-      if (!response.ok) { throw new Error('Failed'); }
+      if (!response.ok) throw new Error('Failed');
       const data = await response.json();
-      setMessages(prev => [...prev, { role: 'ai', content: data.reply }]);
-      analyzeResponseForLocations(userMsg + " " + data.reply);
-    } catch (error) {
-      setMessages(prev => [...prev, { role: 'ai', content: isKa ? 'შეცდომა კავშირისას.' : 'Connection error.' }]);
-    } finally { setIsLoading(false); }
+      const reply = data.reply;
+      setRawResponse(reply);
+      const parsed = parseItinerary(reply, isKa);
+      setItinerary(parsed);
+      // Expand all days by default
+      setExpandedDays(new Set(parsed.days.map((_, i) => i)));
+      analyzeResponseForLocations(prompt + ' ' + reply);
+    } catch {
+      setRawResponse(isKa ? 'შეცდომა კავშირისას. გთხოვთ სცადოთ ხელახლა.' : 'Connection error. Please try again.');
+      setItinerary(null);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } };
+  const buildPromptFromForm = () => {
+    const vibeLabels = vibes.join(', ');
+    const regionLabel = region || (isKa ? 'მთელი საქართველო' : 'All Georgia');
+    const paceLabel = pace === 'relaxed' ? (isKa ? 'ნელი ტემპი' : 'Relaxed pace') : pace === 'intense' ? (isKa ? 'ინტენსიური' : 'Intense/packed') : (isKa ? 'ბალანსირებული' : 'Balanced pace');
 
-  const parseMarkdown = (text: string) => {
-    let parsed = text
-      .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-bold">$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em class="text-gray-300 italic">$1</em>');
-    return <div className="space-y-3 text-[15px] leading-relaxed text-gray-400" dangerouslySetInnerHTML={{ __html: parsed.replace(/\n/g, '<br/>') }} />;
+    if (isKa) {
+      return `დამიგეგმე ${days}-დღიანი ტური საქართველოში. რეგიონი: ${regionLabel}. სტილი: ${vibeLabels || 'ნებისმიერი'}. ტემპი: ${paceLabel}. ${extraNotes ? `დამატებით: ${extraNotes}` : ''} გთხოვთ, ყველა დღე ცალკე აღწერე "დღე 1:", "დღე 2:" ფორმატით.`;
+    }
+    return `Plan a ${days}-day tour in Georgia. Region: ${regionLabel}. Travel style: ${vibeLabels || 'any'}. Pace: ${paceLabel}. ${extraNotes ? `Additional notes: ${extraNotes}` : ''} Please structure the response with "Day 1:", "Day 2:" format for each day.`;
+  };
+
+  const handleReset = () => {
+    setShowForm(true);
+    setItinerary(null);
+    setRawResponse('');
+    setHighlightedSights([]);
+    setRelatedVideos([]);
+    setSaved(false);
+  };
+
+  const handleSave = () => {
+    if (!rawResponse) return;
+    const saved = JSON.parse(localStorage.getItem('touristgeo_itineraries') || '[]');
+    saved.push({ date: new Date().toISOString(), region, days, vibes, response: rawResponse });
+    localStorage.setItem('touristgeo_itineraries', JSON.stringify(saved));
+    setSaved(true);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleGenerate(input); }
   };
 
   const trending = isKa ? TRENDING_KA : TRENDING;
+  const regions = isKa ? REGIONS.ka : REGIONS.en;
+  const vibeOptions = isKa ? VIBES.ka : VIBES.en;
 
   // ── LANDING STATE (with 3D) ──
   if (!started) {
@@ -172,7 +351,7 @@ export default function AITourPlanner({ language, onNavigate }: AITourPlannerPro
             <div className="ai-badge inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full">
               <span className="ai-badge-dot" />
               <span className="text-xs font-bold tracking-[0.2em] uppercase text-[#4ae3b5]">
-                {isKa ? 'AI-ით გაძლიერებული' : 'AI-Powered Planning'}
+                {isKa ? 'AI მარშრუტის დამგეგმავი' : 'AI Itinerary Planner'}
               </span>
             </div>
           </motion.div>
@@ -184,9 +363,9 @@ export default function AITourPlanner({ language, onNavigate }: AITourPlannerPro
             transition={{ duration: 1, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
             className="text-4xl md:text-6xl lg:text-[76px] font-bold tracking-tight text-center mb-6 leading-[1.08]"
           >
-            <span className="block text-white/90">{isKa ? 'სად დაიწყება თქვენი' : 'Where should your'}</span>
+            <span className="block text-white/90">{isKa ? 'შექმენით თქვენი' : 'Design your perfect'}</span>
             <span className="ai-gradient-text block mt-1">
-              {isKa ? 'შემდეგი ისტორია?' : 'next story begin?'}
+              {isKa ? 'იდეალური მარშრუტი' : 'Georgian itinerary'}
             </span>
           </motion.h1>
 
@@ -198,8 +377,8 @@ export default function AITourPlanner({ language, onNavigate }: AITourPlannerPro
             className="text-gray-400 text-base md:text-lg text-center mb-12 max-w-xl leading-relaxed"
           >
             {isKa
-              ? 'აღწერეთ თქვენი იდეალური მოგზაურობა და AI შექმნის სრულყოფილ მარშრუტს'
-              : 'Describe your dream journey and our AI crafts the perfect Georgian itinerary'}
+              ? 'აირჩიეთ რეგიონი, სტილი და ხანგრძლივობა — AI შექმნის დეტალურ გეგმას'
+              : 'Pick your region, style & duration — our AI crafts a detailed day-by-day plan'}
           </motion.p>
 
           {/* Input Pill */}
@@ -219,7 +398,7 @@ export default function AITourPlanner({ language, onNavigate }: AITourPlannerPro
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') handleSend(); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleGenerate(input); }}
                 onFocus={() => setInputFocused(true)}
                 onBlur={() => setInputFocused(false)}
                 placeholder={isKa
@@ -228,7 +407,7 @@ export default function AITourPlanner({ language, onNavigate }: AITourPlannerPro
                 className="flex-1 bg-transparent text-white focus:outline-none text-base md:text-lg placeholder:text-gray-600 py-4"
               />
               <button
-                onClick={() => handleSend()}
+                onClick={() => handleGenerate(input)}
                 disabled={!input.trim()}
                 className="ai-send-btn"
               >
@@ -238,11 +417,28 @@ export default function AITourPlanner({ language, onNavigate }: AITourPlannerPro
             </div>
           </motion.div>
 
+          {/* Quick Start Button */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 1.1 }}
+            className="mb-10"
+          >
+            <button
+              onClick={() => { setStarted(true); setShowForm(true); }}
+              className="ai-suggestion-chip group text-base px-8 py-3"
+            >
+              <Compass size={18} className="mr-1 text-[#4ae3b5]" />
+              <span>{isKa ? 'ან გამოიყენე გეგმის შემქმნელი' : 'Or use the Itinerary Builder'}</span>
+              <ArrowRight size={14} className="ml-1 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
+            </button>
+          </motion.div>
+
           {/* Trending Suggestions */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 1.2 }}
+            transition={{ duration: 0.8, delay: 1.3 }}
             className="w-full max-w-3xl"
           >
             <p className="text-center text-gray-500 text-[11px] font-bold tracking-[0.2em] uppercase mb-5">
@@ -254,8 +450,8 @@ export default function AITourPlanner({ language, onNavigate }: AITourPlannerPro
                   key={i}
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 1.4 + i * 0.1 }}
-                  onClick={() => handleSend(t.prompt)}
+                  transition={{ duration: 0.5, delay: 1.5 + i * 0.1 }}
+                  onClick={() => handleGenerate(t.prompt)}
                   className="ai-suggestion-chip group"
                 >
                   <span className="text-lg mr-1.5">{t.icon}</span>
@@ -275,7 +471,7 @@ export default function AITourPlanner({ language, onNavigate }: AITourPlannerPro
           >
             {[
               isKa ? '🗺️ ინტერაქტიული რუკა' : '🗺️ Interactive Map',
-              isKa ? '🎬 რეალური ვიდეოები' : '🎬 Real Footage',
+              isKa ? '📅 დღეების გეგმა' : '📅 Day-by-Day Plan',
               isKa ? '⚡ მყისიერი პასუხი' : '⚡ Instant Response'
             ].map((feat, i) => (
               <span key={i} className="hidden md:flex items-center gap-1.5">{feat}</span>
@@ -286,7 +482,7 @@ export default function AITourPlanner({ language, onNavigate }: AITourPlannerPro
     );
   }
 
-  // ── CHAT & MAP STATE ──
+  // ── PLANNER & MAP STATE ──
   return (
     <div className="h-[calc(100vh-80px)] w-full flex flex-col md:flex-row bg-[#0a0e0e] font-sans selection:bg-[#4ae3b5]/30 selection:text-[#4ae3b5]">
       <style>{`
@@ -302,18 +498,24 @@ export default function AITourPlanner({ language, onNavigate }: AITourPlannerPro
       `}</style>
 
       {/* LEFT: Map / Media Area */}
-      <div className="waze-map relative w-full h-[40vh] md:h-full md:w-[50%] lg:w-[60%] shrink-0 border-b md:border-b-0 md:border-r border-[#1a2524] z-10 flex flex-col">
+      <div className="waze-map relative w-full h-[40vh] md:h-full md:w-[50%] lg:w-[55%] shrink-0 border-b md:border-b-0 md:border-r border-[#1a2524] z-10 flex flex-col">
         <div className="flex-1 relative bg-[#1a202c]">
           <MapContainer center={[42.0, 43.5]} zoom={7} minZoom={6} maxBounds={[[40.0, 38.5], [44.0, 47.5]]} maxBoundsViscosity={1.0} scrollWheelZoom={true} className="w-full h-full z-0" zoomControl={false} attributionControl={false}>
             <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
             <ZoomControl position="bottomleft" />
+            <MapController coords={activeCoords} zoom={10} />
             {georgianSights.map((sight) => (
               <WazeMapMarker
                 key={sight.id}
                 sight={sight}
                 isHl={highlightedSights.some(s => s.id === sight.id)}
                 isKa={isKa}
-                onSelect={(title) => setInput(prev => prev + (prev.endsWith(' ') ? '' : ' ') + title)}
+                onSelect={() => {
+                  setActiveCoords(sight.coords);
+                  setHighlightedSights(prev =>
+                    prev.some(s => s.id === sight.id) ? prev : [...prev, sight]
+                  );
+                }}
               />
             ))}
           </MapContainer>
@@ -322,7 +524,11 @@ export default function AITourPlanner({ language, onNavigate }: AITourPlannerPro
           <div className="absolute top-5 left-5 z-[1000] pointer-events-none">
             <div className="bg-white/95 backdrop-blur-md px-5 py-3 rounded-2xl flex items-center gap-3 shadow-lg shadow-indigo-500/10 border border-indigo-100">
               <div className="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse" />
-              <span className="text-xs font-extrabold text-indigo-900 tracking-wide uppercase">{isKa ? 'მარშრუტის სიმულაცია' : 'LIVE ROUTE'}</span>
+              <span className="text-xs font-extrabold text-indigo-900 tracking-wide uppercase">
+                {highlightedSights.length > 0
+                  ? `${highlightedSights.length} ${isKa ? 'ადგილი აღმოჩენილია' : 'places found'}`
+                  : isKa ? 'მარშრუტის სიმულაცია' : 'LIVE ROUTE'}
+              </span>
             </div>
           </div>
 
@@ -407,74 +613,288 @@ export default function AITourPlanner({ language, onNavigate }: AITourPlannerPro
         </AnimatePresence>
       </div>
 
-      {/* RIGHT: Chat Space */}
-      <div className="flex-1 h-[60vh] md:h-full flex flex-col bg-[#0a0e0e] relative z-20">
+      {/* RIGHT: Planner Panel */}
+      <div className="flex-1 h-[60vh] md:h-full flex flex-col bg-[#0a0e0e] relative z-20 overflow-hidden">
         {/* Header */}
-        <div className="px-6 py-5 border-b border-[#1a2524] bg-[#0e1514] shrink-0 flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-[#1a2524] bg-[#0e1514] shrink-0 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="ai-header-icon">
-              <Sparkles size={14} className="text-[#4ae3b5]" />
+              <Calendar size={14} className="text-[#4ae3b5]" />
             </div>
             <div>
-              <h2 className="text-white font-bold text-sm">{isKa ? 'GeoTour AI გიდი' : 'GeoTour AI Guide'}</h2>
-              <p className="text-gray-500 text-[10px] font-medium tracking-wide uppercase mt-0.5">{isKa ? 'თქვენი მოგზაურობის სული' : 'Your Travel Spirit'}</p>
+              <h2 className="text-white font-bold text-sm">{isKa ? 'მარშრუტის შემქმნელი' : 'Itinerary Builder'}</h2>
+              <p className="text-gray-500 text-[10px] font-medium tracking-wide uppercase mt-0.5">{isKa ? 'AI-ით გაძლიერებული' : 'AI-Powered Planning'}</p>
             </div>
           </div>
-          <div className="ai-badge px-3 py-1.5 rounded-full flex items-center gap-2">
-            <div className="ai-badge-dot" />
-            <span className="text-xs text-gray-400 font-medium tracking-wide">Sync</span>
+          <div className="flex items-center gap-2">
+            {itinerary && (
+              <button onClick={handleReset} className="planner-reset-btn">
+                <RotateCcw size={12} />
+                {isKa ? 'ახალი' : 'New'}
+              </button>
+            )}
+            <div className="ai-badge px-3 py-1.5 rounded-full flex items-center gap-2">
+              <div className="ai-badge-dot" />
+              <span className="text-xs text-gray-400 font-medium tracking-wide">{isKa ? 'მზადაა' : 'Ready'}</span>
+            </div>
           </div>
         </div>
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 scrollbar-thin scrollbar-thumb-[#1a2524] scrollbar-track-transparent">
-          {messages.map((msg, idx) => (
-            <motion.div key={idx} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-              {msg.role === 'ai' && (
-                <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-2 ml-1">AI Guide</span>
-              )}
-              <div className={`max-w-[85%] rounded-[24px] px-6 py-4 ${
-                msg.role === 'user'
-                  ? 'bg-[#1a2524] text-white rounded-br-sm shadow-md'
-                  : 'bg-[#131b1a] text-gray-200 border border-[#1a2524] rounded-bl-sm shadow-sm'
-              }`}>
-                {msg.role === 'user' ? (
-                  <p className="text-[15px] leading-relaxed">{msg.content}</p>
-                ) : (
-                  parseMarkdown(msg.content)
-                )}
-              </div>
-            </motion.div>
-          ))}
+        {/* Scrollable Content */}
+        <div ref={timelineRef} className="flex-1 overflow-y-auto px-6 py-6 scrollbar-thin scrollbar-thumb-[#1a2524] scrollbar-track-transparent">
 
+          {/* ── STRUCTURED FORM ── */}
+          <AnimatePresence mode="wait">
+            {showForm && !isLoading && !itinerary && (
+              <motion.div
+                key="form"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.4 }}
+              >
+                <div className="planner-form space-y-6">
+                  {/* Duration & Region Row */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="planner-form-label">
+                        <Calendar size={10} className="inline mr-1" />
+                        {isKa ? 'ხანგრძლივობა' : 'Duration'}
+                      </label>
+                      <select value={days} onChange={e => setDays(e.target.value)} className="planner-form-select">
+                        {[1,2,3,4,5,6,7,10,14].map(d => (
+                          <option key={d} value={String(d)}>{d} {isKa ? (d === 1 ? 'დღე' : 'დღე') : (d === 1 ? 'Day' : 'Days')}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="planner-form-label">
+                        <MapPin size={10} className="inline mr-1" />
+                        {isKa ? 'რეგიონი' : 'Region'}
+                      </label>
+                      <select value={region} onChange={e => setRegion(e.target.value)} className="planner-form-select">
+                        {regions.map(r => (
+                          <option key={r.value} value={r.value}>{r.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Travel Vibe */}
+                  <div>
+                    <label className="planner-form-label">
+                      <Sparkles size={10} className="inline mr-1" />
+                      {isKa ? 'მოგზაურობის სტილი' : 'Travel Vibe'}
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {vibeOptions.map(v => (
+                        <button
+                          key={v.value}
+                          onClick={() => toggleVibe(v.value)}
+                          className={`vibe-pill ${vibes.includes(v.value) ? 'vibe-pill-active' : ''}`}
+                        >
+                          {v.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Pace */}
+                  <div>
+                    <label className="planner-form-label">
+                      <Zap size={10} className="inline mr-1" />
+                      {isKa ? 'ტემპი' : 'Pace'}
+                    </label>
+                    <div className="flex gap-2">
+                      {[
+                        { value: 'relaxed', label: isKa ? '🐌 ნელი' : '🐌 Relaxed' },
+                        { value: 'balanced', label: isKa ? '⚖️ ბალანსი' : '⚖️ Balanced' },
+                        { value: 'intense', label: isKa ? '🚀 ინტენსიური' : '🚀 Intense' },
+                      ].map(p => (
+                        <button
+                          key={p.value}
+                          onClick={() => setPace(p.value)}
+                          className={`vibe-pill flex-1 justify-center ${pace === p.value ? 'vibe-pill-active' : ''}`}
+                        >
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Extra Notes */}
+                  <div>
+                    <label className="planner-form-label">
+                      {isKa ? '💬 დამატებითი სურვილები' : '💬 Special Requests'}
+                    </label>
+                    <textarea
+                      value={extraNotes}
+                      onChange={e => setExtraNotes(e.target.value)}
+                      placeholder={isKa ? 'მაგ: მინდა ვნახო ჩანჩქერები, ვეგანური სამზარეულო...' : 'e.g. I love waterfalls, vegan food options, avoid crowded places...'}
+                      className="planner-form-input resize-none min-h-[80px]"
+                      rows={3}
+                    />
+                  </div>
+
+                  {/* Generate Button */}
+                  <button onClick={() => handleGenerate()} className="planner-generate-btn">
+                    <Sparkles size={18} />
+                    {isKa ? 'მარშრუტის გენერაცია' : 'Generate Itinerary'}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* ── LOADING STATE ── */}
           {isLoading && (
-            <div className="flex flex-col items-start">
-              <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-2 ml-1">AI Guide</span>
-              <div className="bg-[#131b1a] border border-[#1a2524] rounded-[24px] rounded-bl-sm px-6 py-5 flex items-center gap-3">
-                <div className="ai-loading-dots">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="space-y-6"
+            >
+              <div className="text-center py-8">
+                <div className="ai-loading-dots mx-auto mb-4" style={{ justifyContent: 'center' }}>
                   <span /><span /><span />
                 </div>
+                <p className="text-[#4ae3b5] text-sm font-bold">{isKa ? 'AI ქმნის თქვენს მარშრუტს...' : 'AI is crafting your itinerary...'}</p>
+                <p className="text-gray-500 text-xs mt-2">{isKa ? 'ეს შეიძლება რამდენიმე წამი გასტანოს' : 'This may take a few seconds'}</p>
               </div>
-            </div>
+              {/* Skeleton cards */}
+              {[1, 2, 3].map(i => (
+                <div key={i} className="planner-skeleton h-32 opacity-60" style={{ animationDelay: `${i * 0.2}s` }} />
+              ))}
+            </motion.div>
           )}
-          <div ref={messagesEndRef} className="h-4" />
-        </div>
 
-        {/* Input Space */}
-        <div className="p-4 md:p-6 shrink-0 bg-[#0a0e0e]">
-          <div className="flex items-center gap-3 bg-[#131b1a] border border-[#1a2524] rounded-[28px] p-2 focus-within:border-[#4ae3b5]/40 transition-all shadow-lg">
-            <textarea
-              value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKeyDown}
-              placeholder={isKa ? 'რა გსურთ აღმოაჩინოთ?' : 'What would you like to discover?'}
-              className="flex-1 bg-transparent py-3 px-4 text-[15px] text-white placeholder-gray-600 focus:outline-none resize-none max-h-32 min-h-[48px] scrollbar-none"
-              rows={1} style={{ height: 'auto' }}
-              onInput={(e) => { const t = e.target as HTMLTextAreaElement; t.style.height = 'auto'; t.style.height = `${Math.min(t.scrollHeight, 120)}px`; }}
-            />
-            <button onClick={() => handleSend()} disabled={!input.trim() || isLoading}
-              className="ai-send-btn-chat">
-              <ArrowRight size={20} strokeWidth={2.5} />
-            </button>
-          </div>
+          {/* ── ITINERARY TIMELINE ── */}
+          <AnimatePresence mode="wait">
+            {itinerary && !isLoading && (
+              <motion.div
+                key="timeline"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                {/* Header Summary */}
+                {itinerary.header && (
+                  <div className="itinerary-header mb-6">
+                    <div className="itinerary-day-content" dangerouslySetInnerHTML={{ __html: formatMarkdown(itinerary.header) }} />
+                  </div>
+                )}
+
+                {/* Day-by-Day Timeline */}
+                {itinerary.days.length > 0 ? (
+                  <div className="itinerary-timeline">
+                    {itinerary.days.map((day, idx) => (
+                      <motion.div
+                        key={idx}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: idx * 0.12, duration: 0.4 }}
+                        className="itinerary-day-card"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="itinerary-day-badge">
+                            <Calendar size={12} />
+                            {day.dayLabel}
+                          </div>
+                          <button onClick={() => toggleDay(idx)} className="text-gray-500 hover:text-[#4ae3b5] transition-colors p-1">
+                            {expandedDays.has(idx) ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                          </button>
+                        </div>
+                        {day.title && (
+                          <h3 className="text-white font-bold text-base mb-3">{day.title}</h3>
+                        )}
+                        <AnimatePresence>
+                          {expandedDays.has(idx) && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.3 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="itinerary-day-content" dangerouslySetInnerHTML={{ __html: formatMarkdown(day.content) }} />
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  /* Fallback: render raw response if parser couldn't find days */
+                  <div className="itinerary-day-card">
+                    <div className="itinerary-day-content" dangerouslySetInnerHTML={{ __html: formatMarkdown(rawResponse) }} />
+                  </div>
+                )}
+
+                {/* Footer / Tips */}
+                {itinerary.footer && (
+                  <div className="mt-4 p-4 bg-[#131b1a] border border-[#1a2524] rounded-2xl">
+                    <div className="itinerary-day-content" dangerouslySetInnerHTML={{ __html: formatMarkdown(itinerary.footer) }} />
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex flex-wrap gap-3 mt-6 pb-4">
+                  <button onClick={handleSave} disabled={saved} className="itinerary-action-btn">
+                    <Heart size={14} className={saved ? 'fill-[#4ae3b5] text-[#4ae3b5]' : ''} />
+                    {saved ? (isKa ? 'შენახულია!' : 'Saved!') : (isKa ? 'შენახვა' : 'Save Itinerary')}
+                  </button>
+                  <button onClick={handleReset} className="itinerary-action-btn">
+                    <RotateCcw size={14} />
+                    {isKa ? 'ახალი გეგმა' : 'New Plan'}
+                  </button>
+                  <button onClick={() => setShowForm(true)} className="itinerary-action-btn">
+                    <Compass size={14} />
+                    {isKa ? 'პარამეტრების შეცვლა' : 'Modify Parameters'}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Show form again if user wants to modify */}
+          <AnimatePresence>
+            {showForm && itinerary && !isLoading && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="mt-6 mb-4"
+              >
+                <div className="planner-form space-y-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-bold text-[#4ae3b5] uppercase tracking-[0.15em]">{isKa ? 'პარამეტრების შეცვლა' : 'Modify & Regenerate'}</span>
+                    <button onClick={() => setShowForm(false)} className="text-gray-500 hover:text-white transition-colors">
+                      <X size={16} />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="planner-form-label">{isKa ? 'ხანგრძლივობა' : 'Duration'}</label>
+                      <select value={days} onChange={e => setDays(e.target.value)} className="planner-form-select">
+                        {[1,2,3,4,5,6,7,10,14].map(d => (
+                          <option key={d} value={String(d)}>{d} {d === 1 ? (isKa ? 'დღე' : 'Day') : (isKa ? 'დღე' : 'Days')}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="planner-form-label">{isKa ? 'რეგიონი' : 'Region'}</label>
+                      <select value={region} onChange={e => setRegion(e.target.value)} className="planner-form-select">
+                        {regions.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <button onClick={() => { setShowForm(false); handleGenerate(); }} className="planner-generate-btn">
+                    <Sparkles size={18} />
+                    {isKa ? 'ხელახლა გენერაცია' : 'Regenerate Itinerary'}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </div>
