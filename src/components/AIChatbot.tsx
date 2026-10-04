@@ -33,24 +33,24 @@ const SUGGESTED_QUESTIONS = {
 };
 
 const WELCOME_MESSAGE = {
-  en: `👋 Welcome to **TravelGeorgia Assistant**!
+  en: `👋 Welcome to **TouristGeo Support**!
 
-I can help you with:
-• **Uploading & managing tours** — step-by-step guidance
-• **Account & registration** — tourist or operator accounts
-• **Booking & reservations** — how it all works
-• **Discovering Georgia** — places, regions, tips
+I'm here to help you navigate the platform:
+• **Booking & reservations** — how to book a tour
+• **Account & registration** — managing your profile
+• **Operator guidance** — uploading and managing tours
+• **General FAQs** — pricing, reviews, and support
 
-Ask me anything or tap a suggestion below!`,
-  ka: `👋 კეთილი იყოს თქვენი მობრძანება **TravelGeorgia ასისტენტში**!
+*Looking for a custom travel itinerary? Check out our dedicated **AI Tour Planner**!*`,
+  ka: `👋 კეთილი იყოს თქვენი მობრძანება **TouristGeo-ს მხარდაჭერაში**!
 
-მე შემიძლია დაგეხმაროთ:
-• **ტურების ატვირთვა და მართვა** — ნაბიჯ-ნაბიჯ ინსტრუქცია
-• **ანგარიში და რეგისტრაცია** — ტურისტი ან ოპერატორი
-• **ჯავშანი და რეზერვაცია** — როგორ მუშაობს
-• **საქართველოს აღმოჩენა** — ადგილები, რეგიონები, რჩევები
+მე დაგეხმარებით პლატფორმის გამოყენებაში:
+• **ჯავშნები და რეზერვაცია** — როგორ დაჯავშნოთ ტური
+• **ანგარიში და რეგისტრაცია** — პროფილის მართვა
+• **ოპერატორებისთვის** — ტურების ატვირთვა და მართვა
+• **ზოგადი კითხვები** — ფასები, შეფასებები და სხვა
 
-დამისვით შეკითხვა ან აირჩიეთ ქვემოთ მოცემული!`,
+*გსურთ მოგზაურობის დაგეგმვა? გამოიყენეთ ჩვენი **AI მარშრუტის დამგეგმავი**!*`,
 };
 
 export default function AIChatbot({ language, onNavigate }: AIChatbotProps) {
@@ -189,10 +189,10 @@ export default function AIChatbot({ language, onNavigate }: AIChatbotProps) {
                 </div>
                 <div>
                   <h3 className="text-white font-bold text-[14px] tracking-tight">
-                    {isKa ? 'TravelGeorgia' : 'TravelGeorgia'}
+                    {isKa ? 'TouristGeo' : 'TouristGeo'}
                   </h3>
                   <p className="text-emerald-400/80 text-[10px] uppercase tracking-[0.15em] font-bold">
-                    {isKa ? 'AI ასისტენტი' : 'AI Assistant'}
+                    {isKa ? 'მხარდაჭერა' : 'Support'}
                   </p>
                 </div>
               </div>
