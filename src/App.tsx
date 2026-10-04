@@ -39,7 +39,6 @@ const Operator = lazyWithRetry(() => import('./pages/Operator'));
 const WhyGeorgia = lazyWithRetry(() => import('./pages/WhyGeorgia'));
 const Places = lazyWithRetry(() => import('./pages/Places'));
 const Favorites = lazyWithRetry(() => import('./pages/Favorites'));
-const Admin = lazyWithRetry(() => import('./pages/Admin'));
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState(() => {
@@ -112,7 +111,6 @@ export default function App() {
       operator: selectedOperator ? `${selectedOperator.name} | TouristGeo` : 'Tour Operator | TouristGeo',
       favorites: isKa ? 'ფავორიტები | TouristGeo' : 'Saved Favorites | TouristGeo',
       'ai-planner': isKa ? 'AI მოგზაურობის დაგეგმვა | TouristGeo' : 'AI Tour Planner | TouristGeo',
-      admin: isKa ? 'ადმინ პანელი | TouristGeo' : 'Admin Panel | TouristGeo',
     };
 
     document.title = titles[currentPage] || 'TouristGeo | Discover Georgia with AI';
@@ -171,7 +169,6 @@ export default function App() {
       case 'operator': return <Operator onNavigate={handleNavigate} language={language} operator={selectedOperator} />;
       case 'favorites': return <Favorites onNavigate={handleNavigate} language={language} />;
       case 'ai-planner': return <AITourPlanner language={language} onNavigate={handleNavigate} />;
-      case 'admin': return user ? <Admin user={user} language={language} onNavigate={handleNavigate} /> : <Home onNavigate={handleNavigate} language={language} />;
       default: return <Home onNavigate={handleNavigate} language={language} />;
     }
   };

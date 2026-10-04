@@ -127,6 +127,34 @@ export default function Home({ onNavigate, language }: { onNavigate: (page: stri
 
   return (
     <>
+      {/* SEO Schema */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "name": "TouristGeo",
+            "url": "https://touristgeo1.netlify.app",
+            "logo": "https://touristgeo1.netlify.app/favicon.ico"
+          },
+          {
+            "@type": "WebPage",
+            "name": "TouristGeo | Discover Georgia with AI",
+            "description": "Custom AI-crafted itineraries for Georgia.",
+            "url": "https://touristgeo1.netlify.app"
+          },
+          {
+            "@type": "BreadcrumbList",
+            "itemListElement": [{
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": "https://touristgeo1.netlify.app"
+            }]
+          }
+        ]
+      }) }} />
+
       {/* Season Modal */}
       {selectedSeason && (
         <SeasonModal
@@ -135,6 +163,29 @@ export default function Home({ onNavigate, language }: { onNavigate: (page: stri
           onClose={() => setSelectedSeason(null)}
         />
       )}
+
+      {/* ════════════════════════════════════
+          POSITIONING & DIFFERENTIATION BLOCK
+          ════════════════════════════════════ */}
+      <section className="bg-emerald-900 text-white py-12 md:py-16 text-center">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
+          <ScrollReveal>
+            <h2 className="text-3xl md:text-4xl font-extrabold mb-4 font-display">
+              {isKa ? 'აღმოაჩინე საქართველო ხელოვნური ინტელექტით' : 'Discover Georgia with AI'}
+            </h2>
+            <p className="text-emerald-100 text-lg md:text-xl font-medium mb-4 max-w-3xl mx-auto">
+              {isKa
+                ? 'TouristGeo არის სპეციალურად შექმნილი პლატფორმა, რომელიც დაგეხმარებათ დაგეგმოთ მოგზაურობა წუთებში.'
+                : 'TouristGeo is the ultimate tool to plan a trip in minutes.'}
+            </p>
+            <p className="text-emerald-200/80 text-sm tracking-wide uppercase font-bold">
+              {isKa
+                ? 'შექმნილია მხოლოდ საქართველოს მარშრუტებისთვის, და არა ზოგადი მოგზაურობისთვის.'
+                : 'Built for Georgia itineraries, not generic trip planning.'}
+            </p>
+          </ScrollReveal>
+        </div>
+      </section>
 
       {/* ════════════════════════════════════
           SECTION 1 — HERO SLIDESHOW WITH PARALLAX
