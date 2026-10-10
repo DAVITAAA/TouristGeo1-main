@@ -19,9 +19,8 @@ export default function Tours({ onNavigate, language }: ToursProps) {
   const t = translations[language];
   const isKa = language === 'ka';
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const { convertPrice, getCurrencySymbol } = useCurrency();
-  const targetCurrency = isKa ? 'GEL' : 'USD';
-  const symbol = getCurrencySymbol(targetCurrency);
+  const { convertPrice, getCurrencySymbol, currency } = useCurrency();
+  const symbol = getCurrencySymbol();
 
   const [tours, setTours] = useState<Tour[]>([]);
   const [loading, setLoading] = useState(true);
@@ -84,7 +83,7 @@ export default function Tours({ onNavigate, language }: ToursProps) {
         parseInt(durationStr) > 14
       );
       const tourPrice = typeof tour.price === 'string' ? parseInt(tour.price) : (tour.price || 0);
-      const convertedPrice = convertPrice(tourPrice, targetCurrency) || 0;
+      const convertedPrice = convertPrice(tourPrice) || 0;
       const matchesPrice = isNaN(convertedPrice) ? true : (convertedPrice >= priceRange[0] && convertedPrice <= priceRange[1]);
 
       return matchesSearch && matchesDest && matchesDuration && matchesPrice;
@@ -104,7 +103,7 @@ export default function Tours({ onNavigate, language }: ToursProps) {
         default: return 0;
       }
     });
-  }, [tours, searchQuery, selectedDestinations, selectedDuration, priceRange, sortBy, targetCurrency, convertPrice]);
+  }, [tours, searchQuery, selectedDestinations, selectedDuration, priceRange, sortBy, currency, convertPrice]);
 
   const getSortLabel = () => {
     switch (sortBy) {

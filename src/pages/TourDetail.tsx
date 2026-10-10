@@ -17,10 +17,7 @@ interface TourDetailProps {
 export default function TourDetail({ tour, onNavigate, language, user }: TourDetailProps) {
   const t = translations[language];
   const isKa = language === 'ka';
-  const { convertPrice, getCurrencySymbol } = useCurrency();
-  const [targetCurrency, setTargetCurrency] = useState<'USD' | 'EUR' | 'GEL'>(isKa ? 'GEL' : 'USD');
-  
-  useEffect(() => { setTargetCurrency(isKa ? 'GEL' : 'USD'); }, [isKa]);
+  const { convertPrice, getCurrencySymbol, currency, setCurrency } = useCurrency();
   const [similarTours, setSimilarTours] = useState<Tour[]>([]);
   const [viewCount, setViewCount] = useState<number>(tour.views || 0);
   const [showReservation, setShowReservation] = useState(false);
@@ -211,7 +208,7 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
                   { label: isKa ? 'ჯგუფი' : 'Max Group', value: `${tour.maxGroupSize || 10} ${isKa ? 'კაცი' : 'people'}`, icon: 'groups' },
                   { label: isKa ? 'ენა' : 'Language', value: tour.languages?.join(', ') || (isKa ? 'ინგლისური' : 'English'), icon: 'translate' },
                   { label: isKa ? 'სირთულე' : 'Difficulty', value: tour.difficulty ? (tour.difficulty === 'easy' ? (isKa ? 'მსუბუქი' : 'Easy') : tour.difficulty === 'hard' ? (isKa ? 'რთული' : 'Hard') : (isKa ? 'საშუალო' : 'Moderate')) : (isKa ? 'საშუალო' : 'Moderate'), icon: 'hiking' },
-                  ...(tour.full_price ? [{ label: isKa ? 'სრული ფასი' : 'Full Price', value: `${getCurrencySymbol(targetCurrency)}${convertPrice(tour.full_price, targetCurrency)}`, icon: 'payments' }] : []),
+                  ...(tour.full_price ? [{ label: isKa ? 'სრული ფასი' : 'Full Price', value: `${getCurrencySymbol()}${convertPrice(tour.full_price)}`, icon: 'payments' }] : []),
                 ].map((item, i) => (
                   <div key={i} className="bg-white rounded-2xl p-4 border border-border-light space-y-2 hover:border-gray-200 hover:shadow-sm transition-all">
                     <span className="material-symbols-outlined text-primary text-[20px]">{item.icon}</span>
@@ -404,15 +401,15 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
               <div className="mb-6">
                 <p className="text-[11px] font-bold text-text-muted uppercase tracking-widest mb-1.5">{isKa ? 'ფასი' : 'Price From'}</p>
                 <div className="flex items-baseline gap-1.5">
-                  <span className="text-3xl font-extrabold text-text-main font-display">{getCurrencySymbol(targetCurrency)}{convertPrice(tour.price, targetCurrency)}</span>
+                  <span className="text-3xl font-extrabold text-text-main font-display">{getCurrencySymbol()}{convertPrice(tour.price)}</span>
                   <span className="text-text-muted font-medium text-[13px]">/ {isKa ? 'კაცზე' : 'person'}</span>
                 </div>
                 <div className="flex items-center gap-1 mt-4 bg-gray-50 p-1 rounded-2xl w-fit border border-gray-100">
                   {(['USD', 'EUR', 'GEL'] as const).map(c => (
                      <button 
                        key={c} 
-                       onClick={() => setTargetCurrency(c)} 
-                       className={`px-4 py-1.5 text-[11px] font-bold rounded-xl transition-all ${targetCurrency === c ? 'bg-white shadow-sm text-primary border border-border-light' : 'text-text-muted hover:text-text-main'}`}
+                       onClick={() => setCurrency(c)} 
+                       className={`px-4 py-1.5 text-[11px] font-bold rounded-xl transition-all ${currency === c ? 'bg-white shadow-sm text-primary border border-border-light' : 'text-text-muted hover:text-text-main'}`}
                      >
                        {c}
                      </button>
@@ -501,7 +498,7 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
                               <span className="text-[11px] font-bold text-white">{st.rating}</span>
                            </div>
                            <h4 className="text-[15px] font-bold text-white line-clamp-1 font-display">{st.title}</h4>
-                           <p className="text-white/80 text-[13px] font-medium">{getCurrencySymbol(targetCurrency)}{convertPrice(st.price, targetCurrency)}</p>
+                           <p className="text-white/80 text-[13px] font-medium">{getCurrencySymbol()}{convertPrice(st.price)}</p>
                         </div>
                      </div>
                   </div>
@@ -518,7 +515,7 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
           <div>
             <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider">{isKa ? 'ფასი' : 'From'}</p>
             <div className="flex items-baseline gap-1">
-              <span className="text-xl font-extrabold text-text-main font-display">{getCurrencySymbol(targetCurrency)}{convertPrice(tour.price, targetCurrency)}</span>
+              <span className="text-xl font-extrabold text-text-main font-display">{getCurrencySymbol()}{convertPrice(tour.price)}</span>
               <span className="text-[11px] text-text-muted font-medium">/ {isKa ? 'კაცზე' : 'person'}</span>
             </div>
           </div>

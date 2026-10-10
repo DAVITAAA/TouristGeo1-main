@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { translations, Language } from '../translations';
 import { User, getUnreadReservationCount } from '../api';
 import { useWishlist } from '../hooks/useWishlist';
-import { useCurrency } from '../hooks/useCurrency';
+import { useCurrency, CurrencyOption } from '../hooks/useCurrency';
 import { Heart } from 'lucide-react';
 
 interface NavbarProps {
@@ -83,8 +83,8 @@ const placesItems = [
 export default function Navbar({ onNavigate, currentPage, language, setLanguage, user, onLoginClick, onLogout }: NavbarProps) {
   const t = translations[language];
   const isKa = language === 'ka';
+  const { currency, setCurrency, getCurrencySymbol } = useCurrency();
   const { wishlist } = useWishlist();
-  // const { currency, setCurrency, convertPrice, getCurrencySymbol } = useCurrency();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileMenuClosing, setMobileMenuClosing] = useState(false);
   const [unreadReservations, setUnreadReservations] = useState(0);
@@ -268,6 +268,21 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
               </button>
             )}
 
+            {/* Currency Toggle */}
+            <div className="relative group/curr hidden sm:block">
+              <button className="flex items-center gap-1.5 h-11 px-4 rounded-full text-[14px] font-semibold text-text-muted hover:text-text-main hover:bg-gray-50 transition-all duration-300">
+                <span className="material-symbols-outlined text-[20px]">payments</span>
+                {currency} ({getCurrencySymbol()})
+              </button>
+              <div className="absolute top-full right-0 mt-2 w-32 opacity-0 invisible translate-y-2 transition-all duration-300 ease-out group-hover/curr:opacity-100 group-hover/curr:visible group-hover/curr:translate-y-0 z-50 bg-white shadow-xl rounded-2xl p-2 border border-border-light">
+                {(['USD', 'EUR', 'GEL'] as CurrencyOption[]).map(c => (
+                  <button key={c} onClick={() => setCurrency(c)} className={`w-full text-left px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${currency === c ? 'bg-primary/10 text-primary' : 'text-text-main hover:bg-gray-50'}`}>
+                    {c}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Language Toggle */}
             <button
               onClick={() => setLanguage(language === 'ka' ? 'en' : 'ka')}
@@ -412,6 +427,25 @@ export default function Navbar({ onNavigate, currentPage, language, setLanguage,
                     {language === 'ka' ? 'EN' : 'GE'}
                   </span>
                 </button>
+
+                {/* Currency Toggle (Mobile) */}
+                <div className="px-4 py-2 flex items-center justify-between bg-gray-50 rounded-xl">
+                  <div className="flex items-center gap-3 text-text-main font-semibold text-sm">
+                    <span className="material-symbols-outlined text-[20px]">payments</span>
+                    {isKa ? 'ვალუტა' : 'Currency'}
+                  </div>
+                  <div className="flex bg-white rounded-lg p-1 border border-border-light shadow-sm">
+                    {(['USD', 'EUR', 'GEL'] as const).map(c => (
+                      <button
+                        key={c}
+                        onClick={() => setCurrency(c)}
+                        className={`px-3 py-1 rounded-md text-xs font-bold transition-colors ${currency === c ? 'bg-primary text-primary-content' : 'text-text-muted'}`}
+                      >
+                        {c}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
 

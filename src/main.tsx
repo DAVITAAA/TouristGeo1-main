@@ -26,10 +26,14 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
   });
 }
 
+import { CurrencyProvider } from './hooks/useCurrency.tsx';
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
-      <App />
+      <CurrencyProvider>
+        <App />
+      </CurrencyProvider>
     </ErrorBoundary>
   </StrictMode>,
 );

@@ -3,6 +3,7 @@ import { Language } from '../translations';
 import { georgianSights } from '../data/georgianSights';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronDown, MapPin } from 'lucide-react';
+import WeatherWidget from '../components/WeatherWidget';
 
 const places = [
     {
@@ -195,11 +196,18 @@ export default function Places({ language, initialExpandedPlaceId }: { language:
                                                 className="overflow-hidden"
                                             >
                                                 <div className="pt-4 pb-2">
-                                                    <div className="flex items-center gap-2 mb-4 px-1">
-                                                        <div className="w-8 h-[2px] bg-primary rounded-full" />
-                                                        <span className="text-xs font-black text-primary uppercase tracking-widest">
-                                                            {isKa ? 'სანახაობები ამ რეგიონში' : 'Sights in this region'}
-                                                        </span>
+                                                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-4 px-1">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-8 h-[2px] bg-primary rounded-full" />
+                                                            <span className="text-xs font-black text-primary uppercase tracking-widest">
+                                                                {isKa ? 'სანახაობები ამ რეგიონში' : 'Sights in this region'}
+                                                            </span>
+                                                        </div>
+                                                        {regionSights.length > 0 && (
+                                                            <div className="w-full md:w-80">
+                                                                <WeatherWidget lat={regionSights[0].coords[0]} lng={regionSights[0].coords[1]} language={language} />
+                                                            </div>
+                                                        )}
                                                     </div>
                                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                                         {regionSights.map((sight) => (

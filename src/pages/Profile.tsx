@@ -154,7 +154,6 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
   };
   const { convertPrice, getCurrencySymbol } = useCurrency();
   const isKa = language === 'ka';
-  const targetCurrency = isKa ? 'GEL' : 'USD';
 
   useEffect(() => {
     if (user.role === 'operator') {
@@ -503,7 +502,7 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
                         )}
                         <div className="mt-auto flex items-center justify-between border-t border-gray-50 pt-4">
                            <p className="font-black text-primary flex items-center gap-1">
-                              {getCurrencySymbol(targetCurrency)}{convertPrice(tour.price, targetCurrency)}
+                              {getCurrencySymbol()}{convertPrice(tour.price)}
                            </p>
                            <div className="flex gap-2">
                               <button onClick={() => onNavigate('edit-tour', tour)} className="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors flex items-center">
@@ -572,7 +571,7 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
                         )}
                         <div className="mt-auto flex items-center justify-between border-t border-gray-50 pt-4">
                            <p className="font-black text-primary flex items-center gap-1">
-                              {getCurrencySymbol(targetCurrency)}{convertPrice(tour.price, targetCurrency)}
+                              {getCurrencySymbol()}{convertPrice(tour.price)}
                            </p>
                            <button 
                             onClick={() => { setIsRenewingTour(tour); setShowPaymentModal(true); }}
@@ -633,7 +632,7 @@ export default function Profile({ onNavigate, language, user, onUpdateUser, onLo
                           {fav.location}
                         </p>
                         <p className="font-black text-primary flex items-center gap-1 mt-auto">
-                           {getCurrencySymbol(targetCurrency)}{convertPrice(fav.price, targetCurrency)}
+                           {getCurrencySymbol()}{convertPrice(fav.price)}
                         </p>
                       </div>
                     </div>
