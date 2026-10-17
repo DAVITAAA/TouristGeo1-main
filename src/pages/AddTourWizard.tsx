@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Language, translations } from '../translations';
 import { User, createTour, updateTour } from '../api';
+import { useCurrency } from '../hooks/useCurrency';
 import Georgia3DMap from '../components/Georgia3DMap';
 import Toast from '../components/Toast';
 
@@ -15,6 +16,7 @@ interface AddTourWizardProps {
 export default function AddTourWizard({ onNavigate, language, user, tourToEdit }: AddTourWizardProps) {
   const isKa = language === 'ka';
   const t = translations[language];
+  const { rates } = useCurrency();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -151,13 +153,13 @@ export default function AddTourWizard({ onNavigate, language, user, tourToEdit }
       body.append('phone', formData.phone);
       
       let finalPriceUsd = formData.price;
-      if (inputCurrency === 'EUR') finalPriceUsd = formData.price / 0.92;
-      else if (inputCurrency === 'GEL') finalPriceUsd = formData.price / 2.65;
+      if (inputCurrency === 'EUR') finalPriceUsd = formData.price / (rates.EUR || 0.92);
+      else if (inputCurrency === 'GEL') finalPriceUsd = formData.price / (rates.GEL || 2.65);
       body.append('price', Math.round(finalPriceUsd).toString());
 
       let finalFullPriceUsd = formData.full_price;
-      if (inputCurrency === 'EUR') finalFullPriceUsd = formData.full_price / 0.92;
-      else if (inputCurrency === 'GEL') finalFullPriceUsd = formData.full_price / 2.65;
+      if (inputCurrency === 'EUR') finalFullPriceUsd = formData.full_price / (rates.EUR || 0.92);
+      else if (inputCurrency === 'GEL') finalFullPriceUsd = formData.full_price / (rates.GEL || 2.65);
       body.append('full_price', Math.round(finalFullPriceUsd).toString());
 
       body.append('difficulty', formData.difficulty);

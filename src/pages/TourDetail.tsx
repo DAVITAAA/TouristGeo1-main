@@ -275,12 +275,44 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
             {/* Reviews Section */}
             <section className="space-y-6 pt-8 border-t border-border-light">
                 <div className="flex items-center justify-between">
-                    <h2 className="text-2xl font-bold text-text-main font-display">{t.reviews_title}</h2>
+                    <div className="flex items-center gap-3">
+                        <h2 className="text-2xl font-bold text-text-main font-display">{t.reviews_title}</h2>
+                        {reviews.length > 0 && (
+                            <span className="px-2.5 py-0.5 bg-primary/10 text-primary rounded-full text-[12px] font-bold">
+                                {reviews.length}
+                            </span>
+                        )}
+                    </div>
                     <div className="flex items-center gap-1.5 px-3 py-1.5 bg-yellow-50 rounded-xl border border-yellow-100">
                         <span className="material-icons text-amber-400 text-[18px]">star</span>
                         <span className="font-bold text-yellow-700 text-[13px]">{tour.reviews_count && tour.reviews_count > 0 ? (tour.rating || 0).toFixed(1) : '0.0'}</span>
                     </div>
                 </div>
+
+                {/* Rating Breakdown */}
+                {reviews.length > 0 && (
+                    <div className="bg-white p-5 rounded-2xl border border-border-light">
+                        <div className="space-y-2">
+                            {[5, 4, 3, 2, 1].map((star) => {
+                                const count = reviews.filter(r => r.rating === star).length;
+                                const pct = reviews.length > 0 ? (count / reviews.length) * 100 : 0;
+                                return (
+                                    <div key={star} className="flex items-center gap-3">
+                                        <span className="text-[12px] font-semibold text-text-muted w-3">{star}</span>
+                                        <span className="material-icons text-amber-400 text-[14px]">star</span>
+                                        <div className="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                                            <div
+                                                className="h-full bg-gradient-to-r from-amber-400 to-amber-300 rounded-full transition-all duration-500"
+                                                style={{ width: `${pct}%` }}
+                                            />
+                                        </div>
+                                        <span className="text-[11px] font-medium text-text-muted w-6 text-right">{count}</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
 
                 {/* Write Review */}
                 <div className="bg-white p-6 rounded-2xl border border-border-light space-y-5 shadow-sm">
@@ -347,47 +379,79 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
                 {/* Review List */}
                 <div className="space-y-4">
                     {reviews.length > 0 ? (
-                        reviews.map((review) => (
-                            <div key={review.id} className="bg-white p-5 rounded-2xl border border-border-light space-y-3">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-text-muted font-bold text-[13px]">
-                                            {review.profiles?.avatar_url ? (
-                                                <img src={review.profiles.avatar_url} alt="" className="w-full h-full object-cover rounded-full" />
-                                            ) : (review.profiles?.name || 'Guest').charAt(0)}
-                                        </div>
-                                        <div>
-                                            <p className="font-bold text-text-main text-[13px]">{review.profiles?.name || 'Guest'}</p>
-                                            <div className="flex">
-                                                {[...Array(5)].map((_, i) => (
-                                                    <span key={i} className={`material-icons text-[12px] ${i < review.rating ? 'text-amber-400' : 'text-gray-200'}`}>
-                                                        {i < review.rating ? 'star' : 'star_border'}
-                                                    </span>
-                                                ))}
+                        reviews.map((review) => {
+                            // Relative time formatting
+                            const reviewDate = new Date(review.created_at);
+                            const now = new Date();
+                            const diffMs = now.getTime() - reviewDate.getTime();
+                            const diffMins = Math.floor(diffMs / 60000);
+                            const diffHours = Math.floor(diffMs / 3600000);
+                            const diffDays = Math.floor(diffMs / 86400000);
+                            let timeAgo: string;
+                            if (diffMins < 1) timeAgo = isKa ? 'ახლახანს' : 'Just now';
+                            else if (diffMins < 60) timeAgo = isKa ? `${diffMins} წუთის წინ` : `${diffMins}m ago`;
+                            else if (diffHours < 24) timeAgo = isKa ? `${diffHours} საათის წინ` : `${diffHours}h ago`;
+                            else if (diffDays < 7) timeAgo = isKa ? `${diffDays} დღის წინ` : `${diffDays}d ago`;
+                            else if (diffDays < 30) timeAgo = isKa ? `${Math.floor(diffDays / 7)} კვირის წინ` : `${Math.floor(diffDays / 7)}w ago`;
+                            else timeAgo = reviewDate.toLocaleDateString(isKa ? 'ka-GE' : 'en-US');
+
+                            const isRegistered = !!review.profiles?.name && review.profiles.name !== 'Guest';
+                            const avatarColors = ['from-blue-400 to-indigo-500', 'from-emerald-400 to-teal-500', 'from-orange-400 to-rose-500', 'from-purple-400 to-pink-500', 'from-cyan-400 to-blue-500'];
+                            const avatarColor = avatarColors[review.id.charCodeAt(0) % avatarColors.length];
+
+                            return (
+                                <div key={review.id} className="bg-white p-5 rounded-2xl border border-border-light space-y-3 hover:shadow-sm transition-shadow">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-[14px] ${review.profiles?.avatar_url ? '' : `bg-gradient-to-br ${avatarColor}`}`}>
+                                                {review.profiles?.avatar_url ? (
+                                                    <img src={review.profiles.avatar_url} alt="" className="w-full h-full object-cover rounded-full" />
+                                                ) : (review.profiles?.name || 'Guest').charAt(0).toUpperCase()}
+                                            </div>
+                                            <div>
+                                                <div className="flex items-center gap-1.5">
+                                                    <p className="font-bold text-text-main text-[13px]">{review.profiles?.name || 'Guest'}</p>
+                                                    {isRegistered && (
+                                                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded-md text-[10px] font-semibold">
+                                                            <span className="material-icons text-[10px]">verified</span>
+                                                            {isKa ? 'დადასტურებული' : 'Verified'}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="flex">
+                                                        {[...Array(5)].map((_, i) => (
+                                                            <span key={i} className={`material-icons text-[13px] ${i < review.rating ? 'text-amber-400' : 'text-gray-200'}`}>
+                                                                {i < review.rating ? 'star' : 'star_border'}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                    <span className="text-[11px] text-text-muted">·</span>
+                                                    <span className="text-[11px] font-medium text-text-muted">{timeAgo}</span>
+                                                </div>
                                             </div>
                                         </div>
+                                        <div className="flex items-center gap-2">
+                                            {user && (user.role === 'admin' || (user.id === tour.operator_id || user.id === tour.operator)) && (
+                                                <button 
+                                                    onClick={() => handleDeleteReview(review.id)}
+                                                    className="p-1.5 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 transition-all"
+                                                    title={isKa ? 'წაშლა' : 'Delete'}
+                                                >
+                                                    <span className="material-symbols-outlined text-[16px]">delete</span>
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-[11px] font-medium text-text-muted">
-                                            {new Date(review.created_at).toLocaleDateString(isKa ? 'ka-GE' : 'en-US')}
-                                        </span>
-                                        {user && (user.role === 'admin' || (user.id === tour.operator_id || user.id === tour.operator)) && (
-                                            <button 
-                                                onClick={() => handleDeleteReview(review.id)}
-                                                className="text-red-400 hover:text-red-600 transition-colors"
-                                                title={isKa ? 'წაშლა' : 'Delete'}
-                                            >
-                                                <span className="material-symbols-outlined text-[16px]">delete</span>
-                                            </button>
-                                        )}
-                                    </div>
+                                    <p className="text-text-main/80 text-[13px] leading-relaxed pl-[52px]">"{review.comment}"</p>
                                 </div>
-                                <p className="text-text-main/80 text-[13px] leading-relaxed">"{review.comment}"</p>
-                            </div>
-                        ))
+                            );
+                        })
                     ) : (
-                        <div className="text-center py-10 bg-gray-50 rounded-2xl border border-border-light border-dashed">
-                            <p className="text-text-muted text-[13px]">{t.reviews_empty}</p>
+                        <div className="text-center py-12 bg-gray-50/50 rounded-2xl border border-border-light border-dashed">
+                            <span className="material-symbols-outlined text-[40px] text-gray-300 mb-3 block">rate_review</span>
+                            <p className="text-text-muted text-[14px] font-medium">{t.reviews_empty}</p>
+                            <p className="text-text-muted/60 text-[12px] mt-1">{isKa ? 'გაგვიზიარეთ თქვენი გამოცდილება' : 'Be the first to share your experience'}</p>
                         </div>
                     )}
                 </div>

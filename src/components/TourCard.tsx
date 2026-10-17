@@ -15,7 +15,6 @@ function TourCard({ tour, onNavigate, language }: TourCardProps) {
   const { toggleWishlist, isInWishlist } = useWishlist();
   const { convertPrice, getCurrencySymbol } = useCurrency();
   const isKa = language === 'ka';
-  const targetCurrency = isKa ? 'GEL' : 'USD';
   const isFavorite = isInWishlist(tour.id);
   const t = translations[language];
 
@@ -150,8 +149,8 @@ function TourCard({ tour, onNavigate, language }: TourCardProps) {
             <div className="flex flex-col items-end">
               <span className="text-[10px] font-medium text-text-muted uppercase mb-0.5">{t.from_price}</span>
               <span className="text-xl font-bold text-text-main flex items-baseline gap-0.5 font-display">
-                <span className="text-sm text-text-muted">{getCurrencySymbol(targetCurrency)}</span>
-                {convertPrice(tour.price, targetCurrency)}
+                <span className="text-sm text-text-muted">{getCurrencySymbol()}</span>
+                {convertPrice(tour.price)}
               </span>
             </div>
           </div>
