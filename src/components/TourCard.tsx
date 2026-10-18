@@ -2,6 +2,7 @@ import React from 'react';
 import { Tour } from '../api';
 import { useWishlist } from '../hooks/useWishlist';
 import { useCurrency } from '../hooks/useCurrency';
+import { useTourCompare } from '../context/TourCompareContext';
 import { translations, Language } from '../translations';
 import TiltCard from './TiltCard';
 
@@ -14,8 +15,10 @@ interface TourCardProps {
 function TourCard({ tour, onNavigate, language }: TourCardProps) {
   const { toggleWishlist, isInWishlist } = useWishlist();
   const { convertPrice, getCurrencySymbol } = useCurrency();
+  const { toggleCompare, isInCompare } = useTourCompare();
   const isKa = language === 'ka';
   const isFavorite = isInWishlist(tour.id);
+  const inCompare = isInCompare(tour.id);
   const t = translations[language];
 
   return (
@@ -38,6 +41,19 @@ function TourCard({ tour, onNavigate, language }: TourCardProps) {
             }}
           />
           
+          {/* Compare Button */}
+          <button
+            onClick={(e) => { e.stopPropagation(); toggleCompare(tour); }}
+            title={inCompare ? (isKa ? 'შედარებიდან ამოშლა' : 'Remove from compare') : (isKa ? 'შედარებაში დამატება' : 'Add to compare')}
+            className={`absolute top-3.5 right-16 z-20 w-11 h-11 rounded-full backdrop-blur-md flex items-center justify-center transition-all duration-200 ${
+              inCompare
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25 scale-105'
+                : 'bg-white/85 text-gray-500 hover:text-blue-600 hover:bg-white shadow-sm hover:scale-105'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[19px]">compare_arrows</span>
+          </button>
+
           {/* Wishlist Button */}
           <button
             onClick={(e) => { e.stopPropagation(); toggleWishlist(tour); }}

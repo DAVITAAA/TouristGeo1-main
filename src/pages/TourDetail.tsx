@@ -4,7 +4,9 @@ import { Language, translations } from '../translations';
 import { Tour, fetchTours, createBooking, User, Review, fetchReviews, createReview, incrementTourViews } from '../api';
 import { useCurrency } from '../hooks/useCurrency';
 import { useWishlist } from '../hooks/useWishlist';
+import { useTourCompare } from '../context/TourCompareContext';
 import ReservationModal from '../components/ReservationModal';
+import ImageLightbox from '../components/ImageLightbox';
 import Toast from '../components/Toast';
 
 interface TourDetailProps {
@@ -24,6 +26,12 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; duration?: number } | null>(null);
   const { toggleWishlist, isInWishlist } = useWishlist(!!user);
   const isSaved = isInWishlist(tour.id);
+  const { toggleCompare, isInCompare } = useTourCompare();
+  const inCompare = isInCompare(tour.id);
+
+  // Gallery lightbox state
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   // Reviews state
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -131,6 +139,7 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
   const sideImages = tour.gallery && tour.gallery.length > 0 
     ? tour.gallery.slice(0, 4) 
     : [];
+  const allImages = [mainImage, ...(tour.gallery || [])].filter(Boolean) as string[];
 
   return (
     <div className="min-h-screen bg-background-light pt-24 pb-28 lg:pb-24">
@@ -155,7 +164,18 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
               <span className="flex items-center gap-1.5" title={isKa ? 'ნახვა' : 'Views'}><span className="material-symbols-outlined text-[18px] text-primary">visibility</span>{viewCount}</span>
             </div>
           </div>
-          <div className="flex gap-2.5">
+          <div className="flex flex-wrap gap-2.5">
+            <button 
+              onClick={() => toggleCompare(tour)}
+              className={`flex items-center gap-2 px-5 py-3 rounded-full border font-bold text-[13px] shadow-sm active:scale-95 transition-all ${
+                inCompare 
+                  ? 'bg-blue-50 border-blue-200 text-blue-600 hover:bg-blue-100' 
+                  : 'bg-white border-border-light text-text-muted hover:border-gray-300 hover:text-text-main'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[20px]">compare_arrows</span>
+              {inCompare ? (isKa ? 'შედარებაშია' : 'In Compare') : (isKa ? 'შედარება' : 'Compare')}
+            </button>
             <button 
               onClick={handleShare}
               className="flex items-center gap-2 px-5 py-3 bg-white rounded-full border border-border-light font-bold text-[13px] shadow-sm hover:border-gray-300 hover:text-text-main active:scale-95 transition-all text-text-muted"
@@ -179,14 +199,47 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
 
         {/* Gallery */}
         <div className="mb-12">
-          <div className="rounded-2xl overflow-hidden mb-3">
-            <img src={mainImage} className="w-full aspect-[21/9] object-cover hover:scale-105 transition-transform duration-700" alt={tour.title} />
+          <div 
+            onClick={() => { setLightboxIndex(0); setLightboxOpen(true); }}
+            className="relative rounded-2xl overflow-hidden mb-3 cursor-pointer group"
+          >
+            <img 
+              src={mainImage} 
+              className="w-full aspect-[21/9] object-cover group-hover:scale-105 transition-transform duration-700" 
+              alt={tour.title} 
+            />
+            <div className="absolute inset-0 bg-black/10 group-hover:bg-black/25 transition-colors flex items-center justify-center">
+              <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 backdrop-blur-md text-white px-5 py-2.5 rounded-full text-[13px] font-bold flex items-center gap-2 shadow-lg scale-95 group-hover:scale-100 duration-200">
+                <span className="material-symbols-outlined text-[18px]">zoom_in</span>
+                {t.view_gallery}
+              </span>
+            </div>
+            {allImages.length > 1 && (
+              <span className="absolute bottom-4 right-4 bg-black/70 backdrop-blur-md text-white px-3.5 py-1.5 rounded-xl text-[12px] font-bold flex items-center gap-1.5 shadow-md">
+                <span className="material-symbols-outlined text-[16px]">photo_library</span>
+                {allImages.length} {t.gallery_photos}
+              </span>
+            )}
           </div>
           {sideImages.length > 0 && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {sideImages.map((img, i) => (
-                <div key={i} className="rounded-xl overflow-hidden bg-gray-100">
-                  <img src={img} className="w-full aspect-[4/3] object-cover hover:scale-110 transition-transform duration-500" loading="lazy" alt="" />
+                <div 
+                  key={i} 
+                  onClick={() => { setLightboxIndex(i + 1); setLightboxOpen(true); }}
+                  className="relative rounded-xl overflow-hidden bg-gray-100 cursor-pointer group"
+                >
+                  <img 
+                    src={img} 
+                    className="w-full aspect-[4/3] object-cover group-hover:scale-110 transition-transform duration-500" 
+                    loading="lazy" 
+                    alt="" 
+                  />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                    <span className="opacity-0 group-hover:opacity-100 text-white material-symbols-outlined text-[20px] transition-opacity">
+                      zoom_in
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -617,6 +670,15 @@ export default function TourDetail({ tour, onNavigate, language, user }: TourDet
           onClose={() => setShowReservation(false)}
         />
       )}
+
+      {/* Fullscreen Image Lightbox */}
+      <ImageLightbox
+        images={allImages}
+        initialIndex={lightboxIndex}
+        isOpen={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+        title={tour.title}
+      />
     </div>
   );
 }

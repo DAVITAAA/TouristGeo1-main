@@ -12,7 +12,13 @@ interface ToursProps {
 
 const filterOptions = {
   destinations: ['Svaneti', 'Kazbegi', 'Kakheti', 'Tbilisi', 'Batumi', 'Mestia'],
-  durations: ['1-3 Days', '4-7 Days', '8-14 Days', '14+ Days']
+  durations: ['1-3 Days', '4-7 Days', '8-14 Days', '14+ Days'],
+  difficulties: [
+    { id: 'all', labelKa: 'ყველა', labelEn: 'All' },
+    { id: 'easy', labelKa: 'მარტივი', labelEn: 'Easy' },
+    { id: 'moderate', labelKa: 'საშუალო', labelEn: 'Moderate' },
+    { id: 'hard', labelKa: 'რთული', labelEn: 'Hard' },
+  ]
 };
 
 export default function Tours({ onNavigate, language }: ToursProps) {
@@ -27,6 +33,7 @@ export default function Tours({ onNavigate, language }: ToursProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDestinations, setSelectedDestinations] = useState<string[]>([]);
   const [selectedDuration, setSelectedDuration] = useState<string>('');
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 50000]);
   const [sortBy, setSortBy] = useState<'recommended' | 'price-asc' | 'price-desc' | 'rating' | 'duration-asc' | 'duration-desc'>('recommended');
   const [isSortOpen, setIsSortOpen] = useState(false);
@@ -85,8 +92,13 @@ export default function Tours({ onNavigate, language }: ToursProps) {
       const tourPrice = typeof tour.price === 'string' ? parseInt(tour.price) : (tour.price || 0);
       const convertedPrice = convertPrice(tourPrice) || 0;
       const matchesPrice = isNaN(convertedPrice) ? true : (convertedPrice >= priceRange[0] && convertedPrice <= priceRange[1]);
+      const matchesDifficulty = selectedDifficulty === 'all' || (
+        tour.difficulty
+          ? tour.difficulty.toLowerCase() === selectedDifficulty.toLowerCase()
+          : selectedDifficulty === 'moderate'
+      );
 
-      return matchesSearch && matchesDest && matchesDuration && matchesPrice;
+      return matchesSearch && matchesDest && matchesDuration && matchesPrice && matchesDifficulty;
     });
 
     return filtered.sort((a, b) => {
@@ -103,7 +115,7 @@ export default function Tours({ onNavigate, language }: ToursProps) {
         default: return 0;
       }
     });
-  }, [tours, searchQuery, selectedDestinations, selectedDuration, priceRange, sortBy, currency, convertPrice]);
+  }, [tours, searchQuery, selectedDestinations, selectedDuration, selectedDifficulty, priceRange, sortBy, currency, convertPrice]);
 
   const getSortLabel = () => {
     switch (sortBy) {
@@ -201,8 +213,32 @@ export default function Tours({ onNavigate, language }: ToursProps) {
                       ))}
                     </div>
                   </div>
+
+                  {/* Difficulty Filter */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-bold text-text-main flex items-center gap-2 uppercase tracking-widest">
+                      <span className="material-symbols-outlined text-primary text-[18px]">hiking</span>
+                      {t.filter_difficulty}
+                    </h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      {filterOptions.difficulties.map(diff => (
+                        <button
+                          key={diff.id}
+                          onClick={() => setSelectedDifficulty(diff.id)}
+                          className={`px-3 py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-wider border transition-all duration-300 ${
+                            selectedDifficulty === diff.id
+                              ? 'bg-primary/5 border-primary text-primary shadow-sm'
+                              : 'bg-gray-50 border-transparent text-text-muted hover:border-gray-300 hover:text-text-main'
+                          }`}
+                        >
+                          {isKa ? diff.labelKa : diff.labelEn}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className="flex gap-3 pt-4">
-                    <button onClick={() => { setSelectedDestinations([]); setSelectedDuration(''); setPriceRange([0, 5000]); }} className="flex-1 py-3.5 bg-gray-50 text-text-main rounded-full font-bold text-[14px] hover:bg-gray-100 transition-colors">{t.clear_all}</button>
+                    <button onClick={() => { setSelectedDestinations([]); setSelectedDuration(''); setSelectedDifficulty('all'); setSearchQuery(''); setPriceRange([0, 50000]); }} className="flex-1 py-3.5 bg-gray-50 text-text-main rounded-full font-bold text-[14px] hover:bg-gray-100 transition-colors">{t.clear_all}</button>
                     <button onClick={() => setMobileFiltersOpen(false)} className="flex-1 py-3.5 bg-primary text-white rounded-full font-bold text-[14px] shadow-lg shadow-primary/20 active:scale-95 transition-all">{isKa ? 'შედეგების ნახვა' : 'Show Results'}</button>
                   </div>
                 </div>
@@ -219,6 +255,8 @@ export default function Tours({ onNavigate, language }: ToursProps) {
                   onClick={() => {
                     setSelectedDestinations([]);
                     setSelectedDuration('');
+                    setSelectedDifficulty('all');
+                    setSearchQuery('');
                     setPriceRange([0, 50000]);
                   }}
                   className="text-[10px] font-bold text-text-muted uppercase tracking-wider hover:text-primary transition-colors"
@@ -297,6 +335,29 @@ export default function Tours({ onNavigate, language }: ToursProps) {
                 </div>
               </div>
 
+              {/* Difficulty Filter */}
+              <div className="space-y-4 mb-8">
+                <h3 className="text-[11px] font-bold text-text-muted uppercase tracking-widest flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-primary text-[16px]">hiking</span>
+                  {t.filter_difficulty}
+                </h3>
+                <div className="grid grid-cols-2 gap-2">
+                  {filterOptions.difficulties.map(diff => (
+                    <button
+                      key={diff.id}
+                      onClick={() => setSelectedDifficulty(diff.id)}
+                      className={`px-2.5 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider border transition-all duration-300 ${
+                        selectedDifficulty === diff.id 
+                        ? 'bg-primary/5 border-primary/40 text-primary shadow-sm' 
+                        : 'bg-gray-50 border-transparent text-text-muted hover:border-gray-200 hover:text-text-main'
+                      }`}
+                    >
+                      {isKa ? diff.labelKa : diff.labelEn}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <button className="w-full py-3.5 bg-primary text-white rounded-full font-bold text-[14px] shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 active:scale-95 transition-all">
                 {isKa ? 'ფილტრის გამოყენება' : 'Apply Filters'}
               </button>
@@ -305,7 +366,30 @@ export default function Tours({ onNavigate, language }: ToursProps) {
 
           {/* Main Results Area */}
           <main className="lg:col-span-9">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-5 mb-8">
+            {/* Search Input Bar */}
+            <div className="relative mb-6">
+              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-[20px]">
+                search
+              </span>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={t.search_tours_placeholder || (isKa ? 'მოძებნე ტური სახელით ან ლოკაციით...' : 'Search tours by title or location...')}
+                className="w-full pl-12 pr-10 py-3.5 bg-white border border-border-light rounded-2xl shadow-sm text-text-main text-[13px] font-medium placeholder-gray-400 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center transition-colors"
+                  title={isKa ? 'გასუფთავება' : 'Clear search'}
+                >
+                  <span className="material-symbols-outlined text-[14px]">close</span>
+                </button>
+              )}
+            </div>
+
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-5 mb-6">
               <div className="space-y-1.5">
                 <h1 className="text-2xl md:text-3xl font-extrabold text-text-main font-display">
                   {t.search_results_title}
@@ -359,26 +443,65 @@ export default function Tours({ onNavigate, language }: ToursProps) {
             </div>
 
             {/* Active Tags */}
-            <div className="flex flex-wrap gap-2 mb-8">
-              {selectedDestinations.map(d => (
+            {(selectedDestinations.length > 0 || searchQuery || selectedDuration || selectedDifficulty !== 'all') && (
+              <div className="flex flex-wrap items-center gap-2 mb-8">
+                {searchQuery && (
+                  <button 
+                    onClick={() => setSearchQuery('')}
+                    className="px-3 py-1.5 bg-primary/10 text-primary border border-primary/20 rounded-lg text-[11px] font-bold flex items-center gap-1.5 group hover:bg-primary/15 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[13px]">search</span>
+                    <span>"{searchQuery}"</span>
+                    <span className="material-symbols-outlined text-[14px] group-hover:scale-110">close</span>
+                  </button>
+                )}
+
+                {selectedDestinations.map(d => (
+                  <button 
+                    key={d}
+                    onClick={() => toggleDest(d)}
+                    className="px-3 py-1.5 bg-primary/5 text-primary border border-primary/20 rounded-lg text-[11px] font-bold flex items-center gap-1.5 group hover:bg-primary/10 transition-colors"
+                  >
+                    {getTranslatedDest(d)}
+                    <span className="material-symbols-outlined text-[14px] group-hover:scale-110">close</span>
+                  </button>
+                ))}
+
+                {selectedDuration && (
+                  <button 
+                    onClick={() => setSelectedDuration('')}
+                    className="px-3 py-1.5 bg-primary/5 text-primary border border-primary/20 rounded-lg text-[11px] font-bold flex items-center gap-1.5 group hover:bg-primary/10 transition-colors"
+                  >
+                    {getTranslatedDuration(selectedDuration)}
+                    <span className="material-symbols-outlined text-[14px] group-hover:scale-110">close</span>
+                  </button>
+                )}
+
+                {selectedDifficulty !== 'all' && (
+                  <button 
+                    onClick={() => setSelectedDifficulty('all')}
+                    className="px-3 py-1.5 bg-primary/5 text-primary border border-primary/20 rounded-lg text-[11px] font-bold flex items-center gap-1.5 group hover:bg-primary/10 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[13px]">hiking</span>
+                    {filterOptions.difficulties.find(d => d.id === selectedDifficulty)?.[isKa ? 'labelKa' : 'labelEn']}
+                    <span className="material-symbols-outlined text-[14px] group-hover:scale-110">close</span>
+                  </button>
+                )}
+
                 <button 
-                  key={d}
-                  onClick={() => toggleDest(d)}
-                  className="px-3 py-1.5 bg-primary/5 text-primary border border-primary/20 rounded-lg text-[11px] font-bold flex items-center gap-1.5 group hover:bg-primary/10 transition-colors"
-                >
-                  {getTranslatedDest(d)}
-                  <span className="material-symbols-outlined text-[14px] group-hover:scale-110">close</span>
-                </button>
-              ))}
-              {selectedDestinations.length > 0 && (
-                <button 
-                  onClick={() => setSelectedDestinations([])}
+                  onClick={() => {
+                    setSelectedDestinations([]);
+                    setSelectedDuration('');
+                    setSelectedDifficulty('all');
+                    setSearchQuery('');
+                    setPriceRange([0, 50000]);
+                  }}
                   className="text-[11px] font-bold text-text-muted hover:text-text-main transition-colors ml-1 px-2"
                 >
                   {t.clear_all}
                 </button>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* Grid */}
             {loading ? (

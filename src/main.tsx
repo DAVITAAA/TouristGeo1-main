@@ -27,13 +27,19 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
 }
 
 import { CurrencyProvider } from './hooks/useCurrency.tsx';
+import { ToastProvider } from './context/ToastContext.tsx';
+import { TourCompareProvider } from './context/TourCompareContext.tsx';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
-      <CurrencyProvider>
-        <App />
-      </CurrencyProvider>
+      <ToastProvider>
+        <CurrencyProvider>
+          <TourCompareProvider>
+            <App />
+          </TourCompareProvider>
+        </CurrencyProvider>
+      </ToastProvider>
     </ErrorBoundary>
   </StrictMode>,
 );

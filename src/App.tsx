@@ -7,6 +7,9 @@ import Footer from './components/Footer';
 import AuthModal from './components/AuthModal';
 import AIChatbot from './components/AIChatbot';
 import OfflineNotice from './components/OfflineNotice';
+import BackToTop from './components/BackToTop';
+import TourCompareBar from './components/TourCompareBar';
+import TourCompareModal from './components/TourCompareModal';
 import { Language } from './translations';
 import { getMe, User, Tour, removeToken } from './api';
 
@@ -218,6 +221,9 @@ export default function App() {
       )}
 
       <AIChatbot language={language} onNavigate={handleNavigate} />
+      <TourCompareBar language={language} />
+      <TourCompareModal language={language} onNavigate={handleNavigate} />
+      <BackToTop language={language} />
       <OfflineNotice language={language} />
     </div>
   );
