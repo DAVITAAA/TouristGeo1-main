@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback, ReactNode, RefObject } from '
 import { translations, Language } from '../translations';
 import SeasonModal from '../components/SeasonModal';
 import TiltCard from '../components/TiltCard';
+import FAQ from '../components/FAQ';
 import { useScrollReveal } from '../hooks/useScrollReveal';
 
 /* ═══════════════════════════════════════
@@ -165,29 +166,6 @@ export default function Home({ onNavigate, language }: { onNavigate: (page: stri
       )}
 
       {/* ════════════════════════════════════
-          POSITIONING & DIFFERENTIATION BLOCK
-          ════════════════════════════════════ */}
-      <section className="bg-emerald-900 text-white py-12 md:py-16 text-center">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
-          <ScrollReveal>
-            <h2 className="text-3xl md:text-4xl font-extrabold mb-4 font-display">
-              {isKa ? 'აღმოაჩინე საქართველო ხელოვნური ინტელექტით' : 'Discover Georgia with AI'}
-            </h2>
-            <p className="text-emerald-100 text-lg md:text-xl font-medium mb-4 max-w-3xl mx-auto">
-              {isKa
-                ? 'TouristGeo არის სპეციალურად შექმნილი პლატფორმა, რომელიც დაგეხმარებათ დაგეგმოთ მოგზაურობა წუთებში.'
-                : 'TouristGeo is the ultimate tool to plan a trip in minutes.'}
-            </p>
-            <p className="text-emerald-200/80 text-sm tracking-wide uppercase font-bold">
-              {isKa
-                ? 'შექმნილია მხოლოდ საქართველოს მარშრუტებისთვის, და არა ზოგადი მოგზაურობისთვის.'
-                : 'Built for Georgia itineraries, not generic trip planning.'}
-            </p>
-          </ScrollReveal>
-        </div>
-      </section>
-
-      {/* ════════════════════════════════════
           SECTION 1 — HERO SLIDESHOW WITH PARALLAX
           ════════════════════════════════════ */}
       <section className="relative h-screen w-full overflow-hidden">
@@ -229,6 +207,13 @@ export default function Home({ onNavigate, language }: { onNavigate: (page: stri
                     {isKa ? 'ტურების ნახვა' : 'Browse Tours'}
                     <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
                   </button>
+                  <button
+                    onClick={() => onNavigate('ai-planner')}
+                    className="px-8 py-4 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md text-white font-bold text-[15px] border border-white/30 hover:-translate-y-1 transition-all duration-300 active:scale-95 flex items-center gap-2"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">auto_awesome</span>
+                    {isKa ? 'AI დამგეგმავი' : 'AI Tour Planner'}
+                  </button>
                 </div>
               </div>
             )}
@@ -265,7 +250,49 @@ export default function Home({ onNavigate, language }: { onNavigate: (page: stri
         </div>
       </section>
 
-
+      {/* ════════════════════════════════════
+          POSITIONING & DIFFERENTIATION BLOCK
+          ════════════════════════════════════ */}
+      <section className="bg-gradient-to-b from-[#0a1f18] to-emerald-950 text-white py-14 md:py-20 text-center relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-600/10 via-transparent to-transparent pointer-events-none" />
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl relative z-10">
+          <ScrollReveal>
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-bold uppercase tracking-wider mb-4">
+              <span className="material-symbols-outlined text-[16px]">auto_awesome</span>
+              {isKa ? 'სპეციალიზებული AI ტურ-დამგეგმავი' : 'Specialized AI Travel Platform'}
+            </span>
+            <h2 className="text-3xl md:text-5xl font-extrabold mb-5 font-display tracking-tight leading-tight">
+              {isKa ? 'აღმოაჩინე საქართველო ხელოვნური ინტელექტით' : 'Discover Georgia with AI'}
+            </h2>
+            <p className="text-emerald-100/90 text-lg md:text-xl font-medium mb-5 max-w-2xl mx-auto leading-relaxed">
+              {isKa
+                ? 'TouristGeo არის სპეციალურად შექმნილი პლატფორმა, რომელიც დაგეხმარებათ დაგეგმოთ მოგზაურობა წუთებში.'
+                : 'TouristGeo is the ultimate tool to plan a customized Georgia trip in minutes.'}
+            </p>
+            <p className="text-emerald-300/80 text-xs md:text-sm tracking-widest uppercase font-bold mb-8">
+              {isKa
+                ? '✦ შექმნილია მხოლოდ საქართველოს მარშრუტებისთვის, და არა ზოგადი მოგზაურობისთვის ✦'
+                : '✦ Built for Georgia itineraries, not generic trip planning ✦'}
+            </p>
+            <div className="flex flex-wrap justify-center gap-4">
+              <button
+                onClick={() => onNavigate('ai-planner')}
+                className="px-8 py-3.5 rounded-full bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold text-sm shadow-xl shadow-emerald-500/20 hover:-translate-y-0.5 transition-all flex items-center gap-2 active:scale-95"
+              >
+                <span className="material-symbols-outlined text-[18px]">auto_awesome</span>
+                {isKa ? 'დაიწყე AI დაგეგმვა' : 'Start AI Planning'}
+              </button>
+              <button
+                onClick={() => onNavigate('why-georgia')}
+                className="px-8 py-3.5 rounded-full bg-white/10 hover:bg-white/15 text-white font-bold text-sm border border-white/15 hover:-translate-y-0.5 transition-all flex items-center gap-2 active:scale-95"
+              >
+                {isKa ? 'რატომ საქართველო?' : 'Why Georgia?'}
+                <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+              </button>
+            </div>
+          </ScrollReveal>
+        </div>
+      </section>
 
       {/* ════════════════════════════════════
           SECTION 2 — SEASONS
@@ -375,7 +402,10 @@ export default function Home({ onNavigate, language }: { onNavigate: (page: stri
         </div>
       </section>
 
-
+      {/* ════════════════════════════════════
+          SECTION 5 — FAQ
+          ════════════════════════════════════ */}
+      <FAQ language={language} />
 
     </>
   );

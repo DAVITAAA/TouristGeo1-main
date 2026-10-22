@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Language } from '../translations';
 import { Sparkles, ArrowRight, Play, X, Video, Calendar, MapPin, Compass, Zap, RotateCcw, Download, Heart, ChevronDown, ChevronUp, Share2, FileDown } from 'lucide-react';
 import WeatherWidget from '../components/WeatherWidget';
+import { useToast } from '../context/ToastContext';
 import { MapContainer, TileLayer, Marker, useMap, ZoomControl } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -196,6 +197,7 @@ const TRENDING_KA = [
 
 export default function AITourPlanner({ language, onNavigate }: AITourPlannerProps) {
   const isKa = language === 'ka';
+  const { showToast } = useToast();
 
   // ── Form State ──
   const [days, setDays] = useState('3');
@@ -319,10 +321,12 @@ export default function AITourPlanner({ language, onNavigate }: AITourPlannerPro
     saved.push({ date: new Date().toISOString(), region, days, vibes, response: rawResponse });
     localStorage.setItem('touristgeo_itineraries', JSON.stringify(saved));
     setSaved(true);
+    showToast(isKa ? 'მარშრუტი შენახულია!' : 'Itinerary saved!', 'success');
   };
 
   const handleExportPDF = () => {
     if (!rawResponse) return;
+    showToast(isKa ? 'PDF ბეჭდვა მზადდება...' : 'Opening print preview...', 'info');
     // Build a clean printable HTML document
     const regionLabel = region || (isKa ? 'მთელი საქართველო' : 'All Georgia');
     const title = isKa ? `საქართველოს ტური — ${days} დღე` : `Georgia Trip — ${days} Days`;
@@ -377,15 +381,16 @@ export default function AITourPlanner({ language, onNavigate }: AITourPlannerPro
     if (navigator.share) {
       try {
         await navigator.share({ title, text: shareText });
+        showToast(isKa ? 'მარშრუტი გაზიარებულია!' : 'Itinerary shared!', 'success');
       } catch (err) {
         // User cancelled or share failed, fallback to clipboard
         await navigator.clipboard.writeText(shareText);
-        alert(isKa ? 'დაკოპირდა!' : 'Copied to clipboard!');
+        showToast(isKa ? 'მარშრუტი დაკოპირდა!' : 'Copied to clipboard!', 'success');
       }
     } else {
       // Fallback: copy to clipboard
       await navigator.clipboard.writeText(shareText);
-      alert(isKa ? 'დაკოპირდა!' : 'Copied to clipboard!');
+      showToast(isKa ? 'მარშრუტი დაკოპირდა!' : 'Copied to clipboard!', 'success');
     }
   };
 

@@ -130,6 +130,26 @@ export default function Tours({ onNavigate, language }: ToursProps) {
 
   return (
     <div className="min-h-screen bg-background-light pt-24 pb-20">
+      {/* SEO Schema */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebPage",
+            "name": isKa ? "ტურები საქართველოში | TouristGeo" : "Explore Tours in Georgia | TouristGeo",
+            "description": "Find and book guided tours in Georgia. Svaneti, Kazbegi, Kakheti wine tours, and day trips.",
+            "url": "https://touristgeo1.netlify.app/tours"
+          },
+          {
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://touristgeo1.netlify.app" },
+              { "@type": "ListItem", "position": 2, "name": "Tours", "item": "https://touristgeo1.netlify.app/tours" }
+            ]
+          }
+        ]
+      }) }} />
+
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
         {/* Breadcrumbs */}
         <nav className="flex items-center gap-2 text-xs font-semibold text-text-muted mb-8 tracking-wide">

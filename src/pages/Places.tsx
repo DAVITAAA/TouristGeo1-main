@@ -113,6 +113,26 @@ export default function Places({ language, initialExpandedPlaceId }: { language:
 
     return (
         <>
+            {/* SEO Schema */}
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@graph": [
+                {
+                  "@type": "WebPage",
+                  "name": isKa ? "საქართველოს ადგილები და ღირშესანიშნაობები | TouristGeo" : "Landmarks & Places in Georgia | TouristGeo",
+                  "description": "Explore Georgia's best regions, ancient towers, caves, canyons, and UNESCO heritage sites.",
+                  "url": "https://touristgeo1.netlify.app/places"
+                },
+                {
+                  "@type": "BreadcrumbList",
+                  "itemListElement": [
+                    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://touristgeo1.netlify.app" },
+                    { "@type": "ListItem", "position": 2, "name": "Places", "item": "https://touristgeo1.netlify.app/places" }
+                  ]
+                }
+              ]
+            }) }} />
+
             {/* Hero */}
             <section className="relative h-[280px] sm:h-[380px] overflow-hidden">
                 <img
